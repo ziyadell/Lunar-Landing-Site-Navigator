@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { useSettings } from '../state/settings';
 import { useApp } from '../state/store';
-import { narrationItem, narrationItems, pause, play, playChime, replay, resume, setChimeMuted, setMuted, setRate, stop, stopChime, unlockAudio, usePlayer, type NarrationItem } from './engine';
+import { narrationItem, narrationItems, pause, play, playCue, replay, resume, retryVoice, setMuted, setRate, stop, unlockAudio, usePlayer, type NarrationItem } from './engine';
+import { useReadiness } from '../state/loading';
 import { exitTour, nextStep, prevStep, replayStep, startTour, toggleTourPause, TOUR_LENGTH, useTour } from './tour';
 
 const Headphones = ({ size = 14 }: { size?: number }) => (
@@ -60,7 +61,7 @@ const RATES = [1, 1.25, 1.5] as const;
 /** Player view: full card, or hidden to a slim bar while the narration keeps playing. */
 export const useGuideView = create<{ minimized: boolean; set: (m: boolean) => void }>((set) => ({ minimized: false, set: (minimized) => set({ minimized }) }));
 const VIEW_ITEM = { orbital: 'orbit-intro', surface: 'surface-intro', analysis: 'analysis-intro' } as const;
-const SOURCE_LABEL = { recorded: 'Recorded narrator', device: 'Device voice · US English', captions: 'Captions only' } as const;
+const SOURCE_LABEL = { recorded: 'Recorded narrator', server: 'Narrator voice', captions: 'Captions' } as const;
 
 function topicGroups() {
   const all = narrationItems();
@@ -154,7 +155,9 @@ function GuideMenu({ onClose, anchor }: { onClose: (restore: boolean) => void; a
  * player — one narration at a time, with captions and an honest source label.
  */
 export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'flow' }) {
-  const { item, playing, loading, progress, muted, source, note } = usePlayer();
+  const { item: playerItem, playing, loading, progress, muted, source, note, canRetry } = usePlayer();
+  // The welcome line has its own caption over the scene; the player is for everything else.
+  const item = playerItem?.id === 'welcome' ? null : playerItem;
   const rate = useSettings((s) => s.rate);
   const transcript = useSettings((s) => s.transcript);
   const welcomeSeen = useSettings((s) => s.welcomeSeen);
@@ -235,6 +238,11 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
               <span className="aplayer__src" aria-live="polite">
                 {status}
                 {note && !loading ? <span className="aplayer__note"> · {note}</span> : null}
+                {canRetry && !loading ? (
+                  <button type="button" className="aplayer__retry" onClick={retryVoice}>
+                    Retry voice
+                  </button>
+                ) : null}
               </span>
             </div>
             <div className="aplayer__win">
@@ -300,109 +308,108 @@ const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia
  * renders underneath from the start. A short, quiet chime fades out fully, then the welcome
  * narration plays with captions. Skip, any interaction, or a hard time limit ends it.
  */
+// Captured before the app rewrites the URL: was a region deep-linked (?site=...)?
+const DEEP_SITE = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('site');
+
+/**
+ * Start Mission. One tap (repeat taps ignored): immediate feedback, audio unlocked inside the
+ * gesture, the entry cue; then, once the Moon is genuinely ready (full-resolution maps
+ * loaded, or failed with the usable fallback in place; at most 12 s), the interface fades in
+ * once and the camera eases to the deep-linked region or the south pole. The welcome line
+ * follows the cue (recording, or captions when no recording exists).
+ */
 export function Welcome() {
   const seen = useSettings((s) => s.welcomeSeen);
   const setS = useSettings((s) => s.set);
   const mode = useApp((s) => s.mode);
   const intro = useApp((s) => s.intro);
-  const [phase, setPhase] = useState<'chime' | 'voice'>('chime');
   const muted = usePlayer((s) => s.muted);
-  const item = usePlayer((s) => s.item);
-  const started = usePlayer((s) => s.started);
+  const [phase, setPhase] = useState<'idle' | 'starting' | 'preparing'>('idle');
+  const startedRef = useRef(false);
   const timers = useRef<number[]>([]);
-  const clearAll = () => {
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current = [];
-  };
-  const finish = () => {
-    clearAll();
-    stopChime();
-    if (usePlayer.getState().item?.id === 'welcome') stop();
-    if (!useApp.getState().intro || useApp.getState().outro) return;
-    // Hand-off: the welcome scene eases out, then the interface comes in, piece by piece.
-    const done = () => {
-      useApp.setState({ intro: false, outro: false, reveal: true });
-      setS({ welcomeSeen: true });
-      window.setTimeout(() => useApp.setState({ reveal: false }), 1400);
-    };
-    if (reducedMotion()) return done();
-    useApp.setState({ outro: true });
-    window.setTimeout(done, 380);
-  };
-  const finishRef = useRef(finish);
-  finishRef.current = finish;
-
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
   useEffect(() => {
-    if (!intro) return;
-    // Never longer than this, whatever happens to audio or speech.
-    timers.current.push(window.setTimeout(() => finishRef.current(), 20_000));
-    const end = (e: Event) => {
-      if ((e.target as Element | null)?.closest?.('.welcome')) return;
-      finishRef.current();
-    };
-    window.addEventListener('pointerdown', end);
-    window.addEventListener('keydown', end);
-    return () => {
-      window.removeEventListener('pointerdown', end);
-      window.removeEventListener('keydown', end);
-    };
+    if (!intro) {
+      startedRef.current = false;
+      setPhase('idle');
+    }
   }, [intro]);
-  useEffect(() => () => clearAll(), []);
 
   if (mode !== 'orbital' || (seen && !intro)) return null;
 
-  const enter = (sound: boolean) => {
-    if (!sound) return setS({ welcomeSeen: true });
-    unlockAudio(); // inside the tap: lets the voice start on time after the chime (iOS)
-    // The chime never overlaps another voice: end any tour or narration first.
+  const start = () => {
+    if (startedRef.current) return; // no duplicate starts
+    startedRef.current = true;
+    unlockAudio();
     if (useTour.getState().step >= 0) exitTour();
     else stop();
+    setPhase('starting');
     useApp.getState().setIntro(true);
-    if (!reducedMotion()) useApp.getState().introCamera();
-    setPhase('chime');
-    playChime(() => {
-      if (!useApp.getState().intro) return;
-      setPhase('voice');
-      void play(narrationItem('welcome')!, {
-        onEnd: () => timers.current.push(window.setTimeout(() => finishRef.current(), 900)),
-      });
+    const t0 = performance.now();
+    let cueDone = false;
+    const reveal = () => {
+      useApp.setState({ intro: false, reveal: true });
+      setS({ welcomeSeen: true });
+      timers.current.push(window.setTimeout(() => useApp.setState({ reveal: false }), 900));
+      const a = useApp.getState();
+      if (!reducedMotion()) {
+        if (DEEP_SITE) a.focusRegion();
+        else a.poleCamera();
+      }
+      timers.current.push(window.setTimeout(() => void play(narrationItem('welcome')!), 150));
+    };
+    const check = () => {
+      const r = useReadiness.getState();
+      const ready = r.globe !== 'pending' || performance.now() - t0 > 12_000;
+      if (cueDone && ready) return reveal();
+      if (cueDone) setPhase('preparing'); // only shown when loading is genuinely still running
+      timers.current.push(window.setTimeout(check, 120));
+    };
+    playCue(() => {
+      cueDone = true;
+      check();
     });
   };
 
-  if (intro) {
-    // Captions appear when the voice actually starts (not when it is queued), so words and
-    // voice stay together even where speech takes a moment to begin.
-    const text = item?.id === 'welcome' && started ? item.text : null;
-    return (
-      <div className="welcome welcome--playing">
-        <p className={`welcome__caption${phase === 'voice' && text ? ' is-on' : ''}`} aria-live="polite">
-          {phase === 'voice' && text ? text : ' '}
-        </p>
-        <div className="welcome__ctrl">
-          <button
-            type="button"
-            className="welcome__link"
-            aria-pressed={muted}
-            onClick={() => {
-              setMuted(!muted);
-              setChimeMuted(!muted);
-            }}
-          >
-            {muted ? 'Unmute' : 'Mute'}
-          </button>
-          <button type="button" className="welcome__link" onClick={() => finishRef.current()}>
-            Skip intro
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="welcome welcome--start" role="region" aria-label="Start">
-      <button type="button" className="welcome__enter welcome__enter--start" onClick={() => enter(true)}>
-        Enter mission
+    <div className={`welcome welcome--start${phase !== 'idle' ? ' is-starting' : ''}`} role="region" aria-label="Start">
+      <button
+        type="button"
+        className="welcome__enter welcome__enter--start"
+        onClick={start}
+        aria-disabled={phase !== 'idle'}
+        aria-describedby={phase === 'preparing' ? 'welcome-status' : undefined}
+      >
+        {phase === 'idle' ? 'Start Mission' : phase === 'preparing' ? 'Preparing the Moon…' : 'Starting…'}
       </button>
+      <div className="welcome__under">
+        <button type="button" className="welcome__sound" aria-pressed={!muted} onClick={() => setMuted(!muted)}>
+          {muted ? I.muted : I.sound}
+          <span>{muted ? 'Sound off' : 'Sound on'}</span>
+        </button>
+        <span id="welcome-status" className="welcome__status" role="status" aria-live="polite">
+          {phase === 'preparing' ? 'Loading full-resolution imagery' : ''}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** The welcome line as a caption over the scene while it plays (recording or captions). */
+export function WelcomeCaption() {
+  const item = usePlayer((s) => s.item);
+  const started = usePlayer((s) => s.started);
+  const note = usePlayer((s) => s.note);
+  if (item?.id !== 'welcome' || !started) return null;
+  return (
+    <div className="welcome-caption" role="status" aria-live="polite">
+      <p className="welcome-caption__text">{item.text}</p>
+      <div className="welcome-caption__ctrl">
+        {note && <span className="welcome-caption__note">{note}</span>}
+        <button type="button" className="welcome__link" onClick={stop}>
+          Dismiss
+        </button>
+      </div>
     </div>
   );
 }

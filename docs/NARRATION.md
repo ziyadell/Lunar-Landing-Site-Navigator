@@ -1,3 +1,27 @@
+# Narration
+
+> **Current policy (corrective pass):** browser/system speech synthesis is no longer used
+> anywhere.
+>
+> - **Fixed narration** (welcome, views, regions, terms, tour) plays the pre-generated
+>   recordings only.
+> - **Live calculated readings** use the server-side voice at `/api/tts`. It uses the same
+>   voice ID, model and settings as the clips. The key stays on the server, only the
+>   reading template is accepted, and responses are CDN-cached by text and configuration
+>   version.
+> - **When neither is available,** the text is shown as captions with an honest status
+>   ("Recorded narration not available") and a Retry.
+> - **Voice:** a calm adult female narrator with a neutral American accent. The default
+>   voice ID is `21m00Tcm4TlvDq8ikWAM` (ElevenLabs premade "Rachel"); the generator refuses
+>   voices that are not labelled American female.
+> - **Entry cue:** an original synthesised confirmation, about 0.9 s.
+>
+> **Still missing:** the recordings themselves and the server key. Both need an ElevenLabs
+> API key. Generate the clips with `scripts/generate-narration.mjs`. For live readings,
+> set `ELEVENLABS_API_KEY` in the Vercel project environment.
+>
+> The sections below that describe device voices are historical.
+
 # Narration: opening, Mission guide and guided tour
 
 Nothing plays without a click. No paid speech API is ever called from the browser.

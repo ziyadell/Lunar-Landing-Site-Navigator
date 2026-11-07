@@ -1,0 +1,453 @@
+/* =====================================================================
+   Corrective pass: Landing Regions, Start Mission, captions, failures,
+   one calm reveal, touch targets. Loaded last.
+   ===================================================================== */
+
+/* ---------------------------------------------- Landing Regions control */
+.rpick__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  margin: -4px 0 2px -10px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  font: 500 12.5px/1 var(--font-ui);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+.rpick__btn:hover,
+.rpick__btn.is-open {
+  border-color: var(--glass-line-strong);
+  background: rgba(241, 245, 249, 0.05);
+  color: var(--text);
+}
+.rpick__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.rpick__count {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(77, 220, 244, 0.14);
+  color: var(--accent);
+  font-size: 11px;
+}
+.rpick__chev {
+  transition: transform var(--dur-fast) ease;
+}
+.rpick__btn.is-open .rpick__chev {
+  transform: rotate(180deg);
+}
+/* Desktop popover under (or above) the button. */
+.rpick__panel.sheet {
+  position: fixed;
+  z-index: 85;
+  width: 320px;
+  max-height: min(70vh, 520px);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px 8px;
+  border-radius: 14px;
+  background: #0e1524;
+  border: 1px solid var(--glass-line-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.rpick__panel.is-up {
+  transform: translateY(-100%);
+}
+.rpick__panel .sheet__head {
+  flex-wrap: wrap;
+  row-gap: 2px;
+  padding: 0 4px 0 8px;
+  margin-bottom: 6px;
+}
+.rpick__sub {
+  order: 3;
+  flex-basis: 100%;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+.rpick__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+}
+.rpick__opt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 16px;
+  grid-template-areas: 'name lights check' 'meta lights check';
+  align-items: center;
+  column-gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.rpick__opt.is-active {
+  background: rgba(241, 245, 249, 0.06);
+}
+.rpick__list:focus-visible .rpick__opt.is-active {
+  box-shadow: inset 0 0 0 1px rgba(77, 220, 244, 0.55);
+}
+.rpick__name {
+  grid-area: name;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.rpick__meta {
+  grid-area: meta;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+.rpick__lights {
+  grid-area: lights;
+  display: inline-flex;
+  gap: 4px;
+}
+.rpick__l {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--text-tertiary);
+}
+.rpick__l--sun.is-on {
+  background: var(--sun);
+  border-color: var(--sun);
+}
+.rpick__l--earth.is-on {
+  background: var(--earth);
+  border-color: var(--earth);
+}
+.rpick__check {
+  grid-area: check;
+  color: var(--accent);
+  visibility: hidden;
+}
+.rpick__opt.is-selected .rpick__check {
+  visibility: visible;
+}
+.rpick__opt.is-selected .rpick__name {
+  color: var(--accent);
+}
+@media (max-width: 759px), (orientation: landscape) and (max-height: 500px) {
+  .rpick__panel.sheet {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    width: auto !important;
+    max-height: min(78dvh, 640px) !important;
+    transform: none !important;
+    padding: 10px 10px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 20px 20px 0 0 !important;
+    background: #0b111d !important;
+    z-index: 80;
+  }
+  .rpick__panel.sheet::before {
+    content: '';
+    display: block;
+    flex: none;
+    width: 40px;
+    height: 4px;
+    margin: 0 auto 10px;
+    border-radius: 4px;
+    background: rgba(241, 245, 249, 0.22);
+  }
+  .rpick__opt {
+    min-height: 56px;
+  }
+}
+
+/* ---------------------------------------------- Start Mission */
+.welcome--start {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+.welcome__enter--start[aria-disabled='true'] {
+  cursor: progress;
+  animation: none;
+  box-shadow: 0 0 22px 4px rgba(77, 220, 244, 0.35);
+  transform: scale(0.98);
+}
+.welcome__enter--start:active {
+  transform: scale(0.97);
+}
+.welcome__under {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.welcome__sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(5, 8, 15, 0.55);
+  color: var(--text-secondary);
+  font: 500 13px/1 var(--font-ui);
+  cursor: pointer;
+}
+.welcome__sound[aria-pressed='true'] {
+  color: var(--text);
+}
+.welcome__sound:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.welcome__status {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.welcome__status:empty {
+  display: none;
+}
+
+/* The welcome line, over the live scene (not a blocking overlay). */
+.welcome-caption {
+  position: fixed;
+  z-index: 45;
+  left: 50%;
+  bottom: calc(var(--gutter) + 92px);
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 32px));
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(5, 8, 15, 0.72);
+  border: 1px solid var(--glass-line);
+  animation: lsn-caption-in 400ms var(--ease-out) both;
+  pointer-events: auto;
+}
+.welcome-caption__text {
+  margin: 0;
+  font: 500 clamp(15px, 2vw, 19px) / 1.45 var(--font-display);
+  text-align: center;
+  color: var(--text);
+}
+.welcome-caption__ctrl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.welcome-caption__note {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+@keyframes lsn-caption-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+@media (max-width: 759px) {
+  .welcome-caption {
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---------------------------------------------- one calm reveal (no cascade) */
+.app.is-reveal .masthead,
+.app.is-reveal .hud > *,
+.app.is-reveal .cond,
+.app.is-reveal .hud__right .tool-col,
+.app.is-reveal .deck-card,
+.app.is-reveal .timepill,
+.app.is-reveal .guide,
+.app.is-reveal .hud__intro,
+.app.is-reveal .hud__corner {
+  animation: lsn-reveal-once 560ms var(--ease-out) both !important;
+}
+.app.is-reveal > .viewport {
+  animation: none !important;
+}
+@keyframes lsn-reveal-once {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app.is-reveal * {
+    animation: none !important;
+  }
+  .welcome-caption {
+    animation: none;
+  }
+}
+/* The scene itself fades in once, on its first frame (no flash of an empty canvas). */
+.viewport__canvas {
+  animation: lsn-canvas-in 500ms ease both;
+}
+@keyframes lsn-canvas-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------- failures and retries */
+.loadchip--failed {
+  gap: 10px;
+  padding-right: 4px;
+  border-color: rgba(255, 107, 107, 0.4);
+}
+.loadchip__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.loadchip__retry,
+.aplayer__retry {
+  flex: none;
+  height: 26px;
+  margin-left: 6px;
+  padding: 0 12px;
+  border: 1px solid rgba(241, 245, 249, 0.25);
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font: 500 12px/1 var(--font-ui);
+  cursor: pointer;
+}
+.loadchip__retry:hover,
+.aplayer__retry:hover {
+  border-color: var(--accent);
+}
+
+/* ---------------------------------------------- region marker: name only */
+.gm-cluster__chip {
+  padding: 0 10px !important;
+}
+
+/* ---------------------------------------------- touch targets (coarse pointers)
+   Small visual controls get a 44 px hit area without changing their look. */
+@media (pointer: coarse) {
+  .listen,
+  .fold-btn,
+  .cond__fold,
+  .sheet__close,
+  .drawer__close,
+  .aplayer__btn,
+  .round-btn,
+  .rpick__btn,
+  .datef__btn {
+    position: relative;
+  }
+  .listen::after,
+  .fold-btn::after,
+  .cond__fold::after,
+  .sheet__close::after,
+  .drawer__close::after,
+  .aplayer__btn::after,
+  .round-btn::after,
+  .rpick__btn::after,
+  .datef__btn::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+  .app .hud__right .tool-col .icon-tool,
+  .app .hud__right .tool-col .tool-col__fold {
+    width: 44px !important;
+    height: 40px !important;
+  }
+  .timepill__step,
+  .timepill__speed,
+  .timepill__play {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ---------------------------------------------- touch screens: every control ≥ 44 px */
+@media (pointer: coarse) {
+  .modenav__btn,
+  .ghost-btn,
+  .more__btn,
+  .cond__more,
+  .text-btn,
+  .guide__btn,
+  .cta {
+    min-height: 44px;
+  }
+  .ghost-btn--icon,
+  .more__btn {
+    min-width: 44px;
+  }
+  .intro__close {
+    position: relative;
+  }
+  .intro__close::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+  .masthead {
+    --mast-h: 64px;
+  }
+}
+
+/* ---------------------------------------------- tablets (760–1023 px wide) */
+@media (min-width: 760px) and (max-width: 1100px) {
+  /* Header: views inline, secondary actions in the More menu. */
+  .more {
+    display: block;
+  }
+  .masthead__aside > .ghost-btn:not(.more__btn),
+  .masthead__aside > .focus-btn {
+    display: none;
+  }
+  /* The region card sits above the time controls instead of beside them. */
+  .hud .hud__left {
+    bottom: calc(var(--gutter) + 76px);
+  }
+  .hud .hud__left .locator {
+    display: none;
+  }
+}
+@media (min-width: 760px) and (max-width: 1199px) {
+  /* Guide button clear of the two-line scale bar. */
+  .hud .hud__audio {
+    bottom: calc(var(--gutter) + 176px);
+  }
+}
+
+/* Globe dots stay absolutely positioned on their lunar points; only their invisible hit
+   area grows on touch screens (44 px). */
+@media (pointer: coarse) {
+  .gm-dot::after {
+    inset: -17px;
+  }
+}
+
+.ghost-btn {
+  white-space: nowrap;
+}

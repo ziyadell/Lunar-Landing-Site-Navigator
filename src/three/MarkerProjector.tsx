@@ -49,7 +49,18 @@ export function MarkerProjector() {
     [sites],
   );
 
+  if (import.meta.env.DEV) Object.assign(window as object, { __markerPts: pts });
+  // Per-label state for deterministic, stable placement (no frame-to-frame accumulation:
+  // positions are recomputed from the surface anchor every frame; only the *choice* of side
+  // is remembered, with hysteresis, so labels do not flip back and forth).
+  const prevCand = useMemo(() => new Map<string, number>(), []);
+  const wasVisible = useMemo(() => new Map<string, boolean>(), []);
+
   useFrame(() => {
+    // The camera controller has just moved the camera in this frame; three.js only refreshes
+    // the world matrix during rendering. Refresh it now, or every marker is projected with the
+    // previous frame's camera and visibly lags the surface while the Moon turns.
+    camera.updateMatrixWorld();
     const st = useApp.getState();
     const showLabels = st.layers.labels;
     const sel = st.regionId;
@@ -69,11 +80,16 @@ export function MarkerProjector() {
       const p = v.clone().project(camera);
       return { x: (p.x * 0.5 + 0.5) * W, y: (-p.y * 0.5 + 0.5) * H, inFront: p.z < 1 };
     };
-    const faces = (v: THREE.Vector3) => v.clone().normalize().dot(cam.clone().sub(v).normalize()) > 0.02;
+    const facing = (v: THREE.Vector3) => v.clone().normalize().dot(cam.clone().sub(v).normalize());
+    const faces = (v: THREE.Vector3) => facing(v) > 0.02;
 
     const items = pts.map((p) => {
       const s = project(p.world);
-      const vis = faces(p.world) && s.inFront && s.x > -40 && s.x < W + 40 && s.y > -40 && s.y < H + 40;
+      // Limb hysteresis: appear above 0.03, disappear below 0.0 (no flicker at the edge).
+      const f = facing(p.world);
+      const front = wasVisible.get(p.id) ? f > 0 : f > 0.03;
+      const vis = front && s.inFront && s.x > -40 && s.x < W + 40 && s.y > -40 && s.y < H + 40;
+      wasVisible.set(p.id, vis);
       return { ...p, s, vis };
     });
     const visible = items.filter((i) => i.vis);
@@ -83,22 +99,32 @@ export function MarkerProjector() {
         minD = Math.min(minD, Math.hypot(visible[a].s.x - visible[b].s.x, visible[a].s.y - visible[b].s.y));
     const cluster = visible.length > 1 && minD < CLUSTER_PX;
 
-    // Cluster pin
+    // Overview marker: when the regions overlap on screen, one marker names the selected
+    // region. Its dot is the selected observation point itself (same world position, same
+    // projection as the regional dots), never an average of whatever happens to be visible.
     const cEl = document.getElementById('gm-cluster');
+    const selItem = items.find((i) => i.id === sel);
     if (cEl) {
-      show(cEl, cluster);
-      if (cluster) {
-        const cx = visible.reduce((a, i) => a + i.s.x, 0) / visible.length;
-        const cy = visible.reduce((a, i) => a + i.s.y, 0) / visible.length;
+      const onCluster = cluster && !!selItem?.vis;
+      show(cEl, onCluster);
+      if (onCluster && selItem) {
+        const cx = selItem.s.x;
+        const cy = selItem.s.y;
         const w = cEl.offsetWidth;
         const h = cEl.offsetHeight;
         // Stays attached to the cluster as the globe turns: the chip starts at the pole point
         // (its dot sits on it) and only flips to the left near the right edge. It never jumps
         // away from controls; it fades behind them instead.
-        const right = cx - 9 + w <= W - MARGIN;
-        const x = right ? cx - 9 : cx + 9 - w;
-        const y = THREE.MathUtils.clamp(cy - h / 2, MARGIN, H - h - MARGIN);
+        // Side: right of the point, flipping left only well past the edge (hysteresis).
+        const wasFlipped = cEl.classList.contains('is-flipped');
+        const right = wasFlipped ? cx + w <= W - MARGIN - 24 : cx + w <= W - MARGIN;
         cEl.classList.toggle('is-flipped', !right);
+        // Place the chip so its dot's centre is exactly the projected point (measured, not assumed).
+        const dotEl = cEl.firstElementChild as HTMLElement | null;
+        const ox = dotEl ? dotEl.offsetLeft + dotEl.offsetWidth / 2 : 5;
+        const oy = dotEl ? dotEl.offsetTop + dotEl.offsetHeight / 2 : h / 2;
+        const x = cx - ox;
+        const y = cy - oy;
         const covered = obstacles.some((o) => overlap({ x, y, w, h }, o));
         cEl.classList.toggle('is-covered', covered);
         cEl.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
@@ -132,19 +158,30 @@ export function MarkerProjector() {
       ];
       let best: Rect | null = null;
       let bestCost = Infinity;
-      for (const [cx, cy] of cands) {
+      let bestIdx = -1;
+      const costs: number[] = [];
+      for (let ci = 0; ci < cands.length; ci++) {
+        const [cx, cy] = cands[ci];
         const r: Rect = { x: cx, y: cy, w, h };
         const outside = r.x < MARGIN || r.y < MARGIN || r.x + w > W - MARGIN || r.y + h > H - MARGIN;
         let cost = (outside ? 1e6 : 0) + Math.hypot(cx + w / 2 - x, cy + h / 2 - y) * 0.01;
         for (const q of placed) cost += area(r, q) * 10;
         for (const d of dots) if (overlap(r, d)) cost += area(r, d) * 10;
         for (const o of obstacles) if (overlap(r, o)) cost += 1e5 + area(r, o);
+        costs[ci] = cost;
         if (cost < bestCost) {
           bestCost = cost;
           best = r;
+          bestIdx = ci;
         }
-        if (cost < 1) break;
       }
+      // Keep the previous side unless another is clearly better (prevents rapid switching).
+      const pi = prevCand.get(it.id);
+      if (pi !== undefined && pi !== bestIdx && costs[pi] !== undefined && costs[pi] <= bestCost + 2) {
+        bestIdx = pi;
+        best = { x: cands[pi][0], y: cands[pi][1], w, h };
+      }
+      prevCand.set(it.id, bestIdx);
       if (!best) continue;
       best.x = THREE.MathUtils.clamp(best.x, MARGIN, W - w - MARGIN);
       best.y = THREE.MathUtils.clamp(best.y, MARGIN, H - h - MARGIN);

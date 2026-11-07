@@ -13,7 +13,6 @@ export function SettingsPanel() {
   const s = useSettings();
   const rs = renderSettings(s.quality);
   const close = useApp((st) => st.openDrawer);
-  const hasSpeech = typeof window !== 'undefined' && 'speechSynthesis' in window;
   return (
     <div className="settings">
       <section className="settings__group">
@@ -49,9 +48,9 @@ export function SettingsPanel() {
             Voice
           </span>
           <div className="seg" role="radiogroup" aria-labelledby="voice-l">
-            {(['recorded', 'device', 'captions'] as const).map((v) => (
+            {(['recorded', 'captions'] as const).map((v) => (
               <button key={v} type="button" role="radio" aria-checked={s.voice === v} className={`seg__btn${s.voice === v ? ' is-active' : ''}`} onClick={() => s.set({ voice: v })}>
-                {v === 'recorded' ? 'Recorded' : v === 'device' ? 'Device voice' : 'Captions'}
+                {v === 'recorded' ? 'Recorded voice' : 'Captions only'}
               </button>
             ))}
           </div>
@@ -69,9 +68,8 @@ export function SettingsPanel() {
           </div>
         </div>
         <p className="settings__note">
-          Recorded narration plays when clips have been generated for this build; otherwise an American English voice on your
-          device reads the same text{hasSpeech ? '' : ' (speech is not available in this browser: captions only)'}. If the device has no
-          American English voice, captions are shown instead. Nothing plays until you ask.
+          One recorded narrator is used on every device; captions are always available. When a recording is not available,
+          the text is shown as captions (no device voices are used).
         </p>
       </section>
 

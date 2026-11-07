@@ -7,6 +7,7 @@ import type { LandingRegion, SiteConditions } from '../../data/types';
 import { Listen } from '../../audio/ui';
 import { assetUrl } from '../../data/release';
 import { FoldButton } from '../Fold';
+import { RegionPicker } from './RegionPicker';
 import { useSettings } from '../../state/settings';
 
 /**
@@ -162,10 +163,8 @@ export function RegionDeck() {
     <section className={`deck-card${orbital ? '' : ' deck-card--surface'}${folded ? ' is-folded' : ''}`} aria-label="Selected region" data-obstacle>
       <header className="deck-card__head">
         <div className="deck-card__titles">
-          <div className="deck-card__eyebrow" aria-label={`NASA candidate region ${i + 1} of ${n}`}>
-            <span aria-hidden="true">
-              NASA region <span className="deck-card__count num">{i + 1}&#8239;/&#8239;{n}</span>
-            </span>
+          <div className="deck-card__eyebrow">
+            <RegionPicker />
           </div>
           <h2 className="deck-card__name" aria-live="polite">
             {r.name}
