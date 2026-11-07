@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useConditions } from '../data/useConditions';
-import { activePreset, SURFACE_PRESETS, useApp, useLook, type SurfacePreset } from '../state/store';
-import { compass, fmtDeg } from '../utils/format';
+import { useApp, useLook } from '../state/store';
+import { fmtDeg } from '../utils/format';
 import { wrap360 } from '../science/geometry';
 
 /** Sun / Earth labels in the 3D sky (positioned by SkyLabelProjector). */
@@ -99,68 +99,29 @@ export function SurfacePanorama() {
   );
 }
 
-/** Display presets (each sets several layers; individual toggles remain in the Display panel). */
-function SurfacePresets() {
+/** What the Surface View shows: measured inputs vs display aids. */
+export function SurfaceMethod() {
   const layers = useApp((s) => s.layers);
-  const apply = useApp((s) => s.applyPreset);
-  const active = activePreset(layers);
+  const { conditions } = useConditions();
   return (
-    <div className="presets" role="radiogroup" aria-label="Display preset">
-      {(Object.keys(SURFACE_PRESETS) as SurfacePreset[]).map((k) => (
-        <button
-          key={k}
-          type="button"
-          role="radio"
-          aria-checked={active === k}
-          className={`presets__btn${active === k ? ' is-active' : ''}`}
-          title={SURFACE_PRESETS[k].hint}
-          onClick={() => apply(k)}
-        >
-          {SURFACE_PRESETS[k].label}
-        </button>
-      ))}
-      {!active && <span className="presets__custom">Custom</span>}
-    </div>
-  );
-}
-
-/** Collapsible method note for the Surface View. */
-export function SurfaceInfo({ error }: { error: string | null }) {
-  const [open, setOpen] = useState(false);
-  const layers = useApp((s) => s.layers);
-  const { conditions, region } = useConditions();
-  const yaw = useLook((s) => s.yaw);
-  if (error) return <div className="vp-note is-warn">Terrain tile failed to load: {error}</div>;
-  return (
-    <div className={`vp-info${open ? ' is-open' : ''}`}>
-      <SurfacePresets />
-      <button type="button" className="vp-info__btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-          <circle cx="6" cy="6" r="5.2" fill="none" stroke="currentColor" strokeWidth="1.1" />
-          <path d="M6 5.2v3.4M6 3.4v.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-        </svg>
-        {region.name} · facing {compass(yaw)} · {layers.enhancedLight ? 'Enhanced visibility' : 'Physical lighting'}
-      </button>
-      {open && (
-        <div className="vp-info__body">
-          <p>
-            <strong>Measured:</strong> one continuous LOLA terrain mesh to 150 km (80 m within 11 km, 400 m to 55 km,
-            1 km beyond), the same range as the ray-traced skyline,
-            surface albedo from the LROC WAC South Pole Summer Mosaic (100 m; its 2010 shadows are replaced by the
-            regional mean), Sun and Earth from JPL Horizons, stars from the Yale Bright Star Catalogue placed with the IAU Moon rotation
-            model. Shadows are cast by the terrain in the scene; direct sunlight is scaled to the visible solar disc
-            {conditions ? ` (${(conditions.sun.discFraction * 100).toFixed(0)}% now)` : ''}.
-          </p>
-          <p>
-            <strong>Display aids:</strong>{' '}
-            {layers.enhancedLight
-              ? 'enhanced visibility adds a sky fill light and brighter Earthshine so terrain in shadow stays readable — real shadowed terrain is much darker. '
-              : 'physical lighting shows only sunlight and faint Earthshine. '}
-            {layers.regolith ? 'Fine surface texture below LOLA resolution is illustrative, not measured. ' : ''}
-            Earth is drawn with its correct phase but no surface detail. Range rings: 100 m, 250 m, 500 m, 1 km.
-          </p>
-        </div>
-      )}
-    </div>
+    <section className="method">
+      <h3 className="mtable__head">This surface view</h3>
+      <p>
+        <strong>Measured:</strong> one continuous LOLA terrain mesh to 150 km (80 m within 11 km, 400 m to 55 km, 1 km beyond),
+        the same range as the ray-traced skyline; surface albedo from the LROC WAC South Pole Summer Mosaic (100 m; its 2010
+        shadows are replaced by the regional mean); Sun and Earth from JPL Horizons; stars from the Yale Bright Star Catalogue
+        placed with the IAU Moon rotation model. Terrain casts its own shadows; direct sunlight is scaled to the visible solar disc
+        {conditions ? ` (${(conditions.sun.discFraction * 100).toFixed(0)}% now)` : ''}.
+      </p>
+      <p>
+        <strong>Display aids:</strong>{' '}
+        {layers.enhancedLight
+          ? 'enhanced visibility adds a sky fill light and brighter Earthshine so terrain in shadow stays readable — real shadowed terrain is much darker. '
+          : 'physical lighting shows only sunlight and faint Earthshine. '}
+        {layers.regolith ? 'Fine surface texture below LOLA resolution is illustrative, not measured. ' : ''}
+        Earth is drawn with its correct phase but no surface detail. Range rings: 100 m, 250 m, 500 m, 1 km. Nearby ground looks
+        smooth because 80 m is the finest measured relief used.
+      </p>
+    </section>
   );
 }
