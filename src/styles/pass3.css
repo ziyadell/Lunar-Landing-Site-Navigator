@@ -451,3 +451,58 @@
 .ghost-btn {
   white-space: nowrap;
 }
+
+/* ---------------------------------------------- stacking: open panels above everything */
+.app .hud__audio:has(.aplayer),
+.app .hud__audio:has(.guide__menu),
+.guide--flow:has(.guide__menu),
+.guide--flow:has(.aplayer) {
+  z-index: 90 !important;
+}
+
+/* Region marker on the globe: a "Landing Regions" control. */
+.gm-cluster__chev {
+  flex: none;
+  color: var(--accent);
+}
+.gm-cluster__chip {
+  gap: 6px;
+}
+
+/* ---------------------------------------------- phones: guide button and loading status
+   placed away from the tool column (right edge) */
+@media (max-width: 759px) and (min-height: 501px) {
+  .app .hud__audio:not(:has(.aplayer-mini)) {
+    justify-self: start !important;
+    margin: 0 0 10px var(--gutter) !important;
+  }
+  .app .hud__bottom > .loadchip {
+    align-self: start !important;
+    justify-self: start !important;
+    margin: 10px 0 0 var(--gutter) !important;
+  }
+  .app--surface .hud__bottom > .loadchip {
+    margin-top: 50px !important; /* below the heading tape */
+  }
+  .app .hud__right .tool-col {
+    max-height: calc(100% - 60px);
+  }
+}
+
+/* Phones up to 420 px: time controls in two rows (date first; steps, play and speed
+   below), so nothing is clipped with 44 px touch targets. */
+@media (max-width: 420px) {
+  .timepill__bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    height: auto;
+    padding: 6px;
+    row-gap: 4px;
+    border-radius: 22px;
+  }
+  .timepill__when {
+    order: -1;
+    flex: 1 0 100%;
+    justify-content: center;
+  }
+}

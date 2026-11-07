@@ -14,7 +14,6 @@ export function GlobeLabels() {
   const { sites, region } = useData();
   const regionId = useApp((s) => s.regionId);
   const selectRegion = useApp((s) => s.selectRegion);
-  const focusRegion = useApp((s) => s.focusRegion);
   // A drag that starts or ends on a marker must not select it: only a tap (< 8 px of
   // movement) or a keyboard activation counts.
   const down = useRef<{ x: number; y: number } | null>(null);
@@ -47,11 +46,14 @@ export function GlobeLabels() {
         ))}
       </svg>
 
-      <button type="button" id="gm-cluster" className="gm-cluster" style={{ visibility: 'hidden' }} {...tap(focusRegion)}
-        aria-label={`${sel.name}, selected landing region. Zoom in to it.`}>
+      <button type="button" id="gm-cluster" className="gm-cluster" style={{ visibility: 'hidden' }}
+        {...tap(() => useApp.getState().openPicker(document.getElementById('gm-cluster')?.getBoundingClientRect()))}
+        aria-haspopup="listbox"
+        aria-label={`Landing Regions: choose any of the ${sites.regions.length} regions. Selected: ${sel.name}.`}>
         <i className="gm-cluster__dot" aria-hidden="true" />
         <span className="gm-cluster__chip" aria-hidden="true">
-          <span className="gm-cluster__sel">{sel.name}</span>
+          <span className="gm-cluster__sel">Landing Regions</span>
+          <svg className="gm-cluster__chev" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.6" /></svg>
         </span>
       </button>
 

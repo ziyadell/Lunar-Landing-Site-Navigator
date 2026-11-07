@@ -18,7 +18,8 @@ export function RegionPicker() {
   const regionId = useApp((s) => s.regionId);
   const selectRegion = useApp((s) => s.selectRegion);
   const all = useAllConditions();
-  const [open, setOpen] = useState(false);
+  const open = useApp((s) => s.pickerOpen);
+  const anchor = useApp((s) => s.pickerAnchor);
   const [active, setActive] = useState(0);
   const [pos, setPos] = useState<{ left: number; top: number; up: boolean; maxH: number } | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
@@ -29,7 +30,9 @@ export function RegionPicker() {
   const selIdx = Math.max(0, regions.findIndex((r) => r.id === regionId));
 
   const place = useCallback(() => {
-    const b = btn.current?.getBoundingClientRect();
+    // Anchor: the control that opened the list (region card button or globe marker).
+    const r = btn.current?.getBoundingClientRect();
+    const b = anchor ? { left: anchor.x, top: anchor.y, bottom: anchor.y + anchor.h, width: anchor.w } : r;
     if (!b) return;
     const W = 320;
     // Open toward the side with more room and never exceed it (the list scrolls inside).
@@ -38,9 +41,9 @@ export function RegionPicker() {
     const up = above > below;
     const maxH = Math.max(200, Math.min(520, (up ? above : below) - 6));
     setPos({ left: Math.min(Math.max(8, b.left), window.innerWidth - W - 8), top: up ? b.top - 6 : b.bottom + 6, up, maxH });
-  }, []);
+  }, [anchor]);
   const close = useCallback((restore: boolean) => {
-    setOpen(false);
+    useApp.getState().closePicker();
     setPos(null);
     if (restore) btn.current?.focus();
   }, []);
@@ -107,11 +110,11 @@ export function RegionPicker() {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
-        onClick={() => (open ? close(true) : setOpen(true))}
+        onClick={(e) => (open ? close(true) : useApp.getState().openPicker(e.currentTarget.getBoundingClientRect()))}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
-            setOpen(true);
+            useApp.getState().openPicker(e.currentTarget.getBoundingClientRect());
           }
         }}
       >

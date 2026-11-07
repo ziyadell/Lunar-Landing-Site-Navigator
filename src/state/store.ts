@@ -122,6 +122,11 @@ interface AppState {
   /** Incremented to retry a failed terrain download. */
   terrainRetry: number;
   retryTerrain: () => void;
+  /** Landing Regions list (opened from the region card or the globe marker). */
+  pickerOpen: boolean;
+  pickerAnchor: { x: number; y: number; w: number; h: number } | null;
+  openPicker: (anchor?: DOMRect | null) => void;
+  closePicker: () => void;
   /** Interface element the guided tour is pointing at (static outline, no animation). */
   tourSpot: string | null;
   toggleLayer: (k: keyof Layers) => void;
@@ -207,6 +212,10 @@ export const useApp = create<AppState>((set) => ({
   terrainRetry: 0,
   retryTerrain: () => set((s) => ({ terrainRetry: s.terrainRetry + 1 })),
   tourSpot: null,
+  pickerOpen: false,
+  pickerAnchor: null,
+  openPicker: (a) => set({ pickerOpen: true, pickerAnchor: a ? { x: a.left, y: a.top, w: a.width, h: a.height } : null }),
+  closePicker: () => set({ pickerOpen: false }),
   toggleLayer: (k) => set((s) => ({ layers: { ...s.layers, [k]: !s.layers[k] } })),
   applyPreset: (p) => set((s) => ({ layers: { ...s.layers, ...SURFACE_PRESETS[p].layers } })),
   setScenario: (i, patch) =>
