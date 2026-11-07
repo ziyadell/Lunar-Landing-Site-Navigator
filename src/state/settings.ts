@@ -15,11 +15,13 @@ interface Settings {
   rate: 1 | 1.25 | 1.5;
   transcript: boolean;
   welcomeSeen: boolean;
+  /** Sun/Earth card folded to a one-line summary. */
+  readingsFolded: boolean;
   set: (p: Partial<Omit<Settings, 'set'>>) => void;
 }
 
 const KEY = 'lsn.settings.v2';
-const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, rate: 1 as const, transcript: true, welcomeSeen: false };
+const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, rate: 1 as const, transcript: true, welcomeSeen: false, readingsFolded: false };
 
 function read() {
   try {
