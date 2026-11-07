@@ -48,6 +48,7 @@ export function regionSwitchEnd() {
 let surfaceStart = 0;
 export function surfaceEnterStart() {
   surfaceStart = performance.now();
+  state.marks['surface-start'] = Math.round(surfaceStart);
 }
 export function surfaceEnterEnd() {
   if (surfaceStart) state.surfaceEnter.push(Math.round(performance.now() - surfaceStart));

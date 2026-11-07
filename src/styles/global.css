@@ -322,7 +322,7 @@ a:hover {
 }
 .vp-fade.is-on {
   opacity: 1;
-  transition-delay: 0.85s;
+  transition-delay: 0.6s;
 }
 
 /* Globe labels (DOM layer positioned by the 3D scene) */

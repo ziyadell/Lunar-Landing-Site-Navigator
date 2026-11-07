@@ -222,14 +222,14 @@ export function GlobeCamera() {
     rebase('site', T);
     const f = frame('site', T);
     if (cmd.kind === 'dive') {
-      dive.current = { until: performance.now() + 2600 };
+      dive.current = { until: performance.now() + 1800 };
       setGoal({ mode: 'site', target: T, heading: sunBearing(f), tilt: TILT_MAX_SITE, logRange: Math.log(0.06) }, 5);
       // Frame-independent fallback: slow GPUs must not stretch the transition.
       const id = window.setTimeout(() => {
         dive.current = null;
         const st = useApp.getState();
         if (st.transitioning && st.mode === 'orbital') useApp.setState({ mode: 'surface' });
-      }, 2800);
+      }, 2000);
       return () => window.clearTimeout(id);
     }
     // focus (optional range from a deep link)
