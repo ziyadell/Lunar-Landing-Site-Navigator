@@ -1,0 +1,768 @@
+/* =====================================================================
+   Responsive layout pass: phones, short landscape screens, the date field,
+   the header's More menu, recovery states. Loaded last.
+   ===================================================================== */
+
+/* ------------------------------------------------------------ date field + calendar */
+.datef {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  border: 1px solid var(--glass-line-strong);
+  border-radius: 10px;
+  background: rgba(5, 8, 15, 0.6);
+  transition: border-color var(--dur-fast) ease;
+}
+.datef:hover {
+  border-color: rgba(241, 245, 249, 0.28);
+}
+.datef:focus-within,
+.datef.is-open {
+  border-color: rgba(77, 220, 244, 0.55);
+}
+.datef__input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 4px 0 12px !important;
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  color: var(--text);
+  font: 400 13.5px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+.datef__input[aria-invalid='true'] {
+  color: #ffb4b4;
+}
+.datef__btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 32px;
+  margin-right: 3px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.datef__btn:hover,
+.datef.is-open .datef__btn {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.08);
+}
+.datef__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.datef__err {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  font-size: 12px;
+  color: #ffb4b4;
+  white-space: nowrap;
+}
+.cal {
+  position: fixed;
+  z-index: 95;
+  width: 288px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #0e1524;
+  border: 1px solid var(--glass-line-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  color: var(--text);
+  font: 400 13px/1 var(--font-ui);
+}
+.cal.is-up {
+  transform: translateY(-100%);
+}
+.cal__head {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.cal__title {
+  text-align: center;
+  font: 600 14px/1 var(--font-display);
+}
+.cal__nav {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.cal__nav:hover:not(:disabled) {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.08);
+}
+.cal__nav:disabled {
+  opacity: 0.3;
+}
+.cal__row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.cal__wd {
+  padding: 6px 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.cal__day {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--text-secondary);
+  font: 400 13px/1 var(--font-mono);
+  cursor: pointer;
+}
+.cal__day:hover:not(:disabled) {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.07);
+}
+.cal__day.is-selected {
+  background: rgba(77, 220, 244, 0.16);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(77, 220, 244, 0.5);
+}
+.cal__day:focus-visible,
+.cal__nav:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.cal__day:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.cal__foot {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--glass-line);
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+.time-inputs .datef {
+  height: 38px;
+}
+@media (pointer: coarse) {
+  .datef {
+    height: 44px;
+  }
+  .cal__day,
+  .cal__nav {
+    height: 40px;
+  }
+}
+
+/* ------------------------------------------------------------ listen placement */
+.pop__listen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.pop__listen .pop__label {
+  margin: 0;
+}
+.drawer__title .listen,
+.timesheet__title .listen,
+.study__head h3 .listen,
+.study__all-title .listen,
+.study__method summary .listen {
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* ------------------------------------------------------------ recovery states */
+.boot__error {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: 44ch;
+  text-align: center;
+}
+.boot__retry {
+  margin-top: 8px;
+}
+.update-notice {
+  position: fixed;
+  z-index: 120;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 999px;
+  background: #0e1524;
+  border: 1px solid rgba(77, 220, 244, 0.45);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.viewport__fallback--compact {
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.viewport__fallback .vp-note__btn {
+  justify-self: center;
+  margin: 12px auto 0;
+}
+
+/* ------------------------------------------------------------ analysis: scenario cards
+   The three controls sit in one row only when the card is wide enough; otherwise
+   date + more durations, then the duration presets underneath (never overlapping). */
+.vantage {
+  container-type: inline-size;
+  min-width: 0;
+}
+.matchup {
+  min-width: 0;
+}
+.matchup > .vantage {
+  min-width: 0;
+}
+@container (max-width: 560px) {
+  .vantage__when {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .vantage__when .field--dur {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+@container (max-width: 300px) {
+  .vantage__when {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.vantage__when .field {
+  min-width: 0;
+}
+.vantage__when .field > label,
+.vantage__when .field > .field__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------ header: More menu */
+.more {
+  position: relative;
+  display: none;
+}
+.more__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 60;
+  display: grid;
+  min-width: 200px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #0e1524;
+  border: 1px solid var(--glass-line-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.more__item {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--text);
+  font: 500 14px/1 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+.more__item:hover,
+.more__item:focus-visible {
+  outline: none;
+  background: rgba(241, 245, 249, 0.07);
+}
+@media (max-width: 560px) {
+  .more {
+    display: block;
+  }
+  .masthead__aside > .ghost-btn:not(.more__btn),
+  .masthead__aside > .focus-btn {
+    display: none;
+  }
+  .masthead__aside {
+    gap: 6px;
+  }
+}
+@media (max-width: 360px) {
+  .modenav__btn svg {
+    display: none;
+  }
+  .modenav__btn {
+    padding: 0 10px;
+  }
+  .brand__mark {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Focus mode: on phones the More menu is the way back, so it stays available. */
+.is-focus .masthead__aside > .more,
+.is-focus .masthead__aside > .more > * {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* ------------------------------------------------------------ region card */
+.deck-card__head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+.deck-card__titles {
+  min-width: 0;
+}
+.deck-card__eyebrow {
+  white-space: nowrap;
+}
+.deck-card__count {
+  white-space: nowrap;
+}
+.deck-card__name {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.deck-card__step {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+/* =====================================================================
+   PHONES (portrait): the page scrolls; the scene has its own region.
+     header · Sun/Earth summary · scene (camera tools on it) · time ·
+     guide / welcome · selected region · first-visit hint
+   ===================================================================== */
+@media (max-width: 759px) and (min-height: 501px) {
+  .app:not(.app--analysis) {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
+    grid-template-areas:
+      'head head head'
+      '. cond .'
+      'scene scene scene'
+      '. time .'
+      '. guide .'
+      '. region .'
+      '. intro .';
+    grid-template-rows: auto auto clamp(240px, 50svh, 470px) auto auto auto auto;
+    row-gap: 10px;
+    align-content: start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+  }
+  .app:not(.app--analysis) > .masthead {
+    grid-area: head;
+    position: sticky;
+    top: 0;
+    height: auto;
+    min-height: var(--mast-h);
+    padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
+    background: rgba(5, 8, 15, 0.88);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-line);
+  }
+  .app:not(.app--analysis) > .viewport {
+    grid-area: scene;
+    position: relative;
+    inset: auto;
+    height: 100%;
+    min-height: 0;
+  }
+  .app:not(.app--analysis) > .scrim {
+    display: none;
+  }
+  .app:not(.app--analysis) .hud,
+  .app:not(.app--analysis) .hud__right {
+    display: contents !important;
+  }
+  .app:not(.app--analysis) .hud > *,
+  .app:not(.app--analysis) .hud__right > * {
+    position: relative;
+    inset: auto;
+    transform: none !important;
+    width: auto;
+    margin: 0;
+  }
+  .app .hud__right .cond {
+    grid-area: cond;
+    width: auto;
+  }
+  /* Camera / look tools: anchored to the scene, in one row. */
+  .app .hud__right .tool-col {
+    grid-area: scene;
+    z-index: 6;
+    align-self: start;
+    justify-self: end;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100% - 2 * var(--gutter));
+    margin: 10px var(--gutter) 0;
+  }
+  .app .hud__right .tool-col > hr,
+  .app .hud__right .tool-col .tool-col__sep {
+    width: 1px;
+    height: auto;
+    margin: 6px 2px;
+  }
+  .app--surface .hud__right .tool-col {
+    justify-self: center;
+    margin-top: 56px; /* below the heading tape */
+  }
+  .app .hud__top {
+    grid-area: scene;
+    z-index: 5;
+    align-self: start;
+    margin: 8px var(--gutter) 0;
+  }
+  .app .hud__bottom .timepill,
+  .app .hud__bottom .timepill__bar {
+    width: 100%;
+    min-width: 0;
+  }
+  .app .hud__bottom {
+    grid-area: time;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .app .hud__left {
+    grid-area: region;
+  }
+  .app .hud__left .deck-card {
+    width: auto;
+  }
+  .app .hud__corner {
+    display: none;
+  }
+  .app .hud__intro {
+    grid-area: intro;
+  }
+  .app .hud__intro .intro {
+    width: auto;
+  }
+  /* Guide: closed, it is a small button on the scene's lower corner (no empty row);
+     open, the player takes its own row under the time controls. */
+  .app .hud__audio {
+    grid-area: guide;
+  }
+  .app .hud__audio:not(:has(.aplayer)) {
+    grid-area: scene;
+    z-index: 6;
+    align-self: end;
+    justify-self: end;
+    margin: 0 var(--gutter) 10px 0;
+  }
+  .app .hud__audio:not(:has(.aplayer)):not(:has(.guide__btn)) {
+    display: none;
+  }
+  .app .hud__audio .guide__menu {
+    max-height: min(56svh, 420px);
+  }
+  .app:has(.hud__audio .aplayer) .hud__intro {
+    display: none;
+  }
+  /* Welcome: its own row under the time controls (never over them or the region card). */
+  .app:not(.app--analysis) > .welcome {
+    grid-area: 5 / 2 / 6 / 3;
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    width: auto;
+    z-index: 7;
+  }
+  .app:not(.app--analysis) > .welcome .welcome__card {
+    padding: 16px;
+  }
+  .app:not(.app--analysis) > .welcome--playing {
+    grid-area: scene;
+    align-self: end;
+    padding: 0 var(--gutter) 12px;
+  }
+  .welcome__caption {
+    font-size: clamp(17px, 4.8vw, 22px);
+  }
+  /* 3D unavailable: a compact notice instead of a large empty region. */
+  .app:not(.app--analysis):has(.viewport__fallback) {
+    grid-template-rows: auto auto auto auto auto auto auto;
+  }
+  .app:not(.app--analysis) > .viewport:has(.viewport__fallback) {
+    height: auto;
+    min-height: 120px;
+  }
+  .viewport__fallback {
+    position: relative;
+    padding: 20px var(--gutter);
+  }
+  /* The heading/label overlays stay within the scene. */
+  .app .vp-note {
+    max-width: calc(100% - 2 * var(--gutter));
+  }
+}
+
+/* Narrow phones: time controls in two rows (date first, then steps, play and speed). */
+@media (max-width: 380px) {
+  .timepill__bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    height: auto;
+    padding: 6px;
+    row-gap: 4px;
+    border-radius: 22px;
+  }
+  .timepill__when {
+    order: -1;
+    flex: 1 0 100%;
+    justify-content: center;
+  }
+}
+
+/* =====================================================================
+   SHORT LANDSCAPE (phones turned sideways): scene on the left, controls in a
+   scrolling column on the right; nothing slides behind the header.
+   ===================================================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --mast-h: 52px;
+    --gutter: 12px;
+  }
+  .app:not(.app--analysis) {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr);
+    grid-template-areas:
+      'head head'
+      'scene cond'
+      'scene time'
+      'scene guide'
+      'scene region'
+      'scene intro';
+    grid-template-rows: auto auto auto auto auto 1fr;
+    column-gap: 12px;
+    row-gap: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0 max(var(--gutter), env(safe-area-inset-right, 0px)) var(--gutter) env(safe-area-inset-left, 0px);
+  }
+  .app:not(.app--analysis) > .masthead {
+    grid-area: head;
+    position: sticky;
+    top: 0;
+    height: var(--mast-h);
+    margin-right: calc(-1 * max(var(--gutter), env(safe-area-inset-right, 0px)));
+    background: rgba(5, 8, 15, 0.9);
+    border-bottom: 1px solid var(--glass-line);
+  }
+  .brand__text {
+    display: none;
+  }
+  .app:not(.app--analysis) > .viewport {
+    grid-area: scene;
+    position: sticky;
+    top: var(--mast-h);
+    inset: auto;
+    align-self: start;
+    height: calc(100dvh - var(--mast-h) - 20px);
+    margin-top: 0;
+    border-radius: 0 14px 14px 0 !important;
+  }
+  /* Header: views stay inline, secondary actions in the More menu. */
+  .more {
+    display: block;
+  }
+  .masthead__aside > .ghost-btn:not(.more__btn),
+  .masthead__aside > .focus-btn {
+    display: none;
+  }
+  .app:not(.app--analysis) > .masthead {
+    grid-template-columns: auto 1fr auto;
+  }
+  .modenav {
+    justify-self: center;
+  }
+  /* Time controls fill the column, in two rows. */
+  .app .hud__bottom .timepill,
+  .app .hud__bottom .timepill__bar {
+    width: 100%;
+    min-width: 0;
+  }
+  .app .hud__bottom .timepill__bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    height: auto;
+    padding: 6px;
+    row-gap: 4px;
+    border-radius: 22px;
+  }
+  .app .hud__bottom .timepill__when {
+    order: -1;
+    flex: 1 0 100%;
+    justify-content: center;
+  }
+  .app:not(.app--analysis) > .scrim {
+    display: none;
+  }
+  .app:not(.app--analysis) .hud,
+  .app:not(.app--analysis) .hud__right {
+    display: contents !important;
+  }
+  .app:not(.app--analysis) .hud > *,
+  .app:not(.app--analysis) .hud__right > * {
+    position: relative;
+    inset: auto;
+    transform: none !important;
+    width: auto;
+    margin: 0;
+  }
+  .app .hud__right .cond {
+    grid-area: cond;
+    width: auto;
+  }
+  .app .hud__right .tool-col {
+    grid-area: scene;
+    z-index: 6;
+    align-self: start;
+    justify-self: end;
+    flex-direction: row;
+    margin: 10px 10px 0 0;
+    position: sticky;
+    top: calc(var(--mast-h) + 10px);
+  }
+  .app--surface .hud__right .tool-col {
+    justify-self: center;
+    top: calc(var(--mast-h) + 52px);
+  }
+  .app .hud__top {
+    grid-area: scene;
+    z-index: 5;
+    align-self: start;
+    position: sticky;
+    top: calc(var(--mast-h) + 6px);
+    margin: 6px 10px 0;
+  }
+  .app .hud__bottom {
+    grid-area: time;
+    align-items: stretch;
+  }
+  .app .hud__left {
+    grid-area: region;
+  }
+  .app .hud__left .deck-card {
+    width: auto;
+  }
+  .app .hud__left .locator {
+    display: none;
+  }
+  .app .hud__corner {
+    display: none;
+  }
+  .app .hud__intro {
+    grid-area: intro;
+  }
+  .app .hud__intro .intro {
+    width: auto;
+  }
+  .app .hud__audio {
+    grid-area: guide;
+  }
+  .app .hud__audio .guide {
+    justify-items: end;
+  }
+  .app .hud__audio .aplayer {
+    width: auto;
+  }
+  .app:not(.app--analysis) > .welcome {
+    grid-area: guide;
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    width: auto;
+  }
+  .app:not(.app--analysis) > .welcome--playing {
+    grid-area: scene;
+    align-self: end;
+    position: sticky;
+    bottom: 12px;
+  }
+  .drawer {
+    top: calc(var(--mast-h) + 6px) !important;
+    max-height: calc(100dvh - var(--mast-h) - 12px);
+  }
+}
+
+/* Analysis on phones: same header; content clear of the notch and toolbar. */
+@media (max-width: 759px) {
+  .app--analysis {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .app--analysis .masthead {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Horizontal tool rows (phones, short landscape): vertical separators. */
+@media (max-width: 759px), (orientation: landscape) and (max-height: 500px) {
+  .app .hud__right .tool-col {
+    flex-direction: row;
+  }
+  .app .hud__right .tool-col .tool-col__sep {
+    width: 1px;
+    height: 20px;
+    margin: 0 3px;
+  }
+}
+
+/* The open time panel sits above the scene's labels and the guide button. */
+@media (max-width: 759px), (orientation: landscape) and (max-height: 500px) {
+  .app .hud__bottom {
+    position: relative;
+    z-index: 8;
+  }
+}

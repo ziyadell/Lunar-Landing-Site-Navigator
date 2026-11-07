@@ -13,10 +13,45 @@ import { SurfacePanorama } from './ui/SurfaceOverlay';
 import { Intro } from './ui/stage/Intro';
 import { LoadingChip } from './ui/stage/LoadingChip';
 import { MissionGuide, Welcome } from './audio/ui';
+import type { DataProblem } from './data/DataContext';
+import { useRelease } from './data/release';
+
+/** Shown when an open tab discovers that a newer release is live (instead of mixing data). */
+function UpdateNotice() {
+  const on = useRelease((s) => s.updateAvailable);
+  if (!on) return null;
+  return (
+    <div className="update-notice" role="alert">
+      Lunar Navigator has been updated.
+      <button type="button" className="vp-note__btn" onClick={() => window.location.reload()}>
+        Reload
+      </button>
+    </div>
+  );
+}
 
 const AnalysisView = lazy(() => import('./ui/analysis/AnalysisView'));
 
-function Boot({ state }: { state: { status: 'loading' } | { status: 'error'; message: string } }) {
+type BootState = { status: 'loading' } | { status: 'error'; problem: DataProblem; detail: string; retry: () => void };
+const PROBLEM: Record<DataProblem, { title: string; text: string; action: string }> = {
+  network: {
+    title: 'The scientific data did not load.',
+    text: 'Check your connection, then try again.',
+    action: 'Try again',
+  },
+  incompatible: {
+    title: 'The data does not match this version of the app.',
+    text: 'An older copy was probably kept by a cache. Trying again fetches a fresh copy; nothing is shown from mismatched data.',
+    action: 'Try again',
+  },
+  updated: {
+    title: 'Lunar Navigator has been updated.',
+    text: 'Reload to continue with the latest version.',
+    action: 'Reload',
+  },
+};
+
+function Boot({ state }: { state: BootState }) {
   return (
     <div className="boot" role="status" aria-live="polite">
       <svg className="boot__mark" width="44" height="44" viewBox="0 0 22 22" aria-hidden="true">
@@ -28,8 +63,12 @@ function Boot({ state }: { state: { status: 'loading' } | { status: 'error'; mes
       {state.status === 'loading' ? (
         <div className="boot__line">Loading JPL ephemeris and LOLA terrain…</div>
       ) : (
-        <div className="boot__line boot__line--error">
-          Could not load scientific data ({state.message}). Check your connection and reload.
+        <div className="boot__error" role="alert">
+          <div className="boot__line boot__line--error">{PROBLEM[state.problem].title}</div>
+          <div className="boot__line">{PROBLEM[state.problem].text}</div>
+          <button type="button" className="cta boot__retry" onClick={state.retry}>
+            {PROBLEM[state.problem].action}
+          </button>
         </div>
       )}
     </div>
@@ -107,8 +146,9 @@ function Workspace() {
 
 export function App() {
   return (
-    <DataProvider fallback={(s) => <Boot state={s as never} />}>
+    <DataProvider fallback={(s) => <Boot state={s as BootState} />}>
       <Workspace />
+      <UpdateNotice />
     </DataProvider>
   );
 }

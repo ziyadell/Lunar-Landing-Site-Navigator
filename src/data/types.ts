@@ -94,7 +94,8 @@ export interface LandingRegion {
   /** How NASA has listed this candidate region. */
   nasaListing: string;
   referenceFeature: ReferenceFeature;
-  nasaRegion: NasaRegion;
+  /** NASA's outline; absent when the record's geometry failed validation (overlays are omitted). */
+  nasaRegion?: NasaRegion;
   observationPoint: ObservationPoint;
   horizon: HorizonProfile;
   terrain: TerrainTileMeta;

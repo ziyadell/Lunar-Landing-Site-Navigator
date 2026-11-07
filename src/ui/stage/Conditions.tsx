@@ -132,8 +132,13 @@ export function DetailsDrawer() {
           {p.sunVisibleFraction2027 !== undefined && <Readout label="Sun in 2027" value={(p.sunVisibleFraction2027 * 100).toFixed(1)} unit="% of hours" />}
         </dl>
         <p className="details__ref">
-          NASA region outline about {region.nasaRegion.sizeKm[0].toFixed(0)} × {region.nasaRegion.sizeKm[1].toFixed(0)} km, centred{' '}
-          {fmtLat(region.nasaRegion.centreLatDeg, 2)} {fmtLon(region.nasaRegion.centreLonDeg, 2)}. Named after{' '}
+          {region.nasaRegion && (
+            <>
+              NASA region outline about {region.nasaRegion.sizeKm[0].toFixed(0)} × {region.nasaRegion.sizeKm[1].toFixed(0)} km, centred{' '}
+              {fmtLat(region.nasaRegion.centreLatDeg, 2)} {fmtLon(region.nasaRegion.centreLonDeg, 2)}.{' '}
+            </>
+          )}
+          Named after{' '}
           {f.url ? (
             <a href={f.url} target="_blank" rel="noreferrer">
               {f.name}

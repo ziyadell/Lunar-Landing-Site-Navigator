@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../state/settings';
 import { useApp } from '../state/store';
-import { narrationItem, narrationItems, pause, play, playChime, replay, resume, setChimeMuted, setMuted, setRate, stop, stopChime, usePlayer, type NarrationItem } from './engine';
+import { narrationItem, narrationItems, pause, play, playChime, replay, resume, setChimeMuted, setMuted, setRate, stop, stopChime, unlockAudio, usePlayer, type NarrationItem } from './engine';
 import { exitTour, nextStep, prevStep, replayStep, startTour, toggleTourPause, TOUR_LENGTH, useTour } from './tour';
 
 const Headphones = ({ size = 14 }: { size?: number }) => (
@@ -40,6 +40,7 @@ export function Listen({ id, item, className = '' }: { id?: string; item?: Narra
       title={active ? 'Pause' : `Listen: ${it.title}`}
       onClick={(e) => {
         e.stopPropagation();
+        e.preventDefault(); // inside <summary>: listen without toggling the section
         if (useTour.getState().step >= 0) exitTour();
         if (active) pause();
         else void play(it);
@@ -57,7 +58,8 @@ const SOURCE_LABEL = { recorded: 'Recorded narrator', device: 'Device voice · U
 function topicGroups() {
   const all = narrationItems();
   return [
-    { name: 'Views', items: ['orbit-intro', 'surface-intro', 'analysis-intro'].map((id) => narrationItem(id)!).filter(Boolean) },
+    { name: 'Views', items: ['orbit-intro', 'surface-intro', 'view-time', 'view-display', 'view-measurements', 'view-atlas', 'view-sources'].map((id) => narrationItem(id)!).filter(Boolean) },
+    { name: 'Mission Analysis', items: all.filter((i) => i.id.startsWith('analysis-')) },
     { name: 'Regions', items: all.filter((i) => i.id.startsWith('region-')) },
     { name: 'Terms', items: all.filter((i) => i.id.startsWith('term-')) },
   ];
@@ -254,6 +256,7 @@ export function Welcome() {
   const [phase, setPhase] = useState<'chime' | 'voice'>('chime');
   const muted = usePlayer((s) => s.muted);
   const item = usePlayer((s) => s.item);
+  const started = usePlayer((s) => s.started);
   const timers = useRef<number[]>([]);
   const clearAll = () => {
     timers.current.forEach((t) => window.clearTimeout(t));
@@ -290,6 +293,7 @@ export function Welcome() {
 
   const enter = (sound: boolean) => {
     if (!sound) return setS({ welcomeSeen: true });
+    unlockAudio(); // inside the tap: lets the voice start on time after the chime (iOS)
     // The chime never overlaps another voice: end any tour or narration first.
     if (useTour.getState().step >= 0) exitTour();
     else stop();
@@ -306,7 +310,9 @@ export function Welcome() {
   };
 
   if (intro) {
-    const text = item?.id === 'welcome' ? item.text : null;
+    // Captions appear when the voice actually starts (not when it is queued), so words and
+    // voice stay together even where speech takes a moment to begin.
+    const text = item?.id === 'welcome' && started ? item.text : null;
     return (
       <div className="welcome welcome--playing">
         <p className={`welcome__caption${phase === 'voice' && text ? ' is-on' : ''}`} aria-live="polite">

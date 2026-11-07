@@ -97,6 +97,61 @@
       "text": "A visibility interval is a period in which a body stays above the skyline without interruption. The timelines draw them as bars. The longest gap without the Sun shows how long a landed system would face darkness."
     },
     {
+      "id": "view-time",
+      "title": "Observation time",
+      "text": "Observation time is in Coordinated Universal Time. The arrows step back or forward by an hour or a day. Open the date to choose any moment inside the period covered by the JPL ephemeris. Play moves time forward at one hour, six hours, or one day per second, and every reading updates as it goes."
+    },
+    {
+      "id": "view-display",
+      "title": "Display options",
+      "text": "Display options choose what is drawn. Measured layers come from NASA data, such as the LOLA skyline, the directions to the Sun and the Earth, and LROC surface brightness. Display aids, such as labels, grids, range rings, and lifted shadows, make the scene easier to read and are not measurements. In Surface View, the Survey, Landscape, and Physical presets set common combinations."
+    },
+    {
+      "id": "view-measurements",
+      "title": "Measurements",
+      "text": "Measurements lists the full readings for the Sun and the Earth from the observation point: elevation above level ground, azimuth from local north, the height of the terrain skyline in that direction, the clearance between them, and how much of the disc is above the skyline. The lower part describes the observation point and its NASA region."
+    },
+    {
+      "id": "view-sources",
+      "title": "Data and method",
+      "text": "Data and method lists every source this app uses: NASA's nine Artemis Three candidate regions, JPL Horizons for the Sun and the Earth, LOLA terrain, LROC imagery, and the Yale Bright Star Catalogue. It also reports how the calculations were validated. This is a Space Apps project, not an official NASA product."
+    },
+    {
+      "id": "view-atlas",
+      "title": "All candidate regions",
+      "text": "This list shows all nine candidate regions with their NASA imagery and the current state of the Sun and the Earth at each observation point. Choose one to select it on the globe."
+    },
+    {
+      "id": "analysis-scenarios",
+      "title": "Choosing scenarios",
+      "text": "Each scenario is one candidate region, a start date in Coordinated Universal Time, and a duration. Choose the region from its name, type or pick the start date, and select a preset duration or one from More durations. Both scenarios are calculated the same way, so the differences come from the place and the period."
+    },
+    {
+      "id": "analysis-glance",
+      "title": "At a glance",
+      "text": "At a glance compares the two scenarios on four questions: how much of the period the Sun is above the skyline, how much the Earth is, how often both are, and the longest stretch without the Sun. Each row shows both values and the difference. When the longest dark stretch touches the start or the end of the period, it is a lower bound, so no winner is declared."
+    },
+    {
+      "id": "analysis-timeline",
+      "title": "Through time",
+      "text": "The timelines show, for each scenario, when the Sun and the Earth are above the measured skyline. Each bar is an uninterrupted interval of visibility. Hover, or use the arrow keys, to read exact values, and click or press Enter to pin a moment and open it in the 3D views."
+    },
+    {
+      "id": "analysis-ground",
+      "title": "From the ground",
+      "text": "These panoramas show the measured skyline all the way around each observation point, with the paths of the Sun and the Earth over the period. Solid dots are above the skyline, and hollow dots are hidden by terrain. Each scenario can be exported as a CSV file from here."
+    },
+    {
+      "id": "analysis-metrics",
+      "title": "Every metric",
+      "text": "Every metric lists ten measures side by side, with the difference between the scenarios. Percentages are shares of the period. Values marked greater than or equal to are lower bounds, because the interval reaches the edge of the period, and their differences are shown as not applicable."
+    },
+    {
+      "id": "analysis-method",
+      "title": "Method and limits",
+      "text": "The Sun and Earth directions come from NASA JPL Horizons, and they agree with Horizons to better than a hundredth of a degree. The skyline is traced through LOLA terrain data out to one hundred and fifty kilometers. Visible means the center of the disc is above the skyline. Results apply to one observation point, and slopes, hazards, temperatures, and radio links are not modeled."
+    },
+    {
       "id": "tour-moon",
       "title": "The Moon from orbit",
       "text": "This is the Moon, as NASA's Lunar Reconnaissance Orbiter has mapped it. Everything in this app is built from NASA measurements: orbital imagery, laser altimetry of the terrain, and JPL ephemerides for the Sun and the Earth.",

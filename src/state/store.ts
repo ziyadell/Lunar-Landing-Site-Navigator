@@ -113,6 +113,8 @@ interface AppState {
   /** The view whose scene has drawn its first complete frame (null while loading). */
   sceneReady: Mode | null;
   setSceneReady: (m: Mode | null) => void;
+  /** No working 3D scene (no WebGL, GPU failure, or a rendering error). */
+  sceneUnavailable: boolean;
   /** Incremented to retry a failed terrain download. */
   terrainRetry: number;
   retryTerrain: () => void;
@@ -195,6 +197,7 @@ export const useApp = create<AppState>((set) => ({
   setTransitioning: (transitioning) => set({ transitioning }),
   sceneReady: null,
   setSceneReady: (sceneReady) => set({ sceneReady }),
+  sceneUnavailable: false,
   terrainRetry: 0,
   retryTerrain: () => set((s) => ({ terrainRetry: s.terrainRetry + 1 })),
   tourSpot: null,

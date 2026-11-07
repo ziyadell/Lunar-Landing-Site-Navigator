@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApp, type Mode } from '../../state/store';
 import { Listen } from '../../audio/ui';
 import { useData } from '../../data/DataContext';
@@ -132,6 +132,69 @@ export function FocusToggle() {
   );
 }
 
+/**
+ * Phones: Focus, Settings and Data & method share one labelled menu so the three view
+ * buttons keep readable, separate touch targets. (Wider screens show them inline.)
+ */
+function MoreMenu() {
+  const [open, setOpen] = useState(false);
+  const btn = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const mode = useApp((s) => s.mode);
+  const focus = useApp((s) => s.focus);
+  useEffect(() => {
+    if (!open) return;
+    menu.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setOpen(false);
+        btn.current?.focus();
+      }
+    };
+    const down = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!menu.current?.contains(t) && !btn.current?.contains(t)) setOpen(false);
+    };
+    window.addEventListener('keydown', key, true);
+    window.addEventListener('pointerdown', down, true);
+    return () => {
+      window.removeEventListener('keydown', key, true);
+      window.removeEventListener('pointerdown', down, true);
+    };
+  }, [open]);
+  const pick = (f: () => void) => {
+    setOpen(false);
+    f();
+  };
+  return (
+    <div className="more">
+      <button ref={btn} type="button" className={`ghost-btn ghost-btn--icon more__btn${open ? ' is-on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="More: focus, settings, data and method" onClick={() => setOpen((o) => !o)}>
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="3.5" cy="8" r="1.4" fill="currentColor" />
+          <circle cx="8" cy="8" r="1.4" fill="currentColor" />
+          <circle cx="12.5" cy="8" r="1.4" fill="currentColor" />
+        </svg>
+      </button>
+      {open && (
+        <div ref={menu} className="more__menu" role="menu">
+          {mode !== 'analysis' && (
+            <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().setFocus(!focus))}>
+              {focus ? 'Show controls' : 'Focus on the scene'}
+            </button>
+          )}
+          <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().openDrawer('settings'))}>
+            Settings
+          </button>
+          <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().openDrawer('about'))}>
+            Data &amp; method
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Masthead() {
   const mode = useApp((s) => s.mode);
   const drawer = useApp((s) => s.drawer);
@@ -145,6 +208,7 @@ export function Masthead() {
       <ModeNav />
       <div className="masthead__aside">
         {!covered && <span className="masthead__warn">Outside ephemeris coverage</span>}
+        <MoreMenu />
         <FocusToggle />
         <button
           type="button"

@@ -41,7 +41,10 @@ export function MarkerProjector() {
       sites.regions.map((r) => ({
         id: r.id,
         world: toWorld(r.observationPoint.latDeg, r.observationPoint.lonDeg, r.observationPoint.elevationM),
-        ref: toWorld(r.nasaRegion.corners[0][0], r.nasaRegion.corners[0][1]),
+        // Label anchor: the outline's first corner; without a valid outline, the point itself.
+        ref: r.nasaRegion
+          ? toWorld(r.nasaRegion.corners[0][0], r.nasaRegion.corners[0][1])
+          : toWorld(r.observationPoint.latDeg, r.observationPoint.lonDeg, r.observationPoint.elevationM),
       })),
     [sites],
   );

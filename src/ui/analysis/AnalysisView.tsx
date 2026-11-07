@@ -10,6 +10,7 @@ import { ScenarioTimeline } from './ScenarioTimeline';
 import { useMedia } from '../../utils/useMedia';
 import { HorizonPanorama } from './HorizonPanorama';
 import { Select } from '../Select';
+import { DateField } from '../DateField';
 
 const DURATIONS = [7, 14, 30, 60, 90, 180, 365];
 const DAY = 86_400_000;
@@ -85,19 +86,16 @@ function Vantage({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
       <div className="vantage__when">
         <div className="field field--date">
           <label htmlFor={`${id}-start`}>Start date (UTC)</label>
-          <input
+          <DateField
             id={`${id}-start`}
-            type="date"
+            label={`Scenario ${res.key} start date`}
             value={fmtDate(res.scenario.startMs)}
             min={minDate}
             max={maxDate}
-            onChange={(e) => {
-              // Dates are UTC days: parse as midnight UTC, whatever the visitor's time zone.
-              const v = Date.parse(`${e.target.value}T00:00:00Z`);
-              if (Number.isNaN(v)) return;
-              const lo = Date.parse(`${minDate}T00:00:00Z`);
-              const hi = Date.parse(`${maxDate}T00:00:00Z`);
-              set(i, { startMs: Math.min(hi, Math.max(lo, v)) });
+            onChange={(v) => {
+              // Dates are UTC days: midnight UTC, whatever the visitor's time zone.
+              const ms = Date.parse(`${v}T00:00:00Z`);
+              if (!Number.isNaN(ms)) set(i, { startMs: ms });
             }}
           />
         </div>
@@ -438,7 +436,8 @@ export default function AnalysisView() {
           How much sunlight and Earth contact does each site get? <Listen id="analysis-intro" />
         </h2>
         <p className="study__lede">
-          Pick two regions and periods; every {step} minutes the Sun and Earth are checked against the measured LOLA skyline.
+          Pick two regions and periods; every {step} minutes the Sun and Earth are checked against the measured LOLA skyline.{' '}
+          <Listen id="analysis-scenarios" />
         </p>
         <div className="study__guide">
           <MissionGuide placement="flow" />
@@ -455,7 +454,9 @@ export default function AnalysisView() {
 
       <section className="study__block">
         <div className="study__head">
-          <h3>At a glance</h3>
+          <h3>
+            At a glance <Listen id="analysis-glance" />
+          </h3>
         </div>
         <div className="glance-wrap">
           <Headlines a={a} b={b} />
@@ -469,7 +470,7 @@ export default function AnalysisView() {
       <section className="study__block">
         <div className="study__head">
           <h3>
-            Through time <Listen id="term-intervals" />
+            Through time <Listen id="analysis-timeline" />
           </h3>
           <p>Bars mark when each body clears the skyline. Hover for exact values; click to pin a moment and open it in 3D.</p>
         </div>
@@ -481,7 +482,9 @@ export default function AnalysisView() {
 
       <section className="study__block">
         <div className="study__head">
-          <h3>From the ground</h3>
+          <h3>
+            From the ground <Listen id="analysis-ground" />
+          </h3>
           <p>The measured skyline all the way around each point, with the Sun and Earth paths over the period. Hollow dots are hidden by terrain.</p>
         </div>
         <div className="study__panos">
@@ -504,7 +507,9 @@ export default function AnalysisView() {
       <section className="study__block">
         <details className="study__all">
           <summary>
-            <span className="study__all-title">Every metric</span>
+            <span className="study__all-title">
+              Every metric <Listen id="analysis-metrics" />
+            </span>
             <span className="study__all-hint">Ten measures side by side, with the difference</span>
           </summary>
           <MetricsTable a={a} b={b} />
@@ -513,7 +518,9 @@ export default function AnalysisView() {
 
       <footer className="study__method">
         <details>
-          <summary>Method and limits</summary>
+          <summary>
+            Method and limits <Listen id="analysis-method" />
+          </summary>
         <ul>
           <li>Sun and Earth directions: NASA/JPL Horizons hourly sub-solar and sub-Earth points, interpolated; validated against Horizons topocentric Az/El to better than 0.01°.</li>
           <li>Skyline: LOLA LDEM_80S_80M (80 m/px) ray-traced to 150 km on a 1737.4 km sphere. Features smaller than about two DEM pixels, and terrain beyond 150 km or outside 80°S, are not represented.</li>
