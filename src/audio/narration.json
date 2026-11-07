@@ -1,10 +1,11 @@
 {
-  "voiceNote": "One American English narrator for every clip. Generated once with scripts/generate-narration.mjs; see docs/NARRATION.md.",
+  "voiceNote": "One female narrator with a neutral American accent for every clip: calm, confident, measured. Generated once with scripts/generate-narration.mjs; see docs/NARRATION.md.",
   "items": [
     {
       "id": "welcome",
       "title": "Welcome",
-      "text": "Welcome to Lunar Navigator. Explore the south pole. Follow the sunlight. Find a view of Earth. Your mission begins now."
+      "text": "Welcome to Afuq. We’re approaching the Moon’s south pole. Pick a site, then move through time to see when the Sun and Earth clear the local horizon.",
+      "speech": "Welcome to Ah-fooq. We’re approaching the Moon’s south pole. Pick a site, then move through time to see when the Sun and Earth clear the local horizon."
     },
     {
       "id": "orbit-intro",

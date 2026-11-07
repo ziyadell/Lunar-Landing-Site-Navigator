@@ -31,6 +31,8 @@ export interface NarrationItem {
   id: string;
   title: string;
   text: string;
+  /** What is spoken, when it differs from the caption (pronunciation, e.g. "Afuq"). */
+  speech?: string;
   /** Calculated from app state (spoken by the device voice, never pre-recorded). */
   calculated?: boolean;
 }
@@ -117,12 +119,38 @@ function recordedIds(): Promise<Set<string>> {
 // ------------------------------------------------------------------ voices
 const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
 
-/** American English voices only (natural/neural first). Null when the device has none. */
+/**
+ * American English voices only, preferring a female narrator (to match the recorded voice)
+ * and natural/neural quality. Null when the device has no en-US voice.
+ */
+const FEMALE = /samantha|ava|allison|susan|zoe|nicky|joelle|aria|jenny|zira|michelle|emma|sara|female|google us english/i;
+const MALE = /\b(david|mark|guy|alex|fred|tom|aaron|evan|nathan|ryan|eric|christopher|roger|steffan|male)\b/i;
 export function americanVoice(): SpeechSynthesisVoice | null {
   if (!synth) return null;
   const vs = synth.getVoices().filter((v) => /^en[-_]US$/i.test(v.lang));
-  const score = (v: SpeechSynthesisVoice) => (/natural|neural|online|premium|enhanced/i.test(v.name) ? 4 : 0) + (v.localService ? 0 : 1);
+  const score = (v: SpeechSynthesisVoice) =>
+    (FEMALE.test(v.name) ? 8 : MALE.test(v.name) ? -4 : 0) + (/natural|neural|online|premium|enhanced/i.test(v.name) ? 4 : 0) + (v.localService ? 1 : 0);
   return vs.sort((a, b) => score(b) - score(a))[0] ?? null;
+}
+
+/** WebKit (Safari, every iOS browser): speaks long text reliably in one utterance. */
+const WEBKIT = typeof navigator !== 'undefined' && /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Edg\//.test(navigator.userAgent) || (typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent));
+
+/**
+ * Speech chunks: whole sentences grouped up to a length. Fewer, longer utterances avoid the
+ * audible gap between sentences; Chromium still needs a limit (it can stop long utterances).
+ */
+export function speechChunks(text: string, max = WEBKIT ? 1200 : 240): string[] {
+  const out: string[] = [];
+  let cur = '';
+  for (const sentence of splitSentences(text)) {
+    if (cur && cur.length + 1 + sentence.length > max) {
+      out.push(cur);
+      cur = sentence;
+    } else cur = cur ? `${cur} ${sentence}` : sentence;
+  }
+  if (cur) out.push(cur);
+  return out.length ? out : [text];
 }
 
 // Chrome fills the voice list asynchronously: wait briefly once before deciding there is none.
@@ -151,6 +179,20 @@ let total = 1;
 let sentenceElapsed = 0;
 let sentenceStartedAt = 0;
 let voice: SpeechSynthesisVoice | null = null;
+/**
+ * The utterance being spoken. Holding a reference matters: iOS Safari can garbage-collect an
+ * utterance mid-speech, which silently drops the rest and never fires "end".
+ */
+let current: SpeechSynthesisUtterance | null = null;
+let lastCancel = 0;
+function cancelSpeech() {
+  if (synth && (synth.speaking || synth.pending)) {
+    synth.cancel();
+    lastCancel = performance.now();
+  }
+  if (current) current.onboundary = null;
+  current = null;
+}
 let fellBack = false;
 
 function clearTimers() {
@@ -172,7 +214,7 @@ function silenceOutputs() {
       /* ignore */
     }
   }
-  if (synth && (synth.speaking || synth.pending)) synth.cancel();
+  cancelSpeech();
 }
 
 export function stop() {
@@ -268,6 +310,7 @@ function runSentence(t: number) {
     return;
   }
   const u = new SpeechSynthesisUtterance(text);
+  current = u;
   u.voice = voice;
   u.lang = voice!.lang;
   u.rate = useSettings.getState().rate;
@@ -281,6 +324,7 @@ function runSentence(t: number) {
   u.onend = () => {
     if (my !== seq || t !== token) return;
     window.clearTimeout(watchdog);
+    current = null;
     advance(t);
   };
   u.onerror = (e) => {
@@ -291,21 +335,34 @@ function runSentence(t: number) {
     if (!started && idx === 0) return toCaptions(t, 'Device voice failed');
     advance(t);
   };
-  // Watchdog: some engines never fire "end". Allow ~2x reading time, then move on.
-  watchdog = window.setTimeout(() => {
+  // Watchdog: some engines never fire "end". Generous (2.5x reading time + 4 s), and it
+  // only moves on while the engine has really gone quiet, so slow voices are not cut.
+  const hardLimit = performance.now() + readMs(text) * 4 + 8000;
+  const guard = () => {
     if (my !== seq || t !== token) return;
+    if (synth!.speaking && started && performance.now() < hardLimit) {
+      watchdog = window.setTimeout(guard, 1500);
+      return;
+    }
     seq++;
-    synth!.cancel();
+    cancelSpeech();
     if (!started && idx === 0) return toCaptions(t, 'Device voice did not start');
     advance(t);
-  }, readMs(text) * 2 + 2500);
-  synth!.speak(u);
+  };
+  watchdog = window.setTimeout(guard, readMs(text) * 2.5 + 4000);
+  // iOS drops an utterance queued immediately after cancel(): give the engine a moment.
+  const wait = Math.max(0, 140 - (performance.now() - lastCancel));
+  if (wait > 0)
+    window.setTimeout(() => {
+      if (my === seq && t === token) synth!.speak(u);
+    }, wait);
+  else synth!.speak(u);
 }
 
 function toCaptions(t: number, note: string) {
   if (t !== token) return;
   seq++;
-  synth?.cancel();
+  cancelSpeech();
   usePlayer.setState({ source: 'captions', note, playing: true, loading: false });
   runSentence(t);
 }
@@ -315,7 +372,7 @@ async function startSpoken(item: NarrationItem, t: number, noteIfRecordedMissing
   await waitVoices();
   if (t !== token) return;
   voice = americanVoice();
-  sentences = splitSentences(item.text);
+  sentences = speechChunks(item.speech ?? item.text);
   idx = 0;
   charsBefore = 0;
   sentenceElapsed = 0;
@@ -391,7 +448,7 @@ export function pause() {
   else sentenceElapsed = 0; // speech restarts the sentence
   seq++;
   clearTimers();
-  if (synth && (synth.speaking || synth.pending)) synth.cancel();
+  cancelSpeech();
 }
 
 export function resume() {
@@ -421,7 +478,7 @@ export function setMuted(muted: boolean) {
       sentenceElapsed = 0;
       usePlayer.setState({ muted });
       seq++;
-      synth?.cancel();
+      cancelSpeech();
       runSentence(token);
       return;
     }
@@ -506,7 +563,7 @@ export function playChime(onDone: () => void): number {
       o.start(now + at);
       o.stop(now + at + 0.36);
     }
-    void ctx.resume();
+    void ctx.resume().catch(() => undefined);
   } catch {
     stopChime();
   }

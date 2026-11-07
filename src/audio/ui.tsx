@@ -391,17 +391,10 @@ export function Welcome() {
   }
 
   return (
-    <div className="welcome" role="dialog" aria-label="Welcome">
-      <div className="welcome__card">
-        <span className="welcome__eyebrow">Artemis III candidate regions</span>
-        <button type="button" className="welcome__enter" onClick={() => enter(true)}>
-          <Headphones size={15} />
-          Enter mission
-        </button>
-        <button type="button" className="welcome__link" onClick={() => enter(false)}>
-          Explore without sound
-        </button>
-      </div>
+    <div className="welcome welcome--start" role="region" aria-label="Start">
+      <button type="button" className="welcome__enter welcome__enter--start" onClick={() => enter(true)}>
+        Enter mission
+      </button>
     </div>
   );
 }

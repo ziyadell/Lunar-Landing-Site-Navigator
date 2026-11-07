@@ -2,6 +2,8 @@ import { ViewMenu } from './stage/Stage';
 import { useCameraInfo, useCursorLL } from '../three/GlobeCamera';
 import { useApp } from '../state/store';
 import { fmtLat, fmtLon } from '../utils/format';
+import { FoldButton, FoldedTools } from './Fold';
+import { useSettings } from '../state/settings';
 
 /**
  * Map scale, data-resolution and cursor readout for the Orbital View.
@@ -44,7 +46,9 @@ export function CameraStack() {
   const focus = useApp((s) => s.focusRegion);
   const reset = useApp((s) => s.resetCamera);
   const transitioning = useApp((s) => s.transitioning);
+  const folded = useSettings((s) => s.toolsFolded);
   if (unavailable) return null;
+  if (folded) return <FoldedTools label="Camera tools" />;
   return (
     <div className="tool-col" role="group" aria-label="Camera" data-obstacle>
       <button type="button" className="icon-tool" aria-label="Zoom in" title="Zoom in" onClick={() => zoom(0.6)} disabled={transitioning}>
@@ -62,6 +66,7 @@ export function CameraStack() {
       </button>
       <span className="tool-col__sep" aria-hidden="true" />
       <ViewMenu />
+      <FoldButton k="toolsFolded" what="camera tools" className="tool-col__fold" />
     </div>
   );
 }

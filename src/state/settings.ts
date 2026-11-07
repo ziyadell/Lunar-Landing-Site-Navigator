@@ -17,11 +17,17 @@ interface Settings {
   welcomeSeen: boolean;
   /** Sun/Earth card folded to a one-line summary. */
   readingsFolded: boolean;
+  /** Camera / look tools collapsed to one button. */
+  toolsFolded: boolean;
+  /** Surface skyline strip folded to its title. */
+  skylineFolded: boolean;
+  /** Region card folded to its name and arrows. */
+  regionFolded: boolean;
   set: (p: Partial<Omit<Settings, 'set'>>) => void;
 }
 
 const KEY = 'lsn.settings.v2';
-const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, rate: 1 as const, transcript: true, welcomeSeen: false, readingsFolded: false };
+const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, rate: 1 as const, transcript: true, welcomeSeen: false, readingsFolded: false, toolsFolded: false, skylineFolded: false, regionFolded: false };
 
 function read() {
   try {

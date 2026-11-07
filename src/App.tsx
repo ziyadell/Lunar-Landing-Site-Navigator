@@ -15,6 +15,7 @@ import { LoadingChip } from './ui/stage/LoadingChip';
 import { MissionGuide, Welcome } from './audio/ui';
 import type { DataProblem } from './data/DataContext';
 import { useRelease } from './data/release';
+import { useSettings } from './state/settings';
 
 /** Shown when an open tab discovers that a newer release is live (instead of mixing data). */
 function UpdateNotice() {
@@ -89,9 +90,12 @@ function Explore() {
   const focus = useApp((s) => s.focus);
   const intro = useApp((s) => s.intro);
   const tourSpot = useApp((s) => s.tourSpot);
+  const welcomeSeen = useSettings((s) => s.welcomeSeen);
+  // First visit: only the Moon and "Enter mission" until the welcome has played.
+  const pre = mode === 'orbital' && !welcomeSeen && !intro;
   const side = drawer === 'atlas' ? ' has-drawer-left' : drawer ? ' has-drawer-right' : '';
   return (
-    <div className={`app app--${mode}${side}${focus ? ' is-focus' : ''}${intro ? ' is-intro' : ''}`} data-tour-spot={tourSpot ?? undefined}>
+    <div className={`app app--${mode}${side}${focus ? ' is-focus' : ''}${intro ? ' is-intro' : ''}${pre ? ' is-prewelcome' : ''}`} data-tour-spot={tourSpot ?? undefined}>
       <Viewport />
       <div className="scrim" aria-hidden="true" />
       <Masthead />
