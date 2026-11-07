@@ -10,6 +10,7 @@ import { Drawer, HeadingReadout, LookTools } from './ui/stage/Stage';
 import { CameraStack, ScaleBar } from './ui/ScaleBar';
 import { Compass } from './ui/Compass';
 import { SurfacePanorama } from './ui/SurfaceOverlay';
+import { Intro } from './ui/stage/Intro';
 
 const AnalysisView = lazy(() => import('./ui/analysis/AnalysisView'));
 
@@ -43,9 +44,10 @@ function Boot({ state }: { state: { status: 'loading' } | { status: 'error'; mes
 function Explore() {
   const mode = useApp((s) => s.mode);
   const drawer = useApp((s) => s.drawer);
+  const focus = useApp((s) => s.focus);
   const side = drawer === 'atlas' ? ' has-drawer-left' : drawer ? ' has-drawer-right' : '';
   return (
-    <div className={`app app--${mode}${side}`}>
+    <div className={`app app--${mode}${side}${focus ? ' is-focus' : ''}`}>
       <Viewport />
       <div className="scrim" aria-hidden="true" />
       <Masthead />
@@ -67,6 +69,9 @@ function Explore() {
           <TimePill />
         </div>
         <div className="hud__corner">{mode === 'orbital' ? <ScaleBar /> : <HeadingReadout />}</div>
+        <div className="hud__intro">
+          <Intro />
+        </div>
       </main>
       <Drawer />
     </div>

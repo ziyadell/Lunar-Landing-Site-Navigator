@@ -33,18 +33,18 @@ export type SurfacePreset = 'scientific' | 'clean' | 'realistic';
  */
 export const SURFACE_PRESETS: Record<SurfacePreset, { label: string; hint: string; layers: Partial<Layers> }> = {
   scientific: {
-    label: 'Scientific',
-    hint: 'All annotations: LOLA skyline, az/el grid, range rings. Enhanced visibility.',
+    label: 'Survey',
+    hint: 'Every annotation: LOLA skyline, azimuth/elevation grid, range rings.',
     layers: { enhancedLight: true, horizonLine: true, stars: true, skyGrid: true, rings: true, regolith: false, albedo: true },
   },
   clean: {
-    label: 'Clean',
-    hint: 'Terrain, Sun, Earth and stars without overlays. Enhanced visibility.',
-    layers: { enhancedLight: true, horizonLine: false, stars: true, skyGrid: false, rings: false, regolith: false, albedo: true },
+    label: 'Landscape',
+    hint: 'Terrain, Sun, Earth and stars with the measured skyline. Shadowed ground lifted for readability.',
+    layers: { enhancedLight: true, horizonLine: true, stars: true, skyGrid: false, rings: false, regolith: true, albedo: true },
   },
   realistic: {
-    label: 'Realistic',
-    hint: 'Physical lighting only; adds the illustrative sub-80 m texture.',
+    label: 'Physical',
+    hint: 'Sunlight and faint Earthshine only: what an observer would see.',
     layers: { enhancedLight: false, horizonLine: false, stars: true, skyGrid: false, rings: false, regolith: true, albedo: true },
   },
 };
@@ -70,6 +70,9 @@ const readPanels = (): { left: boolean; right: boolean } => {
 export type Drawer = null | 'atlas' | 'details' | 'about';
 
 interface AppState {
+  /** Focus mode: only the scene, the time and a way back. */
+  focus: boolean;
+  setFocus: (v: boolean) => void;
   drawer: Drawer;
   openDrawer: (d: Drawer) => void;
   /** Expanded time sheet (scrubber + visibility strip). */
@@ -110,8 +113,10 @@ const DAY = 86_400_000;
 const nowHour = () => Math.floor(Date.now() / 3_600_000) * 3_600_000;
 
 export const useApp = create<AppState>((set) => ({
+  focus: false,
+  setFocus: (focus) => set(focus ? { focus, drawer: null, timeOpen: false } : { focus }),
   drawer: null,
-  openDrawer: (drawer) => set((s) => ({ drawer: s.drawer === drawer ? null : drawer })),
+  openDrawer: (drawer) => set((s) => ({ drawer: s.drawer === drawer ? null : drawer, focus: drawer ? false : s.focus })),
   timeOpen: false,
   setTimeOpen: (timeOpen) => set({ timeOpen }),
   panels: readPanels(),
@@ -137,9 +142,9 @@ export const useApp = create<AppState>((set) => ({
     horizonLine: true,
     enhancedLight: true,
     stars: true,
-    skyGrid: true,
-    rings: true,
-    regolith: false,
+    skyGrid: false,
+    rings: false,
+    regolith: true,
     albedo: true,
   },
   scenarios: [

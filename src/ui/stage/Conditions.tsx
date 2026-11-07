@@ -105,18 +105,24 @@ export function DetailsDrawer() {
           {p.sunVisibleFraction2027 !== undefined && <Readout label="Sun in 2027" value={(p.sunVisibleFraction2027 * 100).toFixed(1)} unit="% of hours" />}
         </dl>
         <p className="details__ref">
-          {region.nasaListing}. Reference feature{' '}
-          <a href={f.url} target="_blank" rel="noreferrer">
-            {f.name}
-          </a>{' '}
-          ({f.type.toLowerCase()}, IAU), {fmtLat(f.latDeg, 2)} {fmtLon(f.lonDeg, 2)}.
+          NASA region outline about {region.nasaRegion.sizeKm[0].toFixed(0)} × {region.nasaRegion.sizeKm[1].toFixed(0)} km, centred{' '}
+          {fmtLat(region.nasaRegion.centreLatDeg, 2)} {fmtLon(region.nasaRegion.centreLonDeg, 2)}. Named after{' '}
+          {f.url ? (
+            <a href={f.url} target="_blank" rel="noreferrer">
+              {f.name}
+            </a>
+          ) : (
+            f.name
+          )}{' '}
+          ({f.type.toLowerCase()}).
         </p>
       </section>
       <details className="disclose">
         <summary>How this point was chosen</summary>
         <p className="disclose__text">
-          NASA candidate regions span roughly 15 × 15 km and are not published as coordinates. Readings use one representative
-          observation point — not a NASA-designated landing site.
+          NASA has published its candidate regions only as outlines on a map. The outline here was digitised from that map by
+          registering it to the LROC mosaic (about 0.5 km accuracy). Readings use one representative point inside it, not a
+          NASA-designated landing site.
         </p>
         <p className="disclose__text disclose__text--strong">{p.selectionRule}</p>
       </details>

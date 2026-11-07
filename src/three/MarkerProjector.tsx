@@ -13,8 +13,8 @@ import { useCameraInfo } from './GlobeCamera';
  *  • Regional: individual dots at the exact projected observation points; labels
  *    placed by greedy collision avoidance among 8 candidate offsets, kept inside
  *    the viewport, with leader lines when displaced.
- *  • Close (range < 400 km): the selected point is annotated as a representative
- *    observation point, and the IAU reference-feature centre is marked separately.
+ *  • Close (range < 400 km): the selected point is annotated as the observation point,
+ *    and NASA's region outline (drawn in RegionOutlines) is labelled at its corner.
  */
 const CLUSTER_PX = 24;
 const DOT = 10;
@@ -41,7 +41,7 @@ export function MarkerProjector() {
       sites.regions.map((r) => ({
         id: r.id,
         world: toWorld(r.observationPoint.latDeg, r.observationPoint.lonDeg, r.observationPoint.elevationM),
-        ref: toWorld(r.referenceFeature.latDeg, r.referenceFeature.lonDeg),
+        ref: toWorld(r.nasaRegion.corners[0][0], r.nasaRegion.corners[0][1]),
       })),
     [sites],
   );
@@ -179,7 +179,7 @@ export function MarkerProjector() {
       const rp = project(s.ref);
       const on = close && faces(s.ref) && rp.inFront && rp.x > 0 && rp.x < W && rp.y > 0 && rp.y < H && showLabels;
       show(refEl, on);
-      if (on) refEl.style.transform = `translate(${(rp.x - 5).toFixed(1)}px, ${(rp.y - 5).toFixed(1)}px)`;
+      if (on) refEl.style.transform = `translate(${(rp.x + 2).toFixed(1)}px, ${(rp.y - refEl.offsetHeight - 3).toFixed(1)}px)`;
     }
   });
   return null;

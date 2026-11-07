@@ -2,8 +2,38 @@
  "method": "Horizons topocentric apparent Az/El (quantity 4, CENTER=coord@301, airless) vs app vector method from hourly sub-point table",
  "period": "2027-01-01 00:00 to 2027-02-28 00:00 UTC, step 6h",
  "note": "Azimuth error is scaled by cos(elevation) (great-circle error on the sky).",
- "retrievedUtc": "2026-11-07T05:02:14Z",
+ "retrievedUtc": "2026-11-07T11:27:52Z",
  "sites": [
+  {
+   "id": "peak-near-cabeus-b",
+   "sun": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0007,
+    "maxAzErrDeg": 0.0002
+   },
+   "earth": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0008,
+    "meanElevErrDeg": 0.0005,
+    "maxAzErrDeg": 0.006
+   }
+  },
+  {
+   "id": "haworth",
+   "sun": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0007,
+    "maxAzErrDeg": 0.0002
+   },
+   "earth": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0006,
+    "meanElevErrDeg": 0.0003,
+    "maxAzErrDeg": 0.006
+   }
+  },
   {
    "id": "malapert-massif",
    "sun": {
@@ -16,6 +46,21 @@
     "samples": 233,
     "maxElevErrDeg": 0.0006,
     "meanElevErrDeg": 0.0003,
+    "maxAzErrDeg": 0.006
+   }
+  },
+  {
+   "id": "mons-mouton-plateau",
+   "sun": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0007,
+    "maxAzErrDeg": 0.0002
+   },
+   "earth": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0006,
+    "meanElevErrDeg": 0.0004,
     "maxAzErrDeg": 0.006
    }
   },
@@ -50,7 +95,22 @@
    }
   },
   {
-   "id": "haworth",
+   "id": "nobile-rim-2",
+   "sun": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0007,
+    "maxAzErrDeg": 0.0002
+   },
+   "earth": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0004,
+    "maxAzErrDeg": 0.0059
+   }
+  },
+  {
+   "id": "de-gerlache-rim-2",
    "sun": {
     "samples": 233,
     "maxElevErrDeg": 0.0007,
@@ -65,22 +125,7 @@
    }
   },
   {
-   "id": "peak-near-cabeus-b",
-   "sun": {
-    "samples": 233,
-    "maxElevErrDeg": 0.0007,
-    "meanElevErrDeg": 0.0007,
-    "maxAzErrDeg": 0.0002
-   },
-   "earth": {
-    "samples": 233,
-    "maxElevErrDeg": 0.0009,
-    "meanElevErrDeg": 0.0006,
-    "maxAzErrDeg": 0.006
-   }
-  },
-  {
-   "id": "de-gerlache-rim-2",
+   "id": "slater-plain",
    "sun": {
     "samples": 233,
     "maxElevErrDeg": 0.0007,

@@ -13,10 +13,8 @@ export function SkyLabels() {
     return (
       <div id={`sky-label-${body}`} className={`sky-label sky-label--${body}`} style={{ visibility: 'hidden' }}>
         <span className="sky-label__name">{body === 'sun' ? 'Sun' : 'Earth'}</span>
-        <span className="num">
-          EL {fmtDeg(b.elDeg)} · AZ {b.azDeg.toFixed(1)}°
-        </span>
-        {b.state !== 'visible' && <span className="sky-label__state">behind terrain</span>}
+        <span className="sky-label__val num">{fmtDeg(b.elDeg, 1)}</span>
+        {b.state !== 'visible' && <span className="sky-label__state">{b.state === 'below-horizontal' ? 'below horizon' : 'behind terrain'}</span>}
       </div>
     );
   };
@@ -116,10 +114,10 @@ export function SurfaceMethod() {
       <p>
         <strong>Display aids:</strong>{' '}
         {layers.enhancedLight
-          ? 'enhanced visibility adds a sky fill light and brighter Earthshine so terrain in shadow stays readable — real shadowed terrain is much darker. '
+          ? 'lifted shadows add a soft light from the Sun’s true direction (raised to at least 7°), a sky fill and brighter Earthshine so relief stays readable; real shadowed terrain is much darker. '
           : 'physical lighting shows only sunlight and faint Earthshine. '}
         {layers.regolith ? 'Fine surface texture below LOLA resolution is illustrative, not measured. ' : ''}
-        Earth is drawn with its correct phase but no surface detail. Range rings: 100 m, 250 m, 500 m, 1 km. Nearby ground looks
+        Sun and Earth are drawn at their true size and direction with a soft glow for visibility; Earth shows its correct phase but no surface detail. Range rings: 100 m, 250 m, 500 m, 1 km. Nearby ground looks
         smooth because 80 m is the finest measured relief used.
       </p>
     </section>

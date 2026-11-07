@@ -98,6 +98,11 @@ def main():
         "retrievedUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "sites": results,
     }
+    old = DATA / "validation.json"
+    if old.exists():  # keep sections written by other scripts (build_stars.py: moonOrientation)
+        prev = json.loads(old.read_text())
+        for k, v in prev.items():
+            out.setdefault(k, v)
     (DATA / "validation.json").write_text(json.dumps(out, indent=1))
 
 

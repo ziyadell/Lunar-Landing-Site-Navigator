@@ -8,6 +8,9 @@ import * as THREE from 'three';
  * labelled in the UI and can be switched off.
  */
 let cached: THREE.DataTexture | null = null;
+let cachedAlb: THREE.DataTexture | null = null;
+let field: Float32Array | null = null;
+const N = 512;
 
 function rng(seed: number) {
   let s = seed >>> 0;
@@ -17,9 +20,8 @@ function rng(seed: number) {
   };
 }
 
-export function regolithNormalMap(): THREE.DataTexture {
-  if (cached) return cached;
-  const N = 512;
+function heightField(): Float32Array {
+  if (field) return field;
   const h = new Float32Array(N * N);
   const r = rng(20261107);
   const wrap = (v: number) => ((v % N) + N) % N;
@@ -55,6 +57,40 @@ export function regolithNormalMap(): THREE.DataTexture {
         h[wrap(Math.round(cy + dy)) * N + wrap(Math.round(cx + dx))] += v;
       }
   }
+  field = h;
+  return h;
+}
+
+/** Albedo mottling from the same field (crater floors slightly darker, rims and ejecta lighter). */
+export function regolithAlbedoMap(): THREE.DataTexture {
+  if (cachedAlb) return cachedAlb;
+  const h = heightField();
+  let lo = Infinity, hi = -Infinity;
+  for (const v of h) {
+    lo = Math.min(lo, v);
+    hi = Math.max(hi, v);
+  }
+  const data = new Uint8Array(N * N * 4);
+  for (let i = 0; i < N * N; i++) {
+    const v = Math.round(((h[i] - lo) / (hi - lo)) * 255);
+    data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = v;
+    data[i * 4 + 3] = 255;
+  }
+  const t = new THREE.DataTexture(data, N, N, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true;
+  t.colorSpace = THREE.NoColorSpace;
+  t.needsUpdate = true;
+  cachedAlb = t;
+  return t;
+}
+
+export function regolithNormalMap(): THREE.DataTexture {
+  if (cached) return cached;
+  const h = heightField();
+  const wrap = (v: number) => ((v % N) + N) % N;
   const data = new Uint8Array(N * N * 4);
   const s = 6.0; // slope gain
   for (let y = 0; y < N; y++)

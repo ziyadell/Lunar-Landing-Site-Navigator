@@ -406,7 +406,6 @@ export default function AnalysisView() {
       <section className="study__block">
         <div className="study__head">
           <h3>At a glance</h3>
-          <p>Bars take the colour of what they measure. A is solid, B is lighter.</p>
         </div>
         <div className="glance-wrap">
           <Headlines a={a} b={b} />
@@ -461,15 +460,17 @@ export default function AnalysisView() {
       </section>
 
       <footer className="study__method">
-        <h3>Method and limits</h3>
+        <details>
+          <summary>Method and limits</summary>
         <ul>
           <li>Sun and Earth directions: NASA/JPL Horizons hourly sub-solar and sub-Earth points, interpolated; validated against Horizons topocentric Az/El to better than 0.01°.</li>
           <li>Skyline: LOLA LDEM_80S_80M (80 m/px) ray-traced to 150 km on a 1737.4 km sphere. Features smaller than about two DEM pixels, and terrain beyond 150 km or outside 80°S, are not represented.</li>
           <li>“Visible” means the disc centre is above the skyline. Partial-disc illumination is reported under Measurements, not in these percentages.</li>
-          <li>Observation points follow a documented selection rule and are not NASA-designated landing sites. Results apply to that point only, at 2 m height.</li>
+          <li>Region outlines are digitised from NASA&rsquo;s official map. Observation points follow a documented rule inside each outline and are not NASA-designated landing sites. Results apply to that point only, at 2 m height.</li>
           <li>Earth visibility is geometric line of sight; it does not model antennas, link budgets or ground-station availability.</li>
           <li>No suitability score is computed. Landing decisions also depend on slope, hazards, thermal and operational constraints not modelled here.</li>
         </ul>
+        </details>
       </footer>
     </main>
   );

@@ -10,6 +10,20 @@ export function DataSources({ open = false }: { open?: boolean }) {
       <summary>Data &amp; method</summary>
       <dl className="kv kv--tight">
         <div>
+          <dt>Regions</dt>
+          <dd>
+            NASA&rsquo;s nine Artemis III candidate regions (28 Oct 2024). Outlines digitised from{' '}
+            {sites.nasaRegionMap ? (
+              <a href={sites.nasaRegionMap.url} target="_blank" rel="noreferrer">
+                NASA&rsquo;s official map
+              </a>
+            ) : (
+              "NASA's official map"
+            )}{' '}
+            by registering it to the LROC mosaic (≈0.5 km); one rule-based observation point per region
+          </dd>
+        </div>
+        <div>
           <dt>Ephemeris</dt>
           <dd>NASA/JPL Horizons, hourly sub-solar &amp; sub-Earth points, retrieved {ephemeris.file.retrievedUtc.slice(0, 10)}</dd>
         </div>
@@ -20,6 +34,10 @@ export function DataSources({ open = false }: { open?: boolean }) {
         <div>
           <dt>Imagery</dt>
           <dd>LROC WAC global mosaic (NASA SVS); south of 80.6°S the LROC WAC South Pole Summer Mosaic, 100 m/px</dd>
+        </div>
+        <div>
+          <dt>Stars</dt>
+          <dd>Yale Bright Star Catalogue (V &lt; 5.5), placed with the IAU Moon rotation model</dd>
         </div>
         <div>
           <dt>Visibility</dt>

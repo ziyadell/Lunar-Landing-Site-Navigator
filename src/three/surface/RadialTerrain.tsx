@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { LandingRegion } from '../../data/types';
-import { regolithNormalMap } from './regolith';
+import { regolithAlbedoMap, regolithNormalMap } from './regolith';
 
 /**
  * One continuous terrain mesh centred on the observer, out to 150 km — the same
@@ -253,16 +253,50 @@ vStereo = stereo;`);
       tex.needsUpdate = true;
       m.normalMap = tex;
       m.normalScale.set(0.32, 0.32);
+      const alb = regolithAlbedoMap();
       patches.push((sh) => {
-        sh.fragmentShader = sh.fragmentShader.replace(
-          '#include <normal_fragment_maps>',
-          `#include <normal_fragment_maps>
-           normal = normalize(mix(normal, nonPerturbedNormal, smoothstep(60.0, 320.0, length(vViewPosition))));`,
-        );
+        sh.uniforms.regAlb = { value: alb };
+        sh.fragmentShader = sh.fragmentShader
+          .replace('#include <common>', '#include <common>\nuniform sampler2D regAlb;')
+          .replace(
+            '#include <normal_fragment_maps>',
+            `#ifdef USE_NORMALMAP_TANGENTSPACE
+               {
+                 float dist = length(vViewPosition);
+                 // Two samples of the tile, the second rotated and at a non-integer scale, so the
+                 // 24 m repeat does not read as a pattern.
+                 vec2 uvR = mat2(0.8, -0.6, 0.6, 0.8) * vNormalMapUv * 0.437 + 0.21;
+                 vec3 mapN = texture2D(normalMap, vNormalMapUv).xyz * 2.0 - 1.0;
+                 vec3 mapR = texture2D(normalMap, uvR).xyz * 2.0 - 1.0;
+                 mapN.xy = (mapN.xy + mapR.xy) * 0.8;
+                 // Second octave at ~3.3 m, only within a few tens of metres of the eye.
+                 vec3 mapN2 = texture2D(normalMap, vNormalMapUv * 7.31 + 0.37).xyz * 2.0 - 1.0;
+                 mapN.xy += mapN2.xy * 0.55 * (1.0 - smoothstep(5.0, 45.0, dist));
+                 mapN.xy *= normalScale;
+                 normal = normalize(tbn * mapN);
+               }
+             #endif
+             normal = normalize(mix(normal, nonPerturbedNormal, smoothstep(60.0, 320.0, length(vViewPosition))));`,
+          )
+          .replace(
+            '#include <color_fragment>',
+            `#include <color_fragment>
+             {
+               float dist = length(vViewPosition);
+               vec2 uvR = mat2(0.8, -0.6, 0.6, 0.8) * vNormalMapUv * 0.437 + 0.21;
+               float a1 = (texture2D(regAlb, vNormalMapUv).r + texture2D(regAlb, uvR).r) * 0.5 - 0.5;
+               float a2 = texture2D(regAlb, vNormalMapUv * 7.31 + 0.37).r - 0.5;
+               float a0 = texture2D(regAlb, vNormalMapUv * 0.061 + 0.11).r - 0.5;
+               diffuseColor.rgb *= 1.0
+                 + a1 * 0.26 * (1.0 - smoothstep(80.0, 700.0, dist))
+                 + a2 * 0.2 * (1.0 - smoothstep(5.0, 45.0, dist))
+                 + a0 * 0.14 * (1.0 - smoothstep(1500.0, 8000.0, dist));
+             }`,
+          );
       });
     }
     m.onBeforeCompile = (sh) => patches.forEach((f) => f(sh));
-    m.customProgramCacheKey = () => `terrain-${detail ? 'd' : ''}${albedo ? 'a' : ''}`;
+    m.customProgramCacheKey = () => `terrain3-${detail ? 'd' : ''}${albedo ? 'a' : ''}`;
     return m;
   }, [detail, albedo]);
   useEffect(() => () => geometry.dispose(), [geometry]);

@@ -1,0 +1,552 @@
+/* =====================================================================
+   Refinement pass (review branch).
+   Loaded last. Covers: lighter glass, the locator-based region card,
+   focus mode, first-visit hint, time playback, surface labels, layer
+   groups, and interaction states (focus, press, target sizes).
+   ===================================================================== */
+
+/* ---------------------------------------------------------- glass
+   Before: ten surface types with backdrop-filter: blur(16px) saturate(1.15).
+   A 16 px blur samples a ~100 px neighbourhood per pixel and re-runs every
+   frame the canvas below changes (orbit drag, playback). Opacity is now high
+   enough that a light 8 px blur gives the same calm and costs far less; the
+   saturate pass is dropped. Surfaces that rarely overlap the scene (drawer,
+   sheets, popovers) are opaque and unblurred. */
+:root {
+  --glass: rgba(9, 14, 24, 0.84);
+  --glass-strong: rgba(12, 18, 30, 0.95);
+}
+.glass,
+.deck-card,
+.cond,
+.tool-col,
+.timepill__bar,
+.pano-strip,
+.modenav {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.drawer,
+.timesheet,
+.pop__panel,
+.intro {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--glass-strong);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .deck-card,
+  .cond,
+  .tool-col,
+  .timepill__bar,
+  .pano-strip,
+  .modenav {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--glass-strong);
+  }
+}
+
+/* ------------------------------------------------- interaction states */
+:where(button, [role='button'], a, input, select, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.round-btn {
+  width: 36px;
+  height: 36px;
+}
+.round-btn:active,
+.icon-tool:active:not(:disabled),
+.ghost-btn:active,
+.text-btn:active {
+  transform: translateY(1px);
+}
+.text-btn {
+  height: 36px;
+  padding: 0 12px;
+}
+.cta {
+  height: 40px;
+  padding: 0 18px;
+}
+.ghost-btn__kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 5px;
+  border: 1px solid var(--glass-line-strong);
+  font: 500 10.5px/1 var(--font-mono);
+  color: var(--text-tertiary);
+}
+.focus-btn.is-on {
+  color: var(--accent);
+  border-color: rgba(77, 220, 244, 0.45);
+}
+
+/* ------------------------------------------------------- region card */
+.deck-card {
+  width: 360px;
+  padding: 16px 16px 12px;
+}
+.deck-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.deck-card__titles {
+  min-width: 0;
+}
+.deck-card__eyebrow {
+  display: block;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.deck-card__eyebrow .num {
+  color: var(--text-secondary);
+}
+.deck-card__name {
+  margin: 3px 0 6px;
+  font-size: 22px;
+}
+.deck-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.deck-card__meta .lights {
+  margin: 0;
+}
+.deck-card__step {
+  position: static;
+  flex: none;
+}
+.deck-card__foot {
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+/* Locator: real polar imagery with NASA's outlines as buttons. */
+.locator {
+  position: relative;
+  margin-top: 14px;
+  aspect-ratio: 390 / 270;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px var(--glass-line-strong);
+}
+.locator__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.78;
+  filter: contrast(1.06);
+  user-select: none;
+  pointer-events: none;
+}
+.locator__pole {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.locator__pole i {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(241, 245, 249, 0.85);
+  background: rgba(5, 8, 15, 0.6);
+}
+.locator__pole span {
+  position: absolute;
+  left: 10px;
+  top: -4px;
+  font-size: 10.5px;
+  color: rgba(241, 245, 249, 0.72);
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+}
+.locator__box {
+  position: absolute;
+  min-width: 14px;
+  min-height: 14px;
+  padding: 0;
+  border: 1.5px solid rgba(241, 245, 249, 0.62);
+  border-radius: 2px;
+  background: rgba(241, 245, 249, 0.03);
+  cursor: pointer;
+  transition: border-color var(--t-soft), background var(--t-soft), box-shadow var(--t-soft);
+}
+/* Enlarge the hit area of small boxes without changing what is drawn. */
+.locator__box::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+.locator__box:hover {
+  border-color: #fff;
+  background: rgba(241, 245, 249, 0.14);
+}
+.locator__box.is-selected {
+  border-color: var(--accent);
+  border-width: 2px;
+  background: rgba(77, 220, 244, 0.14);
+  box-shadow: 0 0 0 3px rgba(77, 220, 244, 0.22), 0 0 18px rgba(77, 220, 244, 0.35);
+  z-index: 2;
+}
+.locator__box:focus-visible {
+  outline-offset: 3px;
+  z-index: 3;
+}
+.locator__obs {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.locator__lights {
+  position: absolute;
+  right: -1px;
+  bottom: calc(100% + 3px);
+  display: flex;
+  gap: 2px;
+  pointer-events: none;
+}
+.locator__lights i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(241, 245, 249, 0.5);
+  background: rgba(5, 8, 15, 0.7);
+}
+.locator__lights i.is-sun {
+  border-color: var(--sun);
+  background: var(--sun);
+}
+.locator__lights i.is-earth {
+  border-color: var(--earth);
+  background: var(--earth);
+}
+.deck-card--surface {
+  width: 340px;
+}
+
+/* Region pictures (atlas) with the observation point. */
+.rimg {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #000;
+}
+.rimg img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.rimg__obs {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px rgba(5, 8, 15, 0.5);
+}
+.atlas-card__img {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 1;
+}
+
+/* --------------------------------------------------------- focus mode */
+.app .hud__right,
+.app .hud__left,
+.app .hud__corner,
+.app .hud__top,
+.masthead .brand,
+.masthead .modenav,
+.masthead__aside > :not(.focus-btn) {
+  transition: opacity 260ms var(--ease-out, ease), transform 260ms var(--ease-out, ease);
+}
+.is-focus .hud__right,
+.is-focus .hud__left,
+.is-focus .hud__corner,
+.is-focus .hud__intro,
+.is-focus .pano-strip,
+.is-focus .masthead .modenav,
+.is-focus .masthead__aside > :not(.focus-btn) {
+  opacity: 0;
+  pointer-events: none !important;
+}
+.is-focus .hud__right > *,
+.is-focus .hud__left > *,
+.is-focus .hud__corner > *,
+.is-focus .masthead .modenav,
+.is-focus .masthead__aside > :not(.focus-btn) {
+  pointer-events: none !important;
+  visibility: hidden;
+  transition: opacity 260ms ease, visibility 0s linear 260ms;
+}
+.is-focus .hud__left {
+  transform: translateY(8px);
+}
+.is-focus .hud__right {
+  transform: translateY(-8px);
+}
+.is-focus .brand__sub {
+  opacity: 0;
+}
+.is-focus .scrim {
+  opacity: 0.6;
+}
+.is-focus .gm-label:not(.is-selected) {
+  opacity: 0;
+}
+
+/* --------------------------------------------------- first-visit hint
+   Top-left, under the title: the one empty corner, away from the Moon. */
+.hud__intro {
+  top: calc(var(--mast-h) + 8px);
+  left: var(--gutter);
+}
+.intro {
+  width: 268px;
+  padding: 16px 16px 14px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--glass-line-strong);
+  box-shadow: var(--glass-shadow);
+  animation: intro-in 420ms var(--ease-out, ease) both 600ms;
+}
+.intro__steps {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  counter-reset: s;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.intro__steps li {
+  counter-increment: s;
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.intro__steps li::before {
+  content: counter(s);
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(77, 220, 244, 0.14);
+  color: var(--accent);
+  font: 600 11px/1 var(--font-mono);
+}
+.intro__steps b {
+  color: var(--text);
+  font-weight: 600;
+}
+.intro__close {
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(241, 245, 249, 0.09);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.intro__close:hover {
+  background: rgba(241, 245, 249, 0.15);
+}
+@keyframes intro-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (max-height: 760px) and (min-width: 760px) {
+  .intro__steps {
+    gap: 6px;
+  }
+}
+@media (max-width: 759px) {
+  .hud .hud__intro {
+    position: fixed;
+    z-index: 30;
+    top: auto;
+    bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+    left: var(--gutter);
+    right: var(--gutter);
+  }
+  .intro {
+    width: auto;
+    padding: 14px;
+  }
+  .intro__steps {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    font-size: 12.5px;
+    margin-bottom: 12px;
+  }
+}
+
+/* ---------------------------------------------------------- time */
+.timepill__speed {
+  white-space: nowrap;
+  height: 32px;
+  min-width: 48px;
+  margin-left: 2px;
+  padding: 0 8px;
+  border: 1px solid var(--glass-line-strong);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.timepill__speed:hover {
+  color: var(--text);
+  border-color: rgba(241, 245, 249, 0.3);
+}
+.timesheet__range {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+
+/* ---------------------------------------------------- scene labels */
+.vp-fade {
+  display: grid;
+  place-items: center;
+}
+.vp-fade__label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+  animation: fade-pulse 1.6s ease-in-out infinite;
+}
+@keyframes fade-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.sky-label {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 7px;
+  margin: 0 0 0 16px;
+  padding: 4px 9px;
+  border-left: 0;
+  border-radius: 999px;
+  background: rgba(5, 8, 15, 0.62);
+  transform-origin: left center;
+}
+.sky-label__name {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12.5px;
+}
+.sky-label__val {
+  font-size: 11.5px;
+  color: var(--text-secondary) !important;
+}
+.sky-label__state {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+.gm-ref--outline {
+  font-size: 11px;
+  color: var(--accent);
+  background: rgba(5, 8, 15, 0.6);
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------- layer groups */
+.pop__section .layers + .layers {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-line);
+}
+.pop__section .layers {
+  grid-template-columns: 1fr;
+}
+.pop__section .layers legend {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+}
+.layers--aid legend {
+  color: var(--text-secondary) !important;
+}
+
+/* ---------------------------------------------------- responsive */
+@media (max-width: 1199px) and (min-width: 760px) {
+  .deck-card {
+    width: 340px;
+  }
+}
+@media (max-height: 820px) and (min-width: 760px) {
+  .locator {
+    aspect-ratio: 390 / 230;
+  }
+}
+@media (max-width: 759px) {
+  .deck-card {
+    width: auto;
+  }
+  /* Phones: the region card stays compact (previous / next, Compare all opens the
+     full picture grid as a sheet); the Moon keeps the middle of the screen. */
+  .deck-card .locator {
+    display: none;
+  }
+  .ghost-btn__kbd,
+  .focus-btn .ghost-btn__long {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro,
+  .vp-fade__label {
+    animation: none;
+  }
+}
+
+/* Analysis: method notes on request, not on the page. */
+.study__method summary {
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 4px 0;
+}
+.study__method details[open] summary {
+  margin-bottom: 16px;
+}

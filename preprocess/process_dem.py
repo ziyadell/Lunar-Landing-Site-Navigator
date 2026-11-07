@@ -51,98 +51,58 @@ FAR_SPACING_M = 400.0
 
 GAZ = "https://planetarynames.wr.usgs.gov/Feature/"
 
-# Reference features: IAU Gazetteer of Planetary Nomenclature (retrieved 2026-11-07).
+# Region geometry: NASA's official map of the nine regions (release 2024-10-28),
+# registered to the LROC WAC mosaic by register_nasa_regions.py -> nasa_regions.json.
+NASA_BOXES = json.loads((pathlib.Path(__file__).parent / "nasa_regions.json").read_text())["regions"]
+RULE = ("Observation point = of candidate points on a {g:g} km grid inside NASA's published region outline, "
+        "with local slope at most {s:g}° (LOLA, 240 m baseline), the one where the Sun's centre is above the "
+        "LOLA terrain horizon for the largest fraction of 2027 (hourly). A representative point for this "
+        "analysis, not a NASA landing site.")
+MAX_SLOPE_DEG = 10.0
+L24 = "Artemis III candidate region in NASA's refined list of nine (Oct 28, 2024)"
+L22 = "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)"
+
+# Reference features: IAU Gazetteer of Planetary Nomenclature (retrieved 2026-11-07), used for naming only.
+F_MALAPERT = {"name": "Mons Malapert", "type": "Mons", "latDeg": -85.98, "lonDeg": -1.67, "diameterKm": 67.0, "gazetteerId": 16338}
+F_MOUTON = {"name": "Mons Mouton", "type": "Mons", "latDeg": -84.60, "lonDeg": 31.00, "diameterKm": 130.0, "gazetteerId": 16070}
+F_NOBILE = {"name": "Nobile", "type": "Crater", "latDeg": -85.28, "lonDeg": 53.27, "diameterKm": 79.27, "gazetteerId": 4321}
 REGIONS = [
-    {
-        "id": "malapert-massif",
-        "name": "Malapert Massif",
-        "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
-        "feature": {"name": "Mons Malapert", "type": "Mons", "latDeg": -85.98, "lonDeg": -1.67,
-                    "diameterKm": 67.0, "gazetteerId": 16338},
-        "rule": "summit",
-        "searchKm": 15.0,
-        "notes": [
-            "Reference feature Mons Malapert: IAU-approved 2024, 67 km across, centred 85.98°S 1.67°W.",
-            "Observation point = of candidate points on a 2 km grid within 15 km of the gazetteer centre, the one where the Sun's centre is above the LOLA terrain horizon for the largest fraction of 2027 (hourly).",
-        ],
-    },
-    {
-        "id": "mons-mouton",
-        "name": "Mons Mouton",
-        "nasaListing": "Artemis III candidate region added in NASA's refined list of nine (Oct 28, 2024), listed separately from 'Mons Mouton Plateau'",
-        "feature": {"name": "Mons Mouton", "type": "Mons", "latDeg": -84.60, "lonDeg": 31.00,
-                    "diameterKm": 130.0, "gazetteerId": 16070},
-        "rule": "summit",
-        "searchKm": 15.0,
-        "notes": [
-            "Reference feature Mons Mouton: IAU-approved 2022, 130 km across, centred 84.60°S 31.00°E.",
-            "Observation point = of candidate points on a 2 km grid within 15 km of the gazetteer centre, the one where the Sun's centre is above the LOLA terrain horizon for the largest fraction of 2027 (hourly).",
-        ],
-    },
-    {
-        "id": "nobile-rim-1",
-        "name": "Nobile Rim 1",
-        "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
-        "feature": {"name": "Nobile", "type": "Crater", "latDeg": -85.28, "lonDeg": 53.27,
-                    "diameterKm": 79.27, "gazetteerId": 4321},
-        "rule": "rim",
-        "notes": [
-            "Reference feature Nobile crater: 79.3 km diameter, centred 85.28°S 53.27°E.",
-            "NASA has not published coordinates distinguishing 'Rim 1' from 'Rim 2'. Observation point = of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii along radial profiles every 5°), the one with the largest fraction of 2027 hours with the Sun's centre above the LOLA terrain horizon. It is a representative rim location, not necessarily inside the Rim 1 region.",
-        ],
-    },
-    {
-        "id": "haworth",
-        "name": "Haworth",
-        "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
-        "feature": {"name": "Haworth", "type": "Crater", "latDeg": -87.45, "lonDeg": -5.17,
-                    "diameterKm": 51.42, "gazetteerId": 14502},
-        "rule": "rim",
-        "notes": [
-            "Reference feature Haworth crater: 51.4 km diameter, centred 87.45°S 5.17°W.",
-            "Observation point = of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii along radial profiles every 5°), the one with the largest fraction of 2027 hours with the Sun's centre above the LOLA terrain horizon. The crater floor is not used.",
-        ],
-    },
-    {
-        "id": "peak-near-cabeus-b",
-        "name": "Peak near Cabeus B",
-        "nasaListing": "Artemis III candidate region in NASA's refined list of nine (Oct 28, 2024)",
-        "feature": {"name": "Cabeus B", "type": "Crater", "latDeg": -82.26, "lonDeg": -54.58,
-                    "diameterKm": 59.62, "gazetteerId": 8058},
-        "rule": "peak",
-        "notes": [
-            "Reference feature Cabeus B crater: 59.6 km diameter, centred 82.26°S 54.58°W.",
-            "NASA has not published the location of the peak. Observation point = the highest LOLA elevation (3×3-smoothed) between 0.6 and 1.6 crater radii of the Cabeus B centre, i.e. the most prominent peak adjoining the crater. Provisional reference: it may not coincide with the NASA region.",
-            "Near the 80°S edge of LDEM_80S_80M: horizon rays toward the north (away from the pole) leave the DEM after ~40 km instead of 150 km, so distant terrain in those directions is not included.",
-        ],
-    },
-    {
-        "id": "de-gerlache-rim-2",
-        "name": "de Gerlache Rim 2",
-        "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
-        "feature": {"name": "de Gerlache", "type": "Crater", "latDeg": -88.48, "lonDeg": -88.34,
-                    "diameterKm": 32.71, "gazetteerId": 1439},
-        "rule": "rim",
-        "notes": [
-            "Reference feature de Gerlache crater: 32.7 km diameter, centred 88.48°S 88.34°W.",
-            "NASA has not published coordinates distinguishing 'Rim 1' from 'Rim 2'. Observation point = of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii along radial profiles every 5°), the one with the largest fraction of 2027 hours with the Sun's centre above the LOLA terrain horizon. It is a representative rim location, not necessarily inside the Rim 2 region.",
-        ],
-    },
+    {"id": "peak-near-cabeus-b", "name": "Peak near Cabeus B", "nasaListing": L24,
+     "feature": {"name": "Cabeus B", "type": "Crater", "latDeg": -82.26, "lonDeg": -54.58, "diameterKm": 59.62, "gazetteerId": 8058}},
+    {"id": "haworth", "name": "Haworth", "nasaListing": L22,
+     "feature": {"name": "Haworth", "type": "Crater", "latDeg": -87.45, "lonDeg": -5.17, "diameterKm": 51.42, "gazetteerId": 14502}},
+    {"id": "malapert-massif", "name": "Malapert Massif", "nasaListing": L22, "feature": F_MALAPERT},
+    {"id": "mons-mouton-plateau", "name": "Mons Mouton Plateau", "nasaListing": L24, "feature": F_MOUTON, "gridKm": 2.0},
+    {"id": "mons-mouton", "name": "Mons Mouton", "nasaListing": L24, "feature": F_MOUTON},
+    {"id": "nobile-rim-1", "name": "Nobile Rim 1", "nasaListing": L22, "feature": F_NOBILE},
+    {"id": "nobile-rim-2", "name": "Nobile Rim 2", "nasaListing": L22, "feature": F_NOBILE},
+    {"id": "de-gerlache-rim-2", "name": "de Gerlache Rim 2", "nasaListing": L22,
+     "feature": {"name": "de Gerlache", "type": "Crater", "latDeg": -88.48, "lonDeg": -88.34, "diameterKm": 32.71, "gazetteerId": 1439}},
+    {"id": "slater-plain", "name": "Slater Plain", "nasaListing": L24,
+     "feature": {"name": "Slater", "type": "Crater", "latDeg": -88.08, "lonDeg": 111.29, "diameterKm": 25.12, "gazetteerId": None}},
 ]
+for _r in REGIONS:
+    _r.setdefault("gridKm", 1.0)
+    _b = NASA_BOXES[_r["id"]]
+    _r["box"] = _b
+    _r["notes"] = [
+        f"Region outline digitised from NASA's official map of the nine regions (2024-10-28): about "
+        f"{_b['sizeKm'][0]:.0f} × {_b['sizeKm'][1]:.0f} km, centred {abs(_b['centreLatDeg']):.2f}°S "
+        f"{abs(_b['centreLonDeg']):.2f}°{'E' if _b['centreLonDeg'] >= 0 else 'W'}. NASA has not published coordinates; "
+        "the outline is accurate to about 0.5 km.",
+        RULE.format(g=_r["gridKm"], s=MAX_SLOPE_DEG),
+    ]
 
 NASA_REFERENCES = [
     {"title": "NASA Provides Update on Artemis III Moon Landing Regions", "date": "2024-10-28",
      "url": "https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
      "regions": ["Peak near Cabeus B", "Haworth", "Malapert Massif", "Mons Mouton Plateau", "Mons Mouton",
                  "Nobile Rim 1", "Nobile Rim 2", "de Gerlache Rim 2", "Slater Plain"]},
+    {"title": "Artemis III site selection update: down-selection from 13 to 9 candidate regions (George et al., LPSC 2026 #1901)",
+     "date": "2026-03", "url": "https://www.hou.usra.edu/meetings/lpsc2026/pdf/1901.pdf"},
     {"title": "NASA Identifies Candidate Regions for Landing Next Americans on Moon (release 22-089)", "date": "2022-08-19",
      "url": "https://www.nasa.gov/news-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/"},
 ]
-NOT_REPRESENTED = {
-    "Mons Mouton Plateau": "No published extent; cannot be distinguished from the Mons Mouton point with public data.",
-    "Nobile Rim 2": "No published coordinates distinguishing it from Nobile Rim 1.",
-    "Slater Plain": "No defensible rule for locating the plain relative to Slater crater (IAU 88.08°S 111.29°E).",
-}
 
 
 # ---------------------------------------------------------------- projection
@@ -178,11 +138,15 @@ def bilinear(dem, row, col):
     fc = c - c0
     v = (dem[r0, c0] * (1 - fr) * (1 - fc) + dem[r0, c0 + 1] * (1 - fr) * fc
          + dem[r0 + 1, c0] * fr * (1 - fc) + dem[r0 + 1, c0 + 1] * fr * fc)
+    if dem.dtype == np.int16:  # raw LOLA DN (memory-mapped): height = DN * 0.5 m
+        v = v * 0.5
     return np.where(ok, v, np.nan)
 
 
 def height_ll(dem, lat, lon):
     x, y = ll_to_xy(lat, lon)
+    if isinstance(dem, Coarse):
+        return dem.sample(*xy_to_pix(x, y))
     return bilinear(dem, *xy_to_pix(x, y))
 
 
@@ -207,48 +171,57 @@ def gc_distance_km(lat1, lon1, lat2, lon2):
 
 # ---------------------------------------------------------------- products
 def load_dem():
-    dn = np.fromfile(RAW, dtype="<i2").reshape(N_PIX, N_PIX)
-    dem = dn.astype(np.float32) * 0.5
-    sm = dem.copy()
-    k = np.zeros_like(dem)
-    for dr in (-1, 0, 1):
-        for dc in (-1, 0, 1):
-            k += np.roll(np.roll(dem, dr, 0), dc, 1)
-    sm = k / 9.0
-    return dem, sm
+    """LOLA heights as a read-only memory map of the raw int16 file (height = DN * 0.5 m).
+    File-backed, so it costs almost no committed memory. The second value is the grid
+    used for slope screening (the same DEM; the 240 m baseline already smooths)."""
+    dem = np.memmap(RAW, dtype="<i2", mode="r", shape=(N_PIX, N_PIX))
+    return dem, dem
+
+
+class Coarse:
+    """k x k block-mean DEM (metres) sampled bilinearly in full-resolution pixel coordinates.
+    Built in row strips to bound memory."""
+
+    def __init__(self, dem, k):
+        m = N_PIX // k * k
+        self.k = k
+        a = np.empty((m // k, m // k), np.float32)
+        rows = 40 * k
+        for r0 in range(0, m, rows):
+            r1 = min(m, r0 + rows)
+            blk = np.asarray(dem[r0:r1, :m], dtype=np.float32)
+            if dem.dtype == np.int16:
+                blk *= 0.5
+            a[r0 // k:r1 // k] = blk.reshape((r1 - r0) // k, k, m // k, k).mean(axis=(1, 3))
+        self.a = a
+
+    def sample(self, row, col):
+        c = (self.k - 1) / 2
+        return bilinear(self.a, (np.asarray(row) - c) / self.k, (np.asarray(col) - c) / self.k)
+
+
+def slope_deg(dem_s, x, y):
+    """Local slope (deg) from central differences over +-240 m (3 DEM pixels)."""
+    r, c = xy_to_pix(x, y)
+    d = 0.240
+    hx = bilinear(dem_s, *xy_to_pix(x + d, y)) - bilinear(dem_s, *xy_to_pix(x - d, y))
+    hy = bilinear(dem_s, *xy_to_pix(x, y + d)) - bilinear(dem_s, *xy_to_pix(x, y - d))
+    return np.rad2deg(np.arctan(np.hypot(hx, hy) / (2 * d * 1000)))
 
 
 def candidate_points(dem_s, reg):
-    """Candidate observation points for a region (see module docstring)."""
-    f = reg["feature"]
-    if reg["rule"] == "rim":
-        # Rim crest: along each of 72 radial profiles from the crater centre, the
-        # highest point between 0.80 and 1.20 crater radii.
-        rad = f["diameterKm"] / 2
-        az = np.arange(0, 360, 5.0)
-        rr = np.linspace(0.80 * rad, 1.20 * rad, 81)
-        A, Rr = np.meshgrid(az, rr, indexing="ij")
-        la, lo = destination(f["latDeg"], f["lonDeg"], A, Rr)
-        h = height_ll(dem_s, la, lo)
-        j = np.nanargmax(h, axis=1)
-        idx = np.arange(len(az))
-        return la[idx, j], lo[idx, j]
-    if reg["rule"] == "peak":
-        # Highest smoothed point between 0.6 and 1.6 crater radii on a 1 km grid.
-        rad = f["diameterKm"] / 2
-        g = np.arange(-1.6 * rad, 1.6 * rad + 0.01, 1.0)
-        E, N = np.meshgrid(g, g)
-        d = np.hypot(E, N)
-        keep = (d >= 0.6 * rad) & (d <= 1.6 * rad)
-        la, lo = destination(f["latDeg"], f["lonDeg"], np.rad2deg(np.arctan2(E[keep], N[keep])), d[keep])
-        h = height_ll(dem_s, la, lo)
-        i = int(np.nanargmax(h))
-        return np.array([la[i]]), np.array([lo[i]])
-    # Mons: 2 km grid within searchKm of the gazetteer centre.
-    g = np.arange(-reg["searchKm"], reg["searchKm"] + 0.01, 2.0)
-    E, N = np.meshgrid(g, g)
-    keep = np.hypot(E, N) <= reg["searchKm"]
-    la, lo = destination(f["latDeg"], f["lonDeg"], np.rad2deg(np.arctan2(E[keep], N[keep])), np.hypot(E[keep], N[keep]))
+    """Grid points inside NASA's region outline with slope <= MAX_SLOPE_DEG."""
+    xs = [c[0] for c in reg["box"]["cornersKm"]]
+    ys = [c[1] for c in reg["box"]["cornersKm"]]
+    g = reg["gridKm"]
+    gx = np.arange(min(xs) + g / 2, max(xs), g)
+    gy = np.arange(min(ys) + g / 2, max(ys), g)
+    X, Y = np.meshgrid(gx, gy)
+    X, Y = X.ravel(), Y.ravel()
+    sl = slope_deg(dem_s, X, Y)
+    keep = sl <= MAX_SLOPE_DEG
+    print(f"  grid {len(X)} points, {int(keep.sum())} with slope <= {MAX_SLOPE_DEG} deg")
+    la, lo = xy_to_ll(X[keep], Y[keep])
     return la, lo
 
 
@@ -274,8 +247,21 @@ def sun_visible_fraction(dem, lat, lon, h0, sun):
     return float(np.mean(el > hz)), prof
 
 
+CACHE = pathlib.Path(__file__).parent / "_selection_cache.json"
+
+
 def select_point(dem, dem_s, reg, sun):
-    """Candidate with the greatest fraction of 2027 hours with the Sun's centre above the terrain horizon."""
+    """Candidate with the greatest fraction of 2027 hours with the Sun's centre above the terrain horizon.
+    The winning coordinates are cached per region (the search is slow); the fraction and horizon
+    are always recomputed at the stored point."""
+    key = f"{reg['id']}|{reg['box']['cornersKm']}|{reg['gridKm']}|{MAX_SLOPE_DEG}"
+    cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+    if key in cache:
+        lat, lon = cache[key]
+        h0 = float(height_ll(dem, lat, lon))
+        frac, prof = sun_visible_fraction(dem, lat, lon, h0, sun)
+        print(f"  cached point, 2027 sun-visible fraction {frac:.3f}")
+        return frac, lat, lon, h0, prof
     la, lo = candidate_points(dem_s, reg)
     best = None
     for lat, lon in zip(np.atleast_1d(la), np.atleast_1d(lo)):
@@ -286,6 +272,9 @@ def select_point(dem, dem_s, reg, sun):
         if best is None or frac > best[0]:
             best = (frac, float(lat), float(lon), h0, prof)
     print(f"  {len(np.atleast_1d(la))} candidates, best 2027 sun-visible fraction {best[0]:.3f}")
+    cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+    cache[key] = [round(best[1], 4), round(best[2], 4)]
+    CACHE.write_text(json.dumps(cache, indent=1))
     return best
 
 
@@ -362,7 +351,7 @@ def polar_cap_normals(dem, size=4096, extent_km=300.0, strip=256):
 
 def main():
     dem, dem_s = load_dem()
-    print("DEM", dem.shape, float(dem.min()), float(dem.max()))
+    print("DEM", dem.shape)
 
     # Sanity check of projection orientation: Shackleton (IAU 89.67°S 129.78°E) floor is ~4 km deep.
     sh = float(height_ll(dem, -89.67, 129.78))
@@ -373,14 +362,9 @@ def main():
     (OUT_DATA / "terrain").mkdir(parents=True, exist_ok=True)
     regions = []
     sun = sun_dirs_2027()
-    k = 5
-    dem_far = dem[: N_PIX // k * k, : N_PIX // k * k].reshape(N_PIX // k, k, N_PIX // k, k).mean(axis=(1, 3))
-    dem_far = np.repeat(np.repeat(dem_far, k, 0), k, 1).astype(np.float32)
+    dem_far = Coarse(dem, 5)
     for reg in REGIONS:
-        f = reg["feature"]
-        if reg["rule"] == "rim":
-            floor = float(np.nanmean(height_ll(dem, *destination(f["latDeg"], f["lonDeg"], np.arange(0, 360, 30), f["diameterKm"] * 0.1))))
-            print(f"  {f['name']} floor (0.2 R) mean {floor:.0f} m")
+        print(reg["name"])
         frac, lat, lon, h0, prof = select_point(dem, dem_s, reg, sun)
         tile = terrain_tile(dem, lat, lon, h0)
         (OUT_DATA / "terrain" / f"{reg['id']}.bin").write_bytes(tile.tobytes())
@@ -399,7 +383,15 @@ def main():
             "id": reg["id"],
             "name": reg["name"],
             "nasaListing": reg["nasaListing"],
-            "referenceFeature": {**f, "url": GAZ + str(f["gazetteerId"])},
+            "referenceFeature": {**f, **({"url": GAZ + str(f["gazetteerId"])} if f["gazetteerId"] else {})},
+            "nasaRegion": {
+                "source": "Digitised from NASA's official map of the nine candidate regions (2024-10-28)",
+                "centreLatDeg": reg["box"]["centreLatDeg"],
+                "centreLonDeg": reg["box"]["centreLonDeg"],
+                "sizeKm": reg["box"]["sizeKm"],
+                "corners": [[round(float(v), 4) for v in xy_to_ll(cx, cy)] for cx, cy in reg["box"]["cornersKm"]],
+                "accuracyKm": 0.5,
+            },
             "observationPoint": {
                 "latDeg": round(lat, 4),
                 "lonDeg": round(lon, 4),
@@ -439,10 +431,19 @@ def main():
             "projection": "Polar stereographic (spherical), MEAN EARTH/POLAR AXIS of DE421",
         },
         "nasaReferences": NASA_REFERENCES,
-        "notRepresented": NOT_REPRESENTED,
+        "nasaRegionMap": {
+            "url": "https://www.nasa.gov/wp-content/uploads/2024/10/artemis-iii-landing-region-candidates.jpg",
+            "credit": "NASA/GSFC/ASU/JSC/AGDT",
+            "method": "Map registered to the LROC WAC South Pole Summer Mosaic by maximising image correlation (similarity transform); region boxes converted to polar-stereographic coordinates. See preprocess/register_nasa_regions.py.",
+        },
         "polarCap": {"texture": "textures/southpole_normal.png", "standard": "textures/polar/nrm_cap_2048.png", "extentKm": 300.0, "size": 4096},
         "regions": regions,
     }
+    prev = OUT_DATA / "sites.json"
+    if prev.exists():  # keep the polar imagery descriptor for build_polar_products.py --sites-only
+        old = json.loads(prev.read_text())
+        if old.get("polarImagery") or old.get("_polarImagery_prev"):
+            out["_polarImagery_prev"] = old.get("polarImagery") or old["_polarImagery_prev"]
     (OUT_DATA / "sites.json").write_text(json.dumps(out, indent=1))
     print("wrote sites.json")
 
