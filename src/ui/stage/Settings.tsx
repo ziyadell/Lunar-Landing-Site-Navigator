@@ -1,6 +1,6 @@
 import { renderSettings, useSettings, type Quality } from '../../state/settings';
 import { useApp } from '../../state/store';
-import { startTour } from '../../audio/tour';
+import { exitTour, startTour } from '../../audio/tour';
 
 const QUALITY: { k: Quality; label: string; hint: string }[] = [
   { k: 'auto', label: 'Auto', hint: 'Chosen from this device' },
@@ -93,6 +93,7 @@ export function SettingsPanel() {
             type="button"
             className="text-btn"
             onClick={() => {
+              exitTour();
               s.set({ welcomeSeen: false });
               const a = useApp.getState();
               a.openDrawer(null);

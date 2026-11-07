@@ -290,6 +290,9 @@ export function Welcome() {
 
   const enter = (sound: boolean) => {
     if (!sound) return setS({ welcomeSeen: true });
+    // The chime never overlaps another voice: end any tour or narration first.
+    if (useTour.getState().step >= 0) exitTour();
+    else stop();
     useApp.getState().setIntro(true);
     if (!reducedMotion()) useApp.getState().introCamera();
     setPhase('chime');
