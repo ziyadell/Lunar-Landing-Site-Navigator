@@ -8,10 +8,11 @@ import { DataSources } from '../DataSources';
 import { SurfaceMethod } from '../SurfaceOverlay';
 import { RegionAtlas } from './Regions';
 import { DetailsDrawer } from './Conditions';
+import { SettingsPanel } from './Settings';
 
 /* ------------------------------------------------------------------ drawers */
 
-const TITLES = { atlas: 'All candidate regions', details: 'Measurements', about: 'Data & method' } as const;
+const TITLES = { atlas: 'All candidate regions', details: 'Measurements', about: 'Data & method', settings: 'Settings' } as const;
 
 /** One contextual drawer at a time; the scene stays visible and interactive beside it. */
 export function Drawer() {
@@ -38,6 +39,7 @@ export function Drawer() {
       <div className="drawer__body">
         {drawer === 'atlas' && <RegionAtlas />}
         {drawer === 'details' && <DetailsDrawer />}
+        {drawer === 'settings' && <SettingsPanel />}
         {drawer === 'about' && (
           <>
             {mode === 'surface' && <SurfaceMethod />}

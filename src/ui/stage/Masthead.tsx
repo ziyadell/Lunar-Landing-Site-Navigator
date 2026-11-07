@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { useApp, type Mode } from '../../state/store';
+import { Listen } from '../../audio/ui';
 import { useData } from '../../data/DataContext';
 
 /**
@@ -53,7 +54,9 @@ export function Brand() {
       </svg>
       <div className="brand__text">
         <h1 className="brand__name">Lunar Landing Site Navigator</h1>
-        <span className="brand__sub">Artemis south-polar regions</span>
+        <span className="brand__sub">
+          Artemis south-polar regions <Listen id="orbit-intro" />
+        </span>
       </div>
     </div>
   );
@@ -142,6 +145,21 @@ export function Masthead() {
       <div className="masthead__aside">
         {!covered && <span className="masthead__warn">Outside ephemeris coverage</span>}
         <FocusToggle />
+        <button
+          type="button"
+          className={`ghost-btn ghost-btn--icon${drawer === 'settings' ? ' is-on' : ''}`}
+          aria-expanded={drawer === 'settings'}
+          onClick={() => openDrawer('settings')}
+          aria-label="Settings: quality, audio guide, tour"
+          title="Settings"
+          data-obstacle
+        >
+          <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2 4.5h7M12 4.5h2M2 11.5h2M7 11.5h7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            <circle cx="10.5" cy="4.5" r="1.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
+            <circle cx="5.5" cy="11.5" r="1.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
+          </svg>
+        </button>
         <button
           type="button"
           className={`ghost-btn${drawer === 'about' ? ' is-on' : ''}`}

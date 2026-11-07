@@ -189,6 +189,15 @@ export function GlobeCamera() {
       invalidate();
     }, 0);
     dive.current = null;
+    if (cmd.kind === 'intro') {
+      // Welcome: a slow, restrained approach from farther out to the default view.
+      rebase('global', new THREE.Vector3());
+      const f = frame('global', new THREE.Vector3());
+      const h = sunBearing(f);
+      cur.current = { ...cur.current!, heading: h - 0.45, tilt: 2.3, logRange: Math.log(Math.min(GLOBAL_MAX, 7) * portrait) };
+      setGoal({ mode: 'global', target: new THREE.Vector3(), heading: h, tilt: 2.62, logRange: Math.log(4.05 * portrait) }, 0.9);
+      return;
+    }
     if (cmd.kind === 'global') {
       rebase('global', new THREE.Vector3());
       const f = frame('global', new THREE.Vector3());

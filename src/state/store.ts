@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { regionSwitchStart, surfaceEnterStart } from '../utils/perf';
 
 export type Mode = 'orbital' | 'surface' | 'analysis';
 
@@ -67,7 +68,7 @@ const readPanels = (): { left: boolean; right: boolean } => {
 };
 
 /** Secondary surfaces: one contextual drawer at a time. */
-export type Drawer = null | 'atlas' | 'details' | 'about';
+export type Drawer = null | 'atlas' | 'details' | 'about' | 'settings';
 
 interface AppState {
   /** Focus mode: only the scene, the time and a way back. */
@@ -85,7 +86,7 @@ interface AppState {
   regionId: string;
   timeMs: number;
   /** Incremented to ask the orbital camera to re-run a focus/reset tween. */
-  cameraCommand: { kind: 'focus' | 'global' | 'dive' | 'pole' | 'point'; seq: number; latDeg?: number; lonDeg?: number; rangeKm?: number };
+  cameraCommand: { kind: 'focus' | 'global' | 'dive' | 'pole' | 'point' | 'intro'; seq: number; latDeg?: number; lonDeg?: number; rangeKm?: number };
   transitioning: boolean;
   layers: Layers;
   scenarios: [Scenario, Scenario];
@@ -94,6 +95,11 @@ interface AppState {
   setTime: (t: number) => void;
   focusRegion: () => void;
   resetCamera: () => void;
+  /** Welcome approach (Enter mission). */
+  introCamera: () => void;
+  /** Interface hidden while the welcome plays. */
+  intro: boolean;
+  setIntro: (v: boolean) => void;
   /** Regional view of the south-polar cluster. */
   poleCamera: () => void;
   /** Zoom toward an arbitrary surface point (double-click). */
@@ -154,20 +160,28 @@ export const useApp = create<AppState>((set) => ({
   // Choosing a mode explicitly cancels any running Orbital → Surface dive.
   setMode: (mode) => set({ mode, transitioning: false, timeOpen: false }),
   selectRegion: (regionId) =>
-    set((s) => ({ regionId, cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 } })),
+    set((s) => {
+      regionSwitchStart();
+      return { regionId, cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 } };
+    }),
   setTime: (timeMs) => set({ timeMs }),
   focusRegion: () => set((s) => ({ cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 } })),
   resetCamera: () => set((s) => ({ cameraCommand: { kind: 'global', seq: s.cameraCommand.seq + 1 } })),
+  introCamera: () => set((s) => ({ cameraCommand: { kind: 'intro', seq: s.cameraCommand.seq + 1 } })),
+  intro: false,
+  setIntro: (intro) => set({ intro }),
   poleCamera: () => set((s) => ({ cameraCommand: { kind: 'pole', seq: s.cameraCommand.seq + 1 } })),
   zoomCommand: { factor: 1, seq: 0 },
   zoomCamera: (factor) => set((s) => ({ zoomCommand: { factor, seq: s.zoomCommand.seq + 1 } })),
   pointCamera: (latDeg, lonDeg) => set((s) => ({ cameraCommand: { kind: 'point', seq: s.cameraCommand.seq + 1, latDeg, lonDeg } })),
-  enterSurface: () =>
+  enterSurface: () => {
+    surfaceEnterStart();
     set((s) =>
       s.mode === 'orbital'
         ? { transitioning: true, cameraCommand: { kind: 'dive', seq: s.cameraCommand.seq + 1 } }
         : { mode: 'surface' },
-    ),
+    );
+  },
   setTransitioning: (transitioning) => set({ transitioning }),
   toggleLayer: (k) => set((s) => ({ layers: { ...s.layers, [k]: !s.layers[k] } })),
   applyPreset: (p) => set((s) => ({ layers: { ...s.layers, ...SURFACE_PRESETS[p].layers } })),

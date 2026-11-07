@@ -42,8 +42,8 @@
   "method": "Map registered to the LROC WAC South Pole Summer Mosaic by maximising image correlation (similarity transform); region boxes converted to polar-stereographic coordinates. See preprocess/register_nasa_regions.py."
  },
  "polarCap": {
-  "texture": "textures/southpole_normal.png",
-  "standard": "textures/polar/nrm_cap_2048.png",
+  "texture": "textures/southpole_normal.webp",
+  "standard": "textures/polar/nrm_cap_2048.webp",
   "extentKm": 300.0,
   "size": 4096
  },
@@ -849,7 +849,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/peak-near-cabeus-b_wac.jpg",
-    "normals": "textures/polar/peak-near-cabeus-b_nrm.png",
+    "normals": "textures/polar/peak-near-cabeus-b_nrm.webp",
     "centerKm": [
      -181.0,
      71.5
@@ -1668,7 +1668,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/haworth_wac.jpg",
-    "normals": "textures/polar/haworth_nrm.png",
+    "normals": "textures/polar/haworth_nrm.webp",
     "centerKm": [
      -44.1,
      102.1
@@ -2487,7 +2487,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/malapert-massif_wac.jpg",
-    "normals": "textures/polar/malapert-massif_nrm.png",
+    "normals": "textures/polar/malapert-massif_nrm.webp",
     "centerKm": [
      -9.0,
      123.7
@@ -3306,7 +3306,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/mons-mouton-plateau_wac.jpg",
-    "normals": "textures/polar/mons-mouton-plateau_nrm.png",
+    "normals": "textures/polar/mons-mouton-plateau_nrm.webp",
     "centerKm": [
      101.5,
      130.1
@@ -4125,7 +4125,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/mons-mouton_wac.jpg",
-    "normals": "textures/polar/mons-mouton_nrm.png",
+    "normals": "textures/polar/mons-mouton_nrm.webp",
     "centerKm": [
      70.6,
      117.6
@@ -4944,7 +4944,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/nobile-rim-1_wac.jpg",
-    "normals": "textures/polar/nobile-rim-1_nrm.png",
+    "normals": "textures/polar/nobile-rim-1_nrm.webp",
     "centerKm": [
      87.7,
      118.6
@@ -5763,7 +5763,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/nobile-rim-2_wac.jpg",
-    "normals": "textures/polar/nobile-rim-2_nrm.png",
+    "normals": "textures/polar/nobile-rim-2_nrm.webp",
     "centerKm": [
      160.9,
      96.5
@@ -6582,7 +6582,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/de-gerlache-rim-2_wac.jpg",
-    "normals": "textures/polar/de-gerlache-rim-2_nrm.png",
+    "normals": "textures/polar/de-gerlache-rim-2_nrm.webp",
     "centerKm": [
      -38.5,
      15.5
@@ -7400,7 +7400,7 @@
    ],
    "detail": {
     "imagery": "textures/polar/slater-plain_wac.jpg",
-    "normals": "textures/polar/slater-plain_nrm.png",
+    "normals": "textures/polar/slater-plain_nrm.webp",
     "centerKm": [
      65.8,
      -50.5

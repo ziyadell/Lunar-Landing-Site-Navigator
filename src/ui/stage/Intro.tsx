@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../../state/store';
+import { useSettings } from '../../state/settings';
 
 const KEY = 'lsn.intro.v1';
 const seen = () => {
@@ -19,6 +20,8 @@ export function Intro() {
   const [open, setOpen] = useState(() => !seen());
   const mode = useApp((s) => s.mode);
   const focus = useApp((s) => s.focus);
+  const welcomeSeen = useSettings((s) => s.welcomeSeen);
+  const intro = useApp((s) => s.intro);
   const close = () => {
     setOpen(false);
     try {
@@ -34,33 +37,25 @@ export function Intro() {
       if (s.regionId !== first || s.mode !== 'orbital') close();
     });
   }, [open]);
-  if (!open || mode !== 'orbital' || focus) return null;
+  if (!open || mode !== 'orbital' || focus || !welcomeSeen || intro) return null;
   return (
     <aside className="intro" aria-label="Getting started" data-obstacle>
-      <ol className="intro__steps">
+      <ul className="intro__steps">
         <li>
-          <span>
-            <b>Drag</b> to turn the Moon, scroll to zoom
-          </span>
+          <b>Drag</b> to turn · <b>scroll</b> to zoom
         </li>
         <li>
-          <span>
-            <b>Pick a region</b> on the map, bottom left
-          </span>
+          <b>Pick a region</b> on the map
         </li>
         <li>
-          <span>
-            <b>Explore the surface</b> to stand there
-          </span>
+          <b>Explore the surface</b> to stand there
         </li>
         <li>
-          <span>
-            <b>Analysis</b> compares two sites over time
-          </span>
+          <b>Analysis</b> compares sites
         </li>
-      </ol>
-      <button type="button" className="intro__close" onClick={close}>
-        Got it
+      </ul>
+      <button type="button" className="intro__close" onClick={close} aria-label="Dismiss tips">
+        <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.6" /></svg>
       </button>
     </aside>
   );

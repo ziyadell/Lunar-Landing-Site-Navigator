@@ -7,9 +7,10 @@ import { useApp, useLook } from '../state/store';
 import { azElToLocal, DEG } from '../science/geometry';
 import type { LandingRegion } from '../data/types';
 import { RadialTerrain, type TerrainAlbedo, type TerrainTiles } from './surface/RadialTerrain';
-import { assetUrl } from '../data/DataContext';
+import { loadTex } from './MoonGlobe';
 import { GroundRings, SkyGrid, SkyLabelProjector, Stars } from './surface/SkyObjects';
 import { DrawerFrame } from './DrawerFrame';
+import { markOnce, surfaceEnterEnd } from '../utils/perf';
 
 /**
  * Local scene frame: 1 unit = 1 m. +X east, +Y up, −Z north (local north = toward
@@ -27,15 +28,7 @@ function useAlbedo(region: LandingRegion, enabled: boolean): TerrainAlbedo | nul
     const capUrl = sites.polarImagery?.cap.standard;
     if (!enabled || !d || !capUrl) return;
     let alive = true;
-    const load = (u: string) =>
-      new Promise<THREE.Texture>((res, rej) =>
-        new THREE.TextureLoader().load(assetUrl(u), (t) => {
-          t.colorSpace = THREE.SRGBColorSpace;
-          t.anisotropy = 8;
-          t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
-          res(t);
-        }, undefined, rej),
-      );
+    const load = (u: string) => loadTex(u, true, 8);
     Promise.all([load(d.imagery), load(capUrl)])
       .then(([detail, cap]) => {
         if (!alive) {
@@ -374,12 +367,14 @@ function ReadySignal() {
   useFrame(() => {
     if (done.current) return;
     done.current = true;
+    markOnce('surface-ready');
+    surfaceEnterEnd();
     requestAnimationFrame(() => useApp.getState().setTransitioning(false));
   });
   return null;
 }
 
-export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number; onError: (m: string | null) => void }) {
+export function SurfaceScene({ shadowMapSize, segments, onError }: { shadowMapSize: number; segments: number; onError: (m: string | null) => void }) {
   const { region } = useData();
   const regionId = useApp((s) => s.regionId);
   const timeMs = useApp((s) => s.timeMs);
@@ -389,7 +384,6 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
   const p = r.observationPoint;
   const { tiles, error } = useTerrain(r);
   const albedo = useAlbedo(r, layers.albedo);
-  const segments = useMemo(() => (Math.min(window.innerWidth, window.innerHeight) < 700 ? 240 : 360), []);
   useEffect(() => onError(error), [error, onError]);
   useEffect(() => {
     if (error) useApp.getState().setTransitioning(false);
@@ -400,7 +394,7 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
       <SunLight mapSize={shadowMapSize} />
       <FillLights enhanced={layers.enhancedLight} />
       <LookCamera eye={p.observerHeightM} />
-      {tiles && <RadialTerrain region={r} tiles={tiles} detail={layers.regolith} segments={segments} albedo={albedo} />}
+      {tiles && <RadialTerrain region={r} tiles={tiles} detail={layers.regolith} segments={segments} albedo={albedo} ready={<ReadySignal />} />}
       {tiles && layers.rings && <GroundRings region={r} heights={tiles.near} />}
       {layers.horizonLine && <SkylineLine region={r} />}
       {layers.stars && <Stars timeMs={timeMs} latDeg={p.latDeg} lonDeg={p.lonDeg} />}
@@ -412,7 +406,6 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
           earth={[conditions.earth.azDeg, conditions.earth.elDeg]}
         />
       )}
-      {tiles && <ReadySignal />}
       <DrawerFrame />
     </>
   );
