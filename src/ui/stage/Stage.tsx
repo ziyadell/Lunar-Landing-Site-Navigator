@@ -11,6 +11,8 @@ import { RegionAtlas } from './Regions';
 import { DetailsDrawer } from './Conditions';
 import { SettingsPanel } from './Settings';
 import { Listen } from '../../audio/ui';
+import { FoldButton, FoldedTools } from '../Fold';
+import { useSettings } from '../../state/settings';
 
 const DRAWER_ITEM = { atlas: 'view-atlas', details: 'view-measurements', about: 'view-sources', settings: null } as const;
 
@@ -176,6 +178,7 @@ export function ViewMenu() {
 /** Look controls for Surface View: turn to a body, to north, or change field of view. */
 export function LookTools() {
   const unavailable = useApp((s) => s.sceneUnavailable);
+  const toolsFolded = useSettings((s) => s.toolsFolded);
   const { conditions } = useConditions();
   const look = useLook();
   // Body in the upper third: the terrain fills the lower half of the frame.
@@ -193,6 +196,7 @@ export function LookTools() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionId, has]);
   if (unavailable) return null;
+  if (toolsFolded) return <FoldedTools label="Look tools" />;
   return (
     <div className="tool-col" role="toolbar" aria-label="Look" data-obstacle>
       <button type="button" className="icon-tool" aria-label="Reset view" title="Reset view" onClick={home}>
@@ -218,6 +222,7 @@ export function LookTools() {
       </button>
       <span className="tool-col__sep" aria-hidden="true" />
       <ViewMenu />
+      <FoldButton k="toolsFolded" what="look tools" className="tool-col__fold" />
     </div>
   );
 }

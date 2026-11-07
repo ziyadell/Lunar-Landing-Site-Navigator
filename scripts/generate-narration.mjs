@@ -35,13 +35,16 @@ const force = flag('--force');
 const dry = flag('--dry-run');
 
 const key = process.env.ELEVENLABS_API_KEY;
-const voice = process.env.ELEVENLABS_VOICE_ID;
+// Default narrator: ElevenLabs premade "Rachel" (American, female, calm narration).
+// Override with ELEVENLABS_VOICE_ID; the voice is checked for an American female label below.
+const voice = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
 const model = process.env.ELEVENLABS_MODEL ?? 'eleven_multilingual_v2';
 const FORMAT = 'mp3_44100_64';
-const SETTINGS = { stability: 0.55, similarity_boost: 0.8, style: 0.1, use_speaker_boost: true };
+// Calm, confident, measured: steady delivery, little stylisation, slightly slower than default.
+const SETTINGS = { stability: 0.62, similarity_boost: 0.8, style: 0.05, use_speaker_boost: true, speed: 0.95 };
 
-if (!dry && (!key || !voice)) {
-  console.error('Set ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID in the environment (never in code). Use --dry-run to preview.');
+if (!dry && !key) {
+  console.error('Set ELEVENLABS_API_KEY in the environment (never in code). Use --dry-run to preview.');
   process.exit(1);
 }
 
@@ -58,14 +61,16 @@ async function checkVoice() {
   const lang = String(labels.language ?? v.fine_tuning?.language ?? '').toLowerCase();
   console.log(`Voice: ${v.name} (${voice})  accent: ${labels.accent ?? 'unlabelled'}  language: ${lang || 'unlabelled'}  category: ${v.category}`);
   const american = /american|us\b|u\.s\./.test(accent);
-  if (!american && !flag('--accept-voice')) {
-    console.error('This voice is not labelled American English. Choose an American voice, or listen and re-run with --accept-voice.');
+  const female = String(labels.gender ?? '').toLowerCase() === 'female';
+  if ((!american || !female) && !flag('--accept-voice')) {
+    console.error('Afuq uses one female narrator with a neutral American accent. This voice is not labelled American female. Choose another, or listen and re-run with --accept-voice.');
     process.exit(2);
   }
   return v;
 }
 
-const hashOf = (it) => createHash('sha256').update(JSON.stringify([voice, model, FORMAT, SETTINGS, it.text])).digest('hex').slice(0, 16);
+const spoken = (it) => it.speech ?? it.text;
+const hashOf = (it) => createHash('sha256').update(JSON.stringify([voice, model, FORMAT, SETTINGS, spoken(it)])).digest('hex').slice(0, 16);
 
 mkdirSync(out, { recursive: true });
 const manPath = join(out, 'manifest.json');
@@ -97,15 +102,15 @@ for (const it of recordable) {
   const hash = hashOf(it);
   const file = join(out, `${it.id}.mp3`);
   if (!force && manifest.files[it.id]?.hash === hash && existsSync(file)) continue;
-  chars += it.text.length;
+  chars += spoken(it).length;
   if (dry) {
-    console.log(`would generate ${it.id} (${it.text.length} chars)`);
+    console.log(`would generate ${it.id} (${spoken(it).length} chars)`);
     continue;
   }
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}?output_format=${FORMAT}`, {
     method: 'POST',
     headers: { 'xi-api-key': key, 'content-type': 'application/json', accept: 'audio/mpeg' },
-    body: JSON.stringify({ text: it.text, model_id: model, language_code: 'en', voice_settings: SETTINGS }),
+    body: JSON.stringify({ text: spoken(it), model_id: model, voice_settings: SETTINGS }),
   });
   if (!res.ok) {
     console.error(`${it.id}: HTTP ${res.status} ${await res.text()}`);

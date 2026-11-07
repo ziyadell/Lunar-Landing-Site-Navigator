@@ -1,0 +1,206 @@
+/* =====================================================================
+   Start screen, welcome, and hide/show toggles. Loaded last.
+   ===================================================================== */
+
+/* ---------------------------------------------- first visit: Moon + one button */
+.app.is-prewelcome .masthead,
+.app.is-prewelcome .hud,
+.app.is-prewelcome .hud > *,
+.app.is-prewelcome .hud__right > *,
+.app.is-prewelcome .hud__bottom > *,
+.app.is-prewelcome .scrim,
+.app.is-prewelcome .gm,
+.app.is-prewelcome .drawer {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.app.is-prewelcome > .welcome {
+  opacity: 1;
+  visibility: visible;
+}
+/* Everything returns together once the welcome ends. */
+.app .masthead,
+.app .hud > *,
+.app .hud__right > *,
+.app .hud__bottom > * {
+  transition:
+    opacity 700ms var(--ease-out),
+    visibility 0s linear 0s;
+}
+
+.welcome--start {
+  position: fixed;
+  z-index: 50;
+  left: 50%;
+  bottom: max(12vh, 84px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.welcome--start > * {
+  pointer-events: auto;
+}
+.welcome__enter--start {
+  height: 54px;
+  padding: 0 36px;
+  border-radius: 999px;
+  font: 600 17px/1 var(--font-display);
+  letter-spacing: 0.01em;
+  animation:
+    lsn-rise 700ms var(--ease-out) both 300ms,
+    lsn-glow 2.6s ease-in-out infinite 1s;
+}
+.welcome__enter--start:hover {
+  transform: translateY(-1px);
+}
+.welcome__enter--start:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--space-black),
+    0 0 0 5px var(--electric-cyan),
+    0 0 36px 6px rgba(77, 220, 244, 0.45);
+}
+@keyframes lsn-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 18px 2px rgba(77, 220, 244, 0.32),
+      0 0 0 0 rgba(77, 220, 244, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 36px 8px rgba(77, 220, 244, 0.55),
+      0 0 0 12px rgba(77, 220, 244, 0);
+  }
+}
+@keyframes lsn-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome__enter--start {
+    animation: none;
+    box-shadow: 0 0 28px 6px rgba(77, 220, 244, 0.45);
+  }
+}
+
+/* Phones and short landscape: the Moon fills the screen for the start and the welcome. */
+@media (max-width: 759px), (orientation: landscape) and (max-height: 500px) {
+  .app.is-prewelcome,
+  .app.is-intro {
+    display: block !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+  .app.is-prewelcome > .viewport,
+  .app.is-intro > .viewport {
+    position: absolute !important;
+    inset: 0 !important;
+    height: auto !important;
+    align-self: stretch !important;
+    justify-self: stretch !important;
+    border-radius: 0 !important;
+  }
+  .app.is-prewelcome > .welcome,
+  .app.is-intro > .welcome {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: calc(13svh + env(safe-area-inset-bottom, 0px)) !important;
+    transform: translateX(-50%) !important;
+    width: max-content !important;
+    max-width: calc(100% - 32px);
+    margin: 0 !important;
+    padding: 0 !important;
+    grid-area: auto !important;
+  }
+  .app.is-intro > .welcome--playing {
+    width: calc(100% - 32px) !important;
+  }
+  .app.is-prewelcome .hud,
+  .app.is-intro .hud {
+    display: none !important;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .app.is-prewelcome > .welcome,
+  .app.is-intro > .welcome {
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* ---------------------------------------------- hide / show toggles */
+.fold-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.fold-btn:hover {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.08);
+}
+.fold-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.tool-col .tool-col__fold {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+.tool-col--folded {
+  padding: 4px;
+}
+/* Skyline strip */
+.pano-strip__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+  line-height: 1;
+}
+.pano-strip__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pano-strip__head .fold-btn {
+  width: 26px;
+  height: 26px;
+}
+.pano-strip.is-folded {
+  height: auto !important;
+  padding-bottom: 4px !important;
+}
+/* Region card */
+.deck-card__step {
+  align-items: center;
+}
+.deck-card.is-folded {
+  padding-bottom: 12px;
+}
+.deck-card.is-folded .deck-card__name {
+  margin-bottom: 0;
+}
+
+/* Short landscape: the skyline strip sits in the right column with the time controls. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .app .hud__bottom > .pano-strip {
+    position: relative;
+    inset: auto;
+    width: auto;
+    height: auto;
+    padding-bottom: 6px;
+    border-radius: 14px;
+  }
+}

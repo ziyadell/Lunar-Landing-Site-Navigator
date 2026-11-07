@@ -6,6 +6,8 @@ import { fmtDeg, fmtLat, fmtLon } from '../../utils/format';
 import type { LandingRegion, SiteConditions } from '../../data/types';
 import { Listen } from '../../audio/ui';
 import { assetUrl } from '../../data/release';
+import { FoldButton } from '../Fold';
+import { useSettings } from '../../state/settings';
 
 /**
  * Region discovery, told through real geography:
@@ -154,9 +156,10 @@ export function RegionDeck() {
   const go = (d: number) => selectRegion(sites.regions[(i + d + n) % n].id);
   const p = r.observationPoint;
   const orbital = mode === 'orbital';
+  const folded = useSettings((st) => st.regionFolded);
 
   return (
-    <section className={`deck-card${orbital ? '' : ' deck-card--surface'}`} aria-label="Selected region" data-obstacle>
+    <section className={`deck-card${orbital ? '' : ' deck-card--surface'}${folded ? ' is-folded' : ''}`} aria-label="Selected region" data-obstacle>
       <header className="deck-card__head">
         <div className="deck-card__titles">
           <div className="deck-card__eyebrow" aria-label={`NASA candidate region ${i + 1} of ${n}`}>
@@ -168,12 +171,12 @@ export function RegionDeck() {
             {r.name}
             <Listen id={`region-${r.id}`} />
           </h2>
-          <div className="deck-card__meta">
+          {!folded && <div className="deck-card__meta">
             <span className="num">
               {fmtLat(p.latDeg, 2)} {fmtLon(p.lonDeg, 2)}
             </span>
             <BodyLights c={all[r.id]} />
-          </div>
+          </div>}
         </div>
         <div className="deck-card__step">
           <button type="button" className="round-btn" aria-label="Previous region" title="Previous region" onClick={() => go(-1)}>
@@ -182,12 +185,13 @@ export function RegionDeck() {
           <button type="button" className="round-btn" aria-label="Next region" title="Next region" onClick={() => go(1)}>
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
           </button>
+          <FoldButton k="regionFolded" what="region details" className="deck-card__fold" />
         </div>
       </header>
 
-      {orbital && <Locator />}
+      {orbital && !folded && <Locator />}
 
-      <div className="deck-card__foot">
+      {!folded && <div className="deck-card__foot">
         <button type="button" className={`text-btn${drawer === 'atlas' ? ' is-on' : ''}`} aria-expanded={drawer === 'atlas'} onClick={() => openDrawer('atlas')}>
           Compare all
         </button>
@@ -209,7 +213,7 @@ export function RegionDeck() {
             Back to orbit
           </button>
         )}
-      </div>
+      </div>}
     </section>
   );
 }

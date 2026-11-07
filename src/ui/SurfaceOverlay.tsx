@@ -3,6 +3,8 @@ import { useConditions } from '../data/useConditions';
 import { useApp, useLook } from '../state/store';
 import { fmtDeg } from '../utils/format';
 import { wrap360 } from '../science/geometry';
+import { FoldButton } from './Fold';
+import { useSettings } from '../state/settings';
 
 /** Sun / Earth labels in the 3D sky (positioned by SkyLabelProjector). */
 export function SkyLabels() {
@@ -33,6 +35,7 @@ export function SkyLabels() {
 export function SurfacePanorama() {
   const { region, conditions } = useConditions();
   const { yaw, fov, set } = useLook();
+  const skyFolded = useSettings((st) => st.skylineFolded);
   const W = 720;
   const H = 70;
   const prof = region.horizon.elevationDeg;
@@ -52,13 +55,20 @@ export function SurfacePanorama() {
   const x0 = x(yaw - hfov / 2);
   const x1 = x(yaw + hfov / 2);
   return (
-    <div className="pano-strip">
+    <div className={`pano-strip${skyFolded ? ' is-folded' : ''}`}>
       <div className="pano-strip__head">
         <span>Skyline 360° · LOLA</span>
-        <span className="num">
-          {lo}° … {hi}°
+        <span className="pano-strip__right">
+          {!skyFolded && (
+            <span className="num">
+              {lo}° … {hi}°
+            </span>
+          )}
+          <FoldButton k="skylineFolded" what="skyline strip" />
         </span>
       </div>
+      {!skyFolded && (
+      <>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
@@ -93,6 +103,8 @@ export function SurfacePanorama() {
         <span>W</span>
         <span>N</span>
       </div>
+      </>
+      )}
     </div>
   );
 }

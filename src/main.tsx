@@ -18,6 +18,7 @@ import './styles/polish.css';
 import './styles/final.css';
 import './styles/mobile.css';
 import './styles/panels.css';
+import './styles/start.css';
 import { App } from './App';
 
 createRoot(document.getElementById('root')!).render(
