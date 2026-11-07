@@ -3,6 +3,8 @@ import type { EphemerisFile, LandingRegion, SitesFile } from './types';
 import { Ephemeris } from '../science/ephemeris';
 import { initUrlSync } from '../state/urlSync';
 import { useApp } from '../state/store';
+import { assetUrl as versioned, checkForUpdate, fetchReleaseJson, ReleaseMismatch } from './release';
+import { DataIncompatible, validateEphemeris, validateSites } from './validate';
 
 export interface ValidationFile {
   method: string;
@@ -19,16 +21,16 @@ export interface AppData {
   region: (id: string) => LandingRegion;
 }
 
-type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: AppData };
+/** Why the essential data could not be used (each has its own recovery). */
+export type DataProblem = 'network' | 'incompatible' | 'updated';
+type LoadState = { status: 'loading' } | { status: 'error'; problem: DataProblem; detail: string; retry: () => void } | { status: 'ready'; data: AppData };
 
 const Ctx = createContext<AppData | null>(null);
 
-const url = (p: string) => `${import.meta.env.BASE_URL}${p}`;
+const url = versioned;
 
 async function getJson<T>(p: string): Promise<T> {
-  const r = await fetch(url(p));
-  if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`);
-  return (await r.json()) as T;
+  return fetchReleaseJson<T>(p);
 }
 
 /**
@@ -37,7 +39,14 @@ async function getJson<T>(p: string): Promise<T> {
  */
 let core: Promise<[SitesFile, EphemerisFile]> | null = null;
 function loadCore() {
-  core ??= Promise.all([getJson<SitesFile>('data/sites.json'), getJson<EphemerisFile>('data/ephemeris.json')]).catch((e) => {
+  core ??= Promise.all([
+    getJson<unknown>('data/sites.json').then((raw) => {
+      const { sites, dropped } = validateSites(raw);
+      if (dropped.length) console.warn('Lunar Navigator data check:', dropped);
+      return sites;
+    }),
+    getJson<unknown>('data/ephemeris.json').then(validateEphemeris),
+  ]).catch((e) => {
     core = null;
     throw e;
   });
@@ -66,6 +75,7 @@ const idle = (f: () => void) => {
 
 export function DataProvider({ children, fallback }: { children: ReactNode; fallback: (s: LoadState) => ReactNode }) {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const [attempt, setAttempt] = useState(0);
   const ready = state.status === 'ready';
   useEffect(() => {
     let alive = true;
@@ -84,12 +94,29 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
           data: { sites, ephemeris, validation: null, region: (id) => byId.get(id) ?? sites.regions[0] },
         });
       })
-      .catch((e: unknown) => alive && setState({ status: 'error', message: e instanceof Error ? e.message : String(e) }));
+      .catch(async (e: unknown) => {
+        console.error('Lunar Navigator could not load its data:', e);
+        // A mismatch or incompatible file usually means the site was updated while this
+        // tab was open (or a cache kept an old file): check before blaming the network.
+        const mismatch = e instanceof ReleaseMismatch || e instanceof DataIncompatible;
+        const updated = await checkForUpdate();
+        if (!alive) return;
+        const retry = () => {
+          setState({ status: 'loading' });
+          setAttempt((a) => a + 1);
+        };
+        setState({
+          status: 'error',
+          problem: updated ? 'updated' : mismatch ? 'incompatible' : 'network',
+          detail: e instanceof Error ? e.message : String(e),
+          retry: updated ? () => window.location.reload() : retry,
+        });
+      });
     return () => {
       alive = false;
       unsubscribe?.();
     };
-  }, []);
+  }, [attempt]);
   // Validation record: after the workspace is interactive, when the browser is idle.
   useEffect(() => {
     if (!ready) return;
@@ -125,6 +152,7 @@ export function loadTerrain(file: string): Promise<Float32Array> {
       })
       .then((b) => new Float32Array(b))
       .catch((e) => {
+        void checkForUpdate(); // a missing file may mean this tab predates a new release
         // Forget failures so a retry fetches again; successes stay cached.
         if (terrainCache.get(file) === p) terrainCache.delete(file);
         throw e;

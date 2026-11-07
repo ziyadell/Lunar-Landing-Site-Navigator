@@ -39,10 +39,12 @@ export function ScaleBar() {
 
 /** Zoom / focus / reset stack: an accessible alternative to wheel and gestures. */
 export function CameraStack() {
+  const unavailable = useApp((s) => s.sceneUnavailable);
   const zoom = useApp((s) => s.zoomCamera);
   const focus = useApp((s) => s.focusRegion);
   const reset = useApp((s) => s.resetCamera);
   const transitioning = useApp((s) => s.transitioning);
+  if (unavailable) return null;
   return (
     <div className="tool-col" role="group" aria-label="Camera" data-obstacle>
       <button type="button" className="icon-tool" aria-label="Zoom in" title="Zoom in" onClick={() => zoom(0.6)} disabled={transitioning}>

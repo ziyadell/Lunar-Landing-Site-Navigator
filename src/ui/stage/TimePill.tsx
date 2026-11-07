@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
 import { TimeInputs, VisibilityStrip } from '../TimeControls';
+import { Listen } from '../../audio/ui';
 
 const H = 3_600_000;
 const D = 24 * H;
@@ -94,7 +95,9 @@ export function TimePill() {
       {open && (
         <section className="timesheet" aria-label="Observation time">
           <div className="timesheet__head">
-            <span className="timesheet__title">Observation time · UTC</span>
+            <span className="timesheet__title">
+              Observation time · UTC <Listen id="view-time" />
+            </span>
             <span className="timesheet__sub">
               When the Sun (gold) and Earth (cyan) clear the skyline at {regionName}. Drag or use the arrow keys.
             </span>

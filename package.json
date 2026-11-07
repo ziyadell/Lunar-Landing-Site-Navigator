@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "test:data": "esbuild tests/data-validation.test.ts --bundle --platform=node --format=esm --log-level=error --outfile=node_modules/.cache/data-validation.test.mjs && node node_modules/.cache/data-validation.test.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.1.0",

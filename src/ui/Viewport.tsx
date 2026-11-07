@@ -1,4 +1,5 @@
-import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Component, Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { checkForUpdate } from '../data/release';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OrbitalScene } from '../three/OrbitalScene';
@@ -10,20 +11,39 @@ import { GlobeLabels } from './GlobeLabels';
 import { SkyLabels } from './SurfaceOverlay';
 
 
-class SceneBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
-  state = { error: null as string | null };
-  static getDerivedStateFromError(e: Error) {
-    return { error: e.message };
+/**
+ * A rendering failure in the 3D scene stays inside the scene: a short, plain explanation
+ * and a Retry, never the raw exception (it goes to the console). Readings, time and
+ * Mission Analysis keep working.
+ */
+class SceneBoundary extends Component<{ children: ReactNode; onState: (failed: boolean) => void }, { failed: boolean; attempt: number }> {
+  state = { failed: false, attempt: 0 };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(e: Error) {
+    console.error('3D scene failed:', e);
+    this.props.onState(true);
+    void checkForUpdate();
   }
   render() {
-    if (this.state.error)
+    if (this.state.failed)
       return (
-        <div className="viewport__fallback" role="alert">
-          <strong>3D view unavailable.</strong> {this.state.error}. Readings, time controls and Mission Analysis remain
-          available.
+        <div className="viewport__fallback viewport__fallback--compact" role="alert">
+          <strong>The 3D view could not start.</strong> Readings, time controls and Mission Analysis still work.
+          <button
+            type="button"
+            className="vp-note__btn"
+            onClick={() => {
+              this.props.onState(false);
+              this.setState((s) => ({ failed: false, attempt: s.attempt + 1 }));
+            }}
+          >
+            Try again
+          </button>
         </div>
       );
-    return this.props.children;
+    return <Fragment key={this.state.attempt}>{this.props.children}</Fragment>;
   }
 }
 
@@ -60,6 +80,12 @@ export function Viewport() {
   const [glLost, setGlLost] = useState(false);
   const [glGen, setGlGen] = useState(0);
   const [glFailed, setGlFailed] = useState(false);
+  const [renderFailed, setRenderFailed] = useState(false);
+  // Camera and look controls are hidden while there is no working scene to control.
+  useEffect(() => {
+    useApp.setState({ sceneUnavailable: !hasGL || glFailed || renderFailed });
+  }, [hasGL, glFailed, renderFailed]);
+  useEffect(() => setRenderFailed(false), [mode, quality]);
   useEffect(() => {
     if (!glLost) return;
     const t = window.setTimeout(() => {
@@ -102,7 +128,7 @@ export function Viewport() {
 
   return (
     <section className={`viewport viewport--${mode}`} aria-label={mode === 'orbital' ? '3D Moon' : 'Local surface'}>
-      <SceneBoundary key={`${mode}-${quality}-${glGen}`}>
+      <SceneBoundary key={`${mode}-${quality}-${glGen}`} onState={setRenderFailed}>
         {mode === 'orbital' ? (
           <Canvas
             className="viewport__canvas"

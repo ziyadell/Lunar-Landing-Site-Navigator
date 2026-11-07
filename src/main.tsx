@@ -16,6 +16,7 @@ import './styles/study.css';
 import './styles/refine.css';
 import './styles/polish.css';
 import './styles/final.css';
+import './styles/mobile.css';
 import { App } from './App';
 
 createRoot(document.getElementById('root')!).render(

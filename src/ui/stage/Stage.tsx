@@ -9,6 +9,9 @@ import { SurfaceMethod } from '../SurfaceOverlay';
 import { RegionAtlas } from './Regions';
 import { DetailsDrawer } from './Conditions';
 import { SettingsPanel } from './Settings';
+import { Listen } from '../../audio/ui';
+
+const DRAWER_ITEM = { atlas: 'view-atlas', details: 'view-measurements', about: 'view-sources', settings: null } as const;
 
 /* ------------------------------------------------------------------ drawers */
 
@@ -31,7 +34,9 @@ export function Drawer() {
   return (
     <aside ref={ref} className={`drawer drawer--${drawer === 'atlas' ? 'left' : 'right'}`} aria-label={TITLES[drawer]} data-obstacle>
       <header className="drawer__head">
-        <h2 className="drawer__title">{TITLES[drawer]}</h2>
+        <h2 className="drawer__title">
+          {TITLES[drawer]} {DRAWER_ITEM[drawer] && <Listen id={DRAWER_ITEM[drawer]!} />}
+        </h2>
         <button type="button" className="drawer__close" aria-label="Close" onClick={() => close(null)}>
           <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>
         </button>
@@ -109,6 +114,10 @@ export function ViewMenu() {
   const active = activePreset(layers);
   return (
     <Popover label="Display options" icon={LayersIcon} className="pop--view">
+      <div className="pop__listen">
+        <span className="pop__label">Display options</span>
+        <Listen id="view-display" />
+      </div>
       {mode === 'surface' && (
         <div className="pop__section">
           <div className="pop__label">Preset</div>
@@ -127,6 +136,7 @@ export function ViewMenu() {
 
 /** Look controls for Surface View: turn to a body, to north, or change field of view. */
 export function LookTools() {
+  const unavailable = useApp((s) => s.sceneUnavailable);
   const { conditions } = useConditions();
   const look = useLook();
   // Body in the upper third: the terrain fills the lower half of the frame.
@@ -143,6 +153,7 @@ export function LookTools() {
     home();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionId, has]);
+  if (unavailable) return null;
   return (
     <div className="tool-col" role="toolbar" aria-label="Look" data-obstacle>
       <button type="button" className="icon-tool" aria-label="Reset view" title="Reset view" onClick={home}>

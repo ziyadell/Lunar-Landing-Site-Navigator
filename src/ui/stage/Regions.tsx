@@ -5,6 +5,7 @@ import { siteConditions } from '../../science/visibility';
 import { fmtDeg, fmtLat, fmtLon } from '../../utils/format';
 import type { LandingRegion, SiteConditions } from '../../data/types';
 import { Listen } from '../../audio/ui';
+import { assetUrl } from '../../data/release';
 
 /**
  * Region discovery, told through real geography:
@@ -14,7 +15,7 @@ import { Listen } from '../../audio/ui';
  * See preprocess/build_thumbnails.py and register_nasa_regions.py.
  */
 
-export const thumbUrl = (id: string) => `${import.meta.env.BASE_URL}textures/polar/thumbs/${id}.jpg`;
+export const thumbUrl = (id: string) => assetUrl(`textures/polar/thumbs/${id}.jpg`);
 
 const R_KM = 1737.4;
 /** South-polar stereographic km (0° longitude toward +y). */
@@ -63,12 +64,13 @@ export function Locator() {
   const T = (y: number) => ((y1 - y) / (y1 - y0)) * 100;
   return (
     <div className="locator" role="group" aria-label="NASA candidate regions on the south-polar map">
-      <img className="locator__img" src={`${import.meta.env.BASE_URL}${loc.file}`} alt="" />
+      <img className="locator__img" src={assetUrl(loc.file)} alt="" />
       <span className="locator__pole" style={{ left: `${L(0)}%`, top: `${T(0)}%` }} aria-hidden="true">
         <i />
         <span>South Pole</span>
       </span>
       {sites.regions.map((r) => {
+        if (!r.nasaRegion) return null; // no valid outline: no box on the locator
         const xy = r.nasaRegion.corners.map(([la, lo]) => stereo(la, lo));
         const xs = xy.map((v) => v[0]);
         const ys = xy.map((v) => v[1]);
@@ -157,8 +159,10 @@ export function RegionDeck() {
     <section className={`deck-card${orbital ? '' : ' deck-card--surface'}`} aria-label="Selected region" data-obstacle>
       <header className="deck-card__head">
         <div className="deck-card__titles">
-          <div className="deck-card__eyebrow">
-            NASA candidate region <span className="num">{i + 1}</span> of <span className="num">{n}</span>
+          <div className="deck-card__eyebrow" aria-label={`NASA candidate region ${i + 1} of ${n}`}>
+            <span aria-hidden="true">
+              NASA region <span className="deck-card__count num">{i + 1}&#8239;/&#8239;{n}</span>
+            </span>
           </div>
           <h2 className="deck-card__name" aria-live="polite">
             {r.name}

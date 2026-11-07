@@ -3,6 +3,7 @@ import { useApp } from '../state/store';
 import { useData } from '../data/DataContext';
 import { computeSeries, runs } from '../science/visibility';
 import { fmtDate, fmtTime, fmtUtc, parseUtc } from '../utils/format';
+import { DateField } from './DateField';
 
 const H = 3_600_000;
 const D = 24 * H;
@@ -47,15 +48,15 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
     <div className={`time-inputs${compact ? ' time-inputs--compact' : ''}`}>
       <div className="field">
         <label htmlFor="obs-date">Date (UTC)</label>
-        <input
+        <DateField
           id="obs-date"
-          type="date"
+          label="Observation date"
           value={date}
           min={min}
           max={max}
-          onChange={(e) => {
-            setDate(e.target.value);
-            commit(e.target.value, time);
+          onChange={(v) => {
+            setDate(v);
+            commit(v, time);
           }}
         />
       </div>

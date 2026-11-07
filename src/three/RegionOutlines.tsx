@@ -27,12 +27,14 @@ export function RegionOutlines() {
   const { camera } = useThree();
   const lines = useMemo(
     () =>
-      sites.regions.map((r) => {
+      // Regions without a valid NASA outline are simply not outlined (never invented).
+      sites.regions.flatMap((r) => {
+        if (!r.nasaRegion) return [];
         const c = r.nasaRegion.corners.map(([la, lo]) => stereo(la, lo));
         const pts: THREE.Vector3[] = [];
-        for (let e = 0; e < 4; e++) {
+        for (let e = 0; e < c.length; e++) {
           const [ax, ay] = c[e];
-          const [bx, by] = c[(e + 1) % 4];
+          const [bx, by] = c[(e + 1) % c.length];
           for (let k = 0; k < 16; k++) {
             const t = k / 16;
             const { lat, lon } = fromStereo(ax + (bx - ax) * t, ay + (by - ay) * t);
@@ -41,7 +43,7 @@ export function RegionOutlines() {
         }
         pts.push(pts[0].clone());
         const mat = new THREE.LineBasicMaterial({ transparent: true, depthWrite: false, color: '#F1F5F9', opacity: 0 });
-        return { id: r.id, line: new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat), mat };
+        return [{ id: r.id, line: new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat), mat }];
       }),
     [sites],
   );

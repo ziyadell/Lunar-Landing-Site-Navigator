@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import narration from './narration.json';
 import { useSettings } from '../state/settings';
+import { assetUrl } from '../data/release';
 
 /**
  * Narration engine. One narration at a time; nothing loads or plays until the user asks.
@@ -50,6 +51,8 @@ interface PlayerState {
   note: string | null;
   /** Called once when the current item finishes (used by the guided tour and welcome). */
   onEnd: (() => void) | null;
+  /** True once sound (or, without a voice, the captions clock) has actually started. */
+  started: boolean;
 }
 
 export const usePlayer = create<PlayerState>(() => ({
@@ -61,6 +64,7 @@ export const usePlayer = create<PlayerState>(() => ({
   muted: false,
   note: null,
   onEnd: null,
+  started: false,
 }));
 
 // ------------------------------------------------------------------ text helpers
@@ -96,7 +100,7 @@ function recordedIds(): Promise<Set<string>> {
     const ctl = new AbortController();
     const timer = window.setTimeout(() => ctl.abort(), 4000);
     try {
-      const r = await fetch(`${import.meta.env.BASE_URL}audio/narration/manifest.json`, { cache: 'no-cache', signal: ctl.signal });
+      const r = await fetch(assetUrl('audio/narration/manifest.json'), { cache: 'no-cache', signal: ctl.signal });
       if (!r.ok) return new Set<string>();
       const m = (await r.json()) as { files?: Record<string, unknown> };
       return new Set(Object.keys(m.files ?? {}));
@@ -174,7 +178,44 @@ function silenceOutputs() {
 export function stop() {
   token++;
   silenceOutputs();
-  usePlayer.setState({ item: null, playing: false, loading: false, progress: 0, onEnd: null, note: null });
+  usePlayer.setState({ item: null, playing: false, loading: false, progress: 0, onEnd: null, note: null, started: false });
+}
+
+const SILENT_WAV = 'data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+/**
+ * Call from a click or tap. iOS Safari (and some other browsers) only allow speech and audio
+ * that begin inside a user gesture; narration that starts a few seconds later (after the
+ * opening chime) is otherwise held back or delayed. A silent utterance and a silent audio
+ * play inside the gesture unlock both for the rest of the visit.
+ */
+let unlocked = false;
+export function unlockAudio() {
+  if (unlocked) return;
+  unlocked = true;
+  try {
+    if (synth) {
+      void waitVoices();
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      synth.speak(u);
+    }
+  } catch {
+    /* speech unavailable */
+  }
+  try {
+    audio ??= new Audio();
+    audio.muted = true;
+    audio.src = SILENT_WAV;
+    void audio
+      .play()
+      .then(() => audio?.pause())
+      .catch(() => undefined)
+      .finally(() => {
+        if (audio) audio.muted = usePlayer.getState().muted;
+      });
+  } catch {
+    /* audio unavailable */
+  }
 }
 
 let endedToken = -1;
@@ -211,6 +252,7 @@ function runSentence(t: number) {
   const text = sentences[idx];
   const speakIt = st.source === 'device' && !st.muted && synth && voice;
   if (!speakIt) {
+    if (!st.started) usePlayer.setState({ started: true });
     // Captions (or muted device voice): advance on a timer so guides keep their pace.
     const ms = Math.max(200, readMs(text) - sentenceElapsed);
     sentenceStartedAt = performance.now();
@@ -233,6 +275,7 @@ function runSentence(t: number) {
   let started = false;
   u.onstart = () => {
     started = true;
+    if (t === token && !usePlayer.getState().started) usePlayer.setState({ started: true });
   };
   u.onboundary = (e) => my === seq && t === token && setProgress(e.charIndex);
   u.onend = () => {
@@ -293,7 +336,7 @@ export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {
   silenceOutputs();
   const t = token;
   fellBack = false;
-  usePlayer.setState({ item, playing: false, loading: true, progress: 0, note: null, onEnd: opts.onEnd ?? null });
+  usePlayer.setState({ item, playing: false, loading: true, progress: 0, note: null, onEnd: opts.onEnd ?? null, started: false });
   const pref = useSettings.getState().voice;
   const wantRecorded = !item.calculated && pref === 'recorded';
   const have = wantRecorded ? (await recordedIds()).has(item.id) : false;
@@ -312,13 +355,16 @@ export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {
   };
   audio ??= new Audio();
   audio.preload = 'auto';
-  audio.src = `${import.meta.env.BASE_URL}audio/narration/${item.id}.mp3`;
+  audio.src = assetUrl(`audio/narration/${item.id}.mp3`);
   audio.playbackRate = useSettings.getState().rate;
   audio.muted = usePlayer.getState().muted;
   audio.ontimeupdate = () => t === token && audio && usePlayer.setState({ progress: audio.duration ? audio.currentTime / audio.duration : 0 });
   audio.onended = () => finished(t);
   audio.onerror = () => fallback('Recording unavailable');
-  audio.onplaying = () => window.clearTimeout(loadTimer);
+  audio.onplaying = () => {
+    window.clearTimeout(loadTimer);
+    if (t === token) usePlayer.setState({ started: true });
+  };
   loadTimer = window.setTimeout(() => fallback('Recording too slow to load'), 8000);
   usePlayer.setState({ source: 'recorded' });
   try {
