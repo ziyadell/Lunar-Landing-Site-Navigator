@@ -181,3 +181,16 @@ Headless Edge (SwiftShader) against the dev build, 1440 × 900:
 - **Point choice:** observation points come from one rule (sunlight plus slope). A
   real landing site also depends on hazards, thermal limits and operations, which are
   not modelled.
+
+## 7. Screenshots
+
+In [`screenshots/review/`](screenshots/review/). The "before" images are the previous
+preview's `screenshots/redesign/after-*`.
+
+- `nasa-official-region-map.jpg`: NASA's map, the source of the outlines.
+- `nine-regions-registered.png`: the digitised outlines and our observation points (cyan)
+  on our own LROC mosaic.
+- `after-orbital-1440.png`: sharpened Moon, star field, locator card, first-visit hint.
+- `after-surface-malapert-1440.png`: Sun behind terrain, Earth up, lifted shadows.
+- `after-surface-slater-sunrise-1440.png`: grazing sunrise, Sun and Earth crescent.
+- `after-analysis-1440.png`: nine-region pickers in one row.
