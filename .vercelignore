@@ -1,0 +1,8 @@
+node_modules
+dist
+data_raw
+.claude
+*.tsbuildinfo
+__pycache__
+.env*
+.vercel
