@@ -430,6 +430,9 @@ export function GlobeCamera() {
     look.current.lerp(c.target, Math.min(1, k * 1.6));
     up.current.lerp(u, Math.min(1, k * 1.6)).normalize();
     if (look.current.distanceToSquared(c.target) > 1e-12) moving = true;
+    // The up vector is smoothed too: keep rendering until it has converged, or the view is
+    // left slightly rolled and the same pose no longer gives the same picture.
+    if (up.current.distanceToSquared(u) > 1e-12) moving = true;
     camera.up.copy(up.current);
     camera.lookAt(look.current);
     const cam = camera as THREE.PerspectiveCamera;
@@ -454,7 +457,7 @@ export function GlobeCamera() {
       last.current = { r: rKm, lat: ll.latDeg, lon: ll.lonDeg, mode: c.mode };
       useCameraInfo.setState({ mode: c.mode, latDeg: ll.latDeg, lonDeg: ll.lonDeg, rangeKm: rKm, metersPerPixel: mpp });
     }
-    if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { c, alt };
+    if (import.meta.env.DEV) Object.assign(window as object, { __cam: { c, alt }, __globe: { cur, goal, look, up } });
     if (moving || dive.current) invalidate();
   });
 

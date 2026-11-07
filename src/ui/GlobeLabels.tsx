@@ -14,7 +14,19 @@ export function GlobeLabels() {
   const { sites, region } = useData();
   const regionId = useApp((s) => s.regionId);
   const selectRegion = useApp((s) => s.selectRegion);
-  const poleCamera = useApp((s) => s.poleCamera);
+  const focusRegion = useApp((s) => s.focusRegion);
+  // A drag that starts or ends on a marker must not select it: only a tap (< 8 px of
+  // movement) or a keyboard activation counts.
+  const down = useRef<{ x: number; y: number } | null>(null);
+  const tap = (fn: () => void) => ({
+    onPointerDown: (e: React.PointerEvent) => (down.current = { x: e.clientX, y: e.clientY }),
+    onClick: (e: React.MouseEvent) => {
+      const d = down.current;
+      down.current = null;
+      if (d && e.detail > 0 && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) return;
+      fn();
+    },
+  });
   const sel = region(regionId);
   const { ephemeris } = useData();
   const timeMs = useApp((s) => s.timeMs);
@@ -35,29 +47,27 @@ export function GlobeLabels() {
         ))}
       </svg>
 
-      <button type="button" id="gm-cluster" className="gm-cluster" style={{ visibility: 'hidden' }} onClick={poleCamera}
-        aria-label={`${sites.regions.length} candidate regions near the south pole. Selected: ${sel.name}. Zoom to the south polar region.`}>
+      <button type="button" id="gm-cluster" className="gm-cluster" style={{ visibility: 'hidden' }} {...tap(focusRegion)}
+        aria-label={`${sel.name}, selected landing region. Zoom in to it.`}>
         <i className="gm-cluster__dot" aria-hidden="true" />
         <span className="gm-cluster__chip" aria-hidden="true">
-          <b className="gm-cluster__n num">{sites.regions.length}</b>
           <span className="gm-cluster__sel">{sel.name}</span>
         </span>
       </button>
 
-      {sites.regions.map((r, i) => {
+      {sites.regions.map((r) => {
         const selected = r.id === regionId;
         const label = `${r.name}, observation point ${fmtLat(r.observationPoint.latDeg, 2)} ${fmtLon(r.observationPoint.lonDeg, 2)}`;
         return (
           <div key={r.id}>
             <button type="button" id={`gm-dot-${r.id}`} className={`gm-dot${selected ? ' is-selected' : ''}`} style={{ visibility: 'hidden' }}
-              onClick={() => selectRegion(r.id)} aria-label={label} aria-pressed={selected} tabIndex={-1} />
+              {...tap(() => selectRegion(r.id))} aria-label={label} aria-pressed={selected} tabIndex={-1} />
             <button type="button" id={`gm-lbl-${r.id}`} className={`gm-label${selected ? ' is-selected' : ''}`} style={{ visibility: 'hidden' }}
-              onClick={() => selectRegion(r.id)} aria-label={label} aria-pressed={selected}
+              {...tap(() => selectRegion(r.id))} aria-label={label} aria-pressed={selected}
               onPointerEnter={(e) => e.pointerType === 'mouse' && showTip(r.id, e.currentTarget)}
               onPointerLeave={() => setHover(null)}
               onFocus={(e) => showTip(r.id, e.currentTarget)}
               onBlur={() => setHover(null)}>
-              <span className="gm-label__idx">{String(i + 1).padStart(2, '0')}</span>
               <span className="gm-label__name">{r.name}</span>
             </button>
           </div>

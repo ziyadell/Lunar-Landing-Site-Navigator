@@ -12,7 +12,7 @@ import { Compass } from './ui/Compass';
 import { SurfacePanorama } from './ui/SurfaceOverlay';
 import { Intro } from './ui/stage/Intro';
 import { LoadingChip } from './ui/stage/LoadingChip';
-import { MissionGuide, Welcome } from './audio/ui';
+import { MissionGuide, Welcome, WelcomeCaption } from './audio/ui';
 import type { DataProblem } from './data/DataContext';
 import { useRelease } from './data/release';
 import { useSettings } from './state/settings';
@@ -128,6 +128,7 @@ function Explore() {
         </div>
       </main>
       <Welcome />
+      <WelcomeCaption />
       <Drawer />
     </div>
   );

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { createMoonMaterial, createMoonUniforms } from './moonMaterial';
 import { assetUrl, loadTerrain, useData } from '../data/DataContext';
 import { useApp } from '../state/store';
+import { useReadiness, reportFailure, clearFailure } from '../state/loading';
 import { useCameraInfo } from './GlobeCamera';
 import { markOnce, regionSwitchEnd } from '../utils/perf';
 import { track } from '../state/loading';
@@ -130,7 +131,21 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
   const hiNormal = tier === 'high' ? 'textures/moon_normal_4k.jpg' : 'textures/moon_normal_2k.jpg';
   const capNormalUrl = sites.polarCap?.standard ?? 'textures/polar/nrm_cap_2048.webp';
   const aniso = gl.capabilities.getMaxAnisotropy();
-  const maxTiles = tier === 'high' ? 10 : 4; // 2048² RGBA + mips ≈ 22 MB each
+  // GPU budget for 16K tiles (2048² RGBA + mips ≈ 22 MB each). Tiles are only requested when
+  // every visible patch can have one, so the view is never a patchwork of sharp and soft.
+  const maxTiles = tier === 'high' ? 12 : 6;
+  // Failed requests back off (5 s, 10 s, 20 s … up to 2 min) instead of retrying every frame.
+  const backoff = useRef(new Map<string, { n: number; at: number }>());
+  const canTry = (key: string) => (backoff.current.get(key)?.at ?? 0) <= performance.now();
+  const failed = (key: string) => {
+    const b = backoff.current.get(key) ?? { n: 0, at: 0 };
+    b.n++;
+    b.at = performance.now() + Math.min(120_000, 5000 * 2 ** (b.n - 1));
+    backoff.current.set(key, b);
+  };
+  const succeeded = (key: string) => backoff.current.delete(key);
+  const [hiAttempt, setHiAttempt] = useState(0);
+  const [detailAttempt, setDetailAttempt] = useState(0);
 
   const uniforms = useMemo(() => {
     const blankN = new THREE.DataTexture(new Uint8Array([128, 128, 255, 255]), 1, 1);
@@ -185,6 +200,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
         invalidate();
       })
       .catch(() => undefined);
+    useReadiness.getState().set({ globe: 'pending' });
     track('Full-resolution Moon imagery', Promise.all([loadTex(hiColor, true, aniso), loadTex(hiNormal, false, aniso)]))
       .then(([c, n]) => {
         if (!alive) return; // shared with a remounted effect; nothing uploaded yet
@@ -199,13 +215,20 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
           p.material.normalMap = nm;
         }
         markOnce('moon-base-hires');
+        useReadiness.getState().set({ globe: 'ready' });
+        clearFailure('globe');
         invalidate();
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (!alive) return;
+        // The 1K maps stay in place (a usable, honest fallback); offer a retry.
+        useReadiness.getState().set({ globe: 'failed' });
+        reportFailure('globe', 'Full-resolution Moon imagery', () => setHiAttempt((a) => a + 1));
+      });
     return () => {
       alive = false;
     };
-  }, [patches, uniforms, hiColor, hiNormal, capNormalUrl, aniso, invalidate]);
+  }, [patches, uniforms, hiColor, hiNormal, capNormalUrl, aniso, invalidate, hiAttempt]);
 
   // --- Polar cap imagery: load once the south pole is in view and close enough.
   const capState = useRef<'idle' | 'loading' | 'done'>('idle');
@@ -236,9 +259,11 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
     const d = r.detail;
     if (!d) {
       uniforms.detailOn.value = 0;
+      useReadiness.getState().set({ region: 'none' });
       return;
     }
     if (detailFor.current === r.id && uniforms.detailOn.value === 1) return;
+    useReadiness.getState().set({ region: 'pending' });
     let alive = true;
     const cache = detailCache.current;
     const keep = tier === 'high' ? 2 : 1; // each region is ~45 MB of GPU memory with mipmaps
@@ -261,6 +286,8 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
       uniforms.detailHalf.value = d.halfExtentKm;
       uniforms.detailOn.value = 1;
       detailFor.current = r.id;
+      useReadiness.getState().set({ region: 'ready' });
+      clearFailure('region');
       regionSwitchEnd();
       if (uniforms.capImgOn.value) markOnce('moon-hires');
       invalidate();
@@ -297,11 +324,14 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
       })
       .catch(() => {
         detailFor.current = null;
+        if (!alive) return;
+        useReadiness.getState().set({ region: 'failed' });
+        reportFailure('region', `${r.name} imagery (100 m)`, () => setDetailAttempt((a) => a + 1));
       });
     return () => {
       alive = false;
     };
-  }, [regionId, region, sites, uniforms, aniso, invalidate, tier]);
+  }, [regionId, region, sites, uniforms, aniso, invalidate, tier, detailAttempt]);
 
   // --- Per-frame: visibility, 16K tile streaming with LRU eviction, polar cap trigger.
   const inFlight = useRef(0);
@@ -320,6 +350,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
     if (
       tier === 'high' &&
       capHiState.current === 'idle' &&
+      canTry('capRelief') &&
       sites.polarCap?.texture &&
       camDir.y < -0.5 &&
       useCameraInfo.getState().metersPerPixel < 350
@@ -332,9 +363,13 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
           uniforms.capNrmOn.value = 1;
           old.dispose();
           capHiState.current = 'done';
+          succeeded('capRelief');
           invalidate();
         })
-        .catch(() => (capHiState.current = 'idle'));
+        .catch(() => {
+          capHiState.current = 'idle';
+          failed('capRelief');
+        });
     }
 
     // Polar WAC mosaic: the 293 m/px cap as soon as the south pole faces the camera (it is far
@@ -346,7 +381,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
       old?.dispose();
       invalidate();
     };
-    if (capState.current === 'idle' && camDir.y < -0.2) {
+    if (capState.current === 'idle' && camDir.y < -0.2 && canTry('cap')) {
       capState.current = 'loading';
       const url = sites.polarImagery?.cap.standard;
       if (url)
@@ -355,18 +390,26 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
             if (capHiImg.current === 'done') return t.dispose();
             setCap(t);
             capState.current = 'done';
+            succeeded('cap');
             if (uniforms.detailOn.value) markOnce('moon-hires');
           })
-          .catch(() => (capState.current = 'idle'));
+          .catch(() => {
+            capState.current = 'idle';
+            failed('cap');
+          });
     }
-    if (tier === 'high' && capHiImg.current === 'idle' && d < 2.8 && camDir.y < -0.35 && sites.polarImagery?.cap.high) {
+    if (tier === 'high' && capHiImg.current === 'idle' && d < 2.8 && camDir.y < -0.35 && sites.polarImagery?.cap.high && canTry('capHi')) {
       capHiImg.current = 'loading';
       loadTex(sites.polarImagery.cap.high, true, aniso)
         .then((t) => {
           setCap(t);
           capHiImg.current = 'done';
+          succeeded('capHi');
         })
-        .catch(() => (capHiImg.current = 'idle'));
+        .catch(() => {
+          capHiImg.current = 'idle';
+          failed('capHi');
+        });
     }
 
     // 16K tiles only help when one screen pixel covers less than ~2 km of ground (4K base ≈ 2.7 km/px).
@@ -380,14 +423,18 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
         visible.push(p);
       }
     }
-    if (!needTiles) return;
+    // Tiles only when they can cover the whole view (otherwise sharp and soft patches would
+    // sit side by side); the global map stays uniform until the view is close enough.
+    if (!needTiles || visible.length > maxTiles) return;
     visible.sort((a, b) => b.sphere.center.clone().normalize().dot(camDir) - a.sphere.center.clone().normalize().dot(camDir));
     for (const p of visible) {
-      if (p.state !== 'base' || inFlight.current >= MAX_PARALLEL) continue;
-      // Respect the GPU budget: evict the least-recently-seen tile that is not visible.
+      const key = `tile:${p.j}_${p.i}`;
+      if (p.state !== 'base' || inFlight.current >= MAX_PARALLEL || !canTry(key)) continue;
+      // Respect the GPU budget: evict the least-recently-seen tile that has been out of view
+      // for a few seconds (so turning back and forth does not reload it).
       const resident = patches.filter((q) => q.state === 'tile');
       if (resident.length >= maxTiles) {
-        const victim = resident.filter((q) => q.lastSeen < now).sort((a, b) => a.lastSeen - b.lastSeen)[0];
+        const victim = resident.filter((q) => q.lastSeen < now - 3000).sort((a, b) => a.lastSeen - b.lastSeen)[0];
         if (!victim) break;
         victim.material.map = victim.base;
         victim.tile?.dispose();
@@ -402,11 +449,13 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
           p.tile = tex;
           p.material.map = tex;
           p.state = 'tile';
+          succeeded(key);
           invalidate();
         })
         .catch(() => {
           inFlight.current--;
           p.state = 'base';
+          failed(key);
         });
     }
     if (import.meta.env.DEV) (window as unknown as { __moonU: unknown }).__moonU = uniforms;

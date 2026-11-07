@@ -74,7 +74,7 @@ function BodyVectors() {
 /** frameloop="demand": re-render when app state that affects the globe changes. */
 function InvalidateOnState() {
   const { invalidate, scene, camera } = useThree();
-  if (import.meta.env.DEV) Object.assign(window as object, { __scene: scene, __cam: camera });
+  if (import.meta.env.DEV) Object.assign(window as object, { __scene: scene, __camera: camera, __invalidate: invalidate });
   useEffect(() => useApp.subscribe(() => invalidate()), [invalidate]);
   return null;
 }

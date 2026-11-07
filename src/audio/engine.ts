@@ -4,36 +4,28 @@ import { useSettings } from '../state/settings';
 import { assetUrl } from '../data/release';
 
 /**
- * Narration engine. One narration at a time; nothing loads or plays until the user asks.
+ * Narration engine: one narrator, the same audio on every device.
  *
- * Sources, in order of preference:
- *  1. recorded - pre-generated clips in public/audio/narration/<id>.mp3, listed in
- *                manifest.json (scripts/generate-narration.mjs, run once by a developer;
- *                no speech API is ever called from the browser);
- *  2. device   - the browser's own speech synthesis, American English (en-US) voices only:
- *                a British or other voice is never substituted silently;
- *  3. captions - text only, timed by reading speed, when no American voice is available.
+ *  - Static narration (welcome, views, regions, terms, tour): pre-generated recordings in
+ *    public/audio/narration/<id>.mp3, listed in manifest.json, all from one voice with one set
+ *    of production settings (scripts/generate-narration.mjs).
+ *  - Live calculated readings ("Conditions now"): the server-side voice at /api/tts (same
+ *    voice ID, model and settings; provider key stays on the server; responses cached by
+ *    text + voice configuration).
+ *  - Browser/system speech synthesis is never used: when a recording or the server voice is
+ *    unavailable, the text is shown as captions with an honest status and a retry.
  *
- * Calculated readings ("Conditions now") are spoken by the device voice from the live,
- * validated app state and are labelled as calculated.
- *
- * Robustness rules:
- *  - every asynchronous callback carries the token of the narration that created it, and
- *    is ignored once a newer narration (or stop) has replaced it;
- *  - a failing recording falls back exactly once, whichever error fires first;
- *  - device speech is driven one sentence at a time with a per-sentence watchdog, so a
- *    voice that never reports "end" cannot stall the guide; pause and mute cancel the
- *    current sentence and resume from it;
- *  - manifest and recordings have time limits, so the player never waits indefinitely.
+ * Robustness: one narration at a time; every async step carries a token, so a late
+ * manifest, recording or server response can never play for a narration that has been
+ * replaced (e.g. after a region change); a failure falls back exactly once; requests have
+ * time limits; mute is remembered and never pauses the narration.
  */
 
 export interface NarrationItem {
   id: string;
   title: string;
   text: string;
-  /** What is spoken, when it differs from the caption (pronunciation, e.g. "Afuq"). */
-  speech?: string;
-  /** Calculated from app state (spoken by the device voice, never pre-recorded). */
+  /** Calculated from app state (server voice when available, never pre-recorded). */
   calculated?: boolean;
 }
 
@@ -41,7 +33,7 @@ const ITEMS = new Map<string, NarrationItem>((narration.items as NarrationItem[]
 export const narrationItem = (id: string) => ITEMS.get(id);
 export const narrationItems = () => [...ITEMS.values()];
 
-export type Source = 'recorded' | 'device' | 'captions';
+export type Source = 'recorded' | 'server' | 'captions';
 interface PlayerState {
   item: NarrationItem | null;
   source: Source;
@@ -49,8 +41,10 @@ interface PlayerState {
   loading: boolean;
   progress: number; // 0..1
   muted: boolean;
-  /** Honest status when a preferred source was unavailable (shown under the title). */
+  /** Honest status when the voice is unavailable (shown under the title). */
   note: string | null;
+  /** Retry for an unavailable voice (refetches and replays). */
+  canRetry: boolean;
   /** Called once when the current item finishes (used by the guided tour and welcome). */
   onEnd: (() => void) | null;
   /** True once sound (or, without a voice, the captions clock) has actually started. */
@@ -63,17 +57,14 @@ export const usePlayer = create<PlayerState>(() => ({
   playing: false,
   loading: false,
   progress: 0,
-  muted: false,
+  muted: !useSettings.getState().sound,
   note: null,
+  canRetry: false,
   onEnd: null,
   started: false,
 }));
 
-// ------------------------------------------------------------------ text helpers
-/**
- * Sentences for speech: split only at . ! ? followed by whitespace, so decimals (58.3),
- * and a final fragment without punctuation are kept intact.
- */
+/** Sentences split only at . ! ? followed by whitespace (decimals and trailing fragments kept). */
 export function splitSentences(text: string): string[] {
   const out: string[] = [];
   let start = 0;
@@ -93,9 +84,9 @@ export function splitSentences(text: string): string[] {
 }
 const words = (t: string) => t.split(/\s+/).filter(Boolean).length;
 /** Reading time for captions (ms) at ~155 words per minute, scaled by playback speed. */
-const readMs = (t: string) => Math.max(1200, (words(t) / 2.6) * 1000) / useSettings.getState().rate;
+const readMs = (t: string) => Math.max(1500, (words(t) / 2.6) * 1000) / useSettings.getState().rate;
 
-// ------------------------------------------------------------------ manifest
+// ------------------------------------------------------------------ recorded clips
 let manifest: Promise<Set<string>> | null = null;
 function recordedIds(): Promise<Set<string>> {
   manifest ??= (async () => {
@@ -116,134 +107,196 @@ function recordedIds(): Promise<Set<string>> {
   return manifest;
 }
 
-// ------------------------------------------------------------------ voices
-const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
-
-/**
- * American English voices only, preferring a female narrator (to match the recorded voice)
- * and natural/neural quality. Null when the device has no en-US voice.
- */
-const FEMALE = /samantha|ava|allison|susan|zoe|nicky|joelle|aria|jenny|zira|michelle|emma|sara|female|google us english/i;
-const MALE = /\b(david|mark|guy|alex|fred|tom|aaron|evan|nathan|ryan|eric|christopher|roger|steffan|male)\b/i;
-export function americanVoice(): SpeechSynthesisVoice | null {
-  if (!synth) return null;
-  const vs = synth.getVoices().filter((v) => /^en[-_]US$/i.test(v.lang));
-  const score = (v: SpeechSynthesisVoice) =>
-    (FEMALE.test(v.name) ? 8 : MALE.test(v.name) ? -4 : 0) + (/natural|neural|online|premium|enhanced/i.test(v.name) ? 4 : 0) + (v.localService ? 1 : 0);
-  return vs.sort((a, b) => score(b) - score(a))[0] ?? null;
-}
-
-/** WebKit (Safari, every iOS browser): speaks long text reliably in one utterance. */
-const WEBKIT = typeof navigator !== 'undefined' && /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Edg\//.test(navigator.userAgent) || (typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent));
-
-/**
- * Speech chunks: whole sentences grouped up to a length. Fewer, longer utterances avoid the
- * audible gap between sentences; Chromium still needs a limit (it can stop long utterances).
- */
-export function speechChunks(text: string, max = WEBKIT ? 1200 : 240): string[] {
-  const out: string[] = [];
-  let cur = '';
-  for (const sentence of splitSentences(text)) {
-    if (cur && cur.length + 1 + sentence.length > max) {
-      out.push(cur);
-      cur = sentence;
-    } else cur = cur ? `${cur} ${sentence}` : sentence;
+// ------------------------------------------------------------------ server voice (live readings)
+let serverVoiceDown = false;
+const serverAudio = new Map<string, string>(); // text → object URL (this visit)
+async function serverVoice(text: string): Promise<string | null> {
+  if (serverVoiceDown) return null;
+  const hit = serverAudio.get(text);
+  if (hit) return hit;
+  const ctl = new AbortController();
+  const timer = window.setTimeout(() => ctl.abort(), 9000);
+  try {
+    const r = await fetch(`${import.meta.env.BASE_URL}api/tts?v=1&text=${encodeURIComponent(text)}`, { signal: ctl.signal });
+    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('audio')) {
+      if (r.status === 404 || r.status === 503 || r.ok) serverVoiceDown = true; // not configured here
+      return null;
+    }
+    const url = URL.createObjectURL(await r.blob());
+    serverAudio.set(text, url);
+    return url;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
   }
-  if (cur) out.push(cur);
-  return out.length ? out : [text];
 }
-
-// Chrome fills the voice list asynchronously: wait briefly once before deciding there is none.
-let voicesReady: Promise<void> | null = null;
-const waitVoices = () =>
-  (voicesReady ??= new Promise<void>((res) => {
-    if (!synth || synth.getVoices().length) return res();
-    synth.addEventListener('voiceschanged', () => res(), { once: true });
-    window.setTimeout(res, 700);
-  }));
 
 // ------------------------------------------------------------------ playback core
 let audio: HTMLAudioElement | null = null;
-let token = 0; // one per narration
-let seq = 0; // one per spoken sentence / timer (pause and mute cancel the current one)
+let token = 0;
 let timer = 0;
-let watchdog = 0;
 let loadTimer = 0;
-
-/** Current narration's sentence cursor (device voice and captions). */
-let sentences: string[] = [];
-let idx = 0;
-let charsBefore = 0;
-let total = 1;
-/** Captions: elapsed time within the current sentence when paused. */
-let sentenceElapsed = 0;
-let sentenceStartedAt = 0;
-let voice: SpeechSynthesisVoice | null = null;
-/**
- * The utterance being spoken. Holding a reference matters: iOS Safari can garbage-collect an
- * utterance mid-speech, which silently drops the rest and never fires "end".
- */
-let current: SpeechSynthesisUtterance | null = null;
-let lastCancel = 0;
-function cancelSpeech() {
-  if (synth && (synth.speaking || synth.pending)) {
-    synth.cancel();
-    lastCancel = performance.now();
-  }
-  if (current) current.onboundary = null;
-  current = null;
-}
 let fellBack = false;
+/** Captions clock. */
+let capTotal = 1;
+let capElapsed = 0;
+let capStartedAt = 0;
 
-function clearTimers() {
-  window.clearTimeout(timer);
-  window.clearTimeout(watchdog);
+function silence() {
+  window.clearInterval(timer);
   window.clearTimeout(loadTimer);
-}
-
-function silenceOutputs() {
-  seq++;
-  clearTimers();
   if (audio) {
     audio.onended = audio.onerror = audio.ontimeupdate = audio.onplaying = null;
     audio.pause();
-    audio.removeAttribute('src');
-    try {
-      audio.load();
-    } catch {
-      /* ignore */
-    }
   }
-  cancelSpeech();
 }
 
 export function stop() {
   token++;
-  silenceOutputs();
-  usePlayer.setState({ item: null, playing: false, loading: false, progress: 0, onEnd: null, note: null, started: false });
+  silence();
+  usePlayer.setState({ item: null, playing: false, loading: false, progress: 0, onEnd: null, note: null, canRetry: false, started: false });
 }
 
-const SILENT_WAV = 'data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+let endedToken = -1;
+function finished(t: number) {
+  if (t !== token || endedToken === t) return;
+  endedToken = t;
+  silence();
+  const end = usePlayer.getState().onEnd;
+  usePlayer.setState({ playing: false, progress: 1, onEnd: null });
+  end?.();
+}
+
+function runCaptions(t: number) {
+  window.clearInterval(timer);
+  capStartedAt = performance.now();
+  timer = window.setInterval(() => {
+    if (t !== token) return window.clearInterval(timer);
+    if (!usePlayer.getState().playing) return;
+    const done = capElapsed + (performance.now() - capStartedAt);
+    usePlayer.setState({ progress: Math.min(1, done / capTotal) });
+    if (done >= capTotal) finished(t);
+  }, 200);
+}
+
+/** Text only: captions timed to reading speed, with the reason the voice is unavailable. */
+function toCaptions(item: NarrationItem, t: number, note: string | null, canRetry: boolean) {
+  if (t !== token) return;
+  capTotal = readMs(item.text);
+  capElapsed = 0;
+  usePlayer.setState({ source: 'captions', note, canRetry, playing: true, loading: false, started: true });
+  runCaptions(t);
+}
+
+function playAudio(item: NarrationItem, t: number, src: string, kind: 'recorded' | 'server') {
+  const fallback = (why: string) => {
+    if (t !== token || fellBack) return;
+    fellBack = true; // "error" and a rejected play() can both fire: fall back once
+    silence();
+    toCaptions(item, t, why, true);
+  };
+  audio ??= new Audio();
+  audio.preload = 'auto';
+  audio.src = src;
+  audio.playbackRate = useSettings.getState().rate;
+  audio.muted = usePlayer.getState().muted;
+  audio.ontimeupdate = () => t === token && audio && usePlayer.setState({ progress: audio.duration ? audio.currentTime / audio.duration : 0 });
+  audio.onended = () => finished(t);
+  audio.onerror = () => fallback('Recording could not play · captions');
+  audio.onplaying = () => {
+    window.clearTimeout(loadTimer);
+    if (t === token) usePlayer.setState({ started: true });
+  };
+  loadTimer = window.setTimeout(() => fallback('Recording too slow to load · captions'), 8000);
+  usePlayer.setState({ source: kind, note: null, canRetry: false });
+  audio
+    .play()
+    .then(() => {
+      if (t === token && !fellBack) usePlayer.setState({ playing: true, loading: false });
+    })
+    .catch((e: Error) => fallback(e?.name === 'NotAllowedError' ? 'Sound blocked by the browser · captions' : 'Recording could not play · captions'));
+}
+
+/** Play a narration (stops anything playing). */
+export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {}) {
+  token++;
+  silence();
+  const t = token;
+  fellBack = false;
+  usePlayer.setState({ item, playing: false, loading: true, progress: 0, note: null, canRetry: false, onEnd: opts.onEnd ?? null, started: false });
+  if (useSettings.getState().voice === 'captions') return toCaptions(item, t, null, false);
+  if (item.calculated) {
+    const url = await serverVoice(item.text);
+    if (t !== token) return; // a newer narration (or a region change) replaced this one
+    if (url) return playAudio(item, t, url, 'server');
+    return toCaptions(item, t, 'Voice not available for live readings · captions', false);
+  }
+  const ids = await recordedIds();
+  if (t !== token) return;
+  if (!ids.has(item.id)) return toCaptions(item, t, 'Recorded narration not available · captions', true);
+  playAudio(item, t, assetUrl(`audio/narration/${item.id}.mp3`), 'recorded');
+}
+
+export function playId(id: string, opts?: { onEnd?: () => void }) {
+  const it = ITEMS.get(id);
+  if (it) return play(it, opts);
+}
+
+/** Retry an unavailable voice: refetch the manifest and play the item again. */
+export function retryVoice() {
+  const st = usePlayer.getState();
+  if (!st.item) return;
+  manifest = null;
+  serverVoiceDown = false;
+  void play(st.item, { onEnd: st.onEnd ?? undefined });
+}
+
+export function pause() {
+  const st = usePlayer.getState();
+  if (!st.playing) return;
+  usePlayer.setState({ playing: false });
+  if (st.source === 'captions') capElapsed += performance.now() - capStartedAt;
+  else audio?.pause();
+}
+
+export function resume() {
+  const st = usePlayer.getState();
+  if (!st.item || st.playing || st.loading) return;
+  if (st.progress >= 1) return void play(st.item, { onEnd: st.onEnd ?? undefined });
+  usePlayer.setState({ playing: true });
+  if (st.source === 'captions') runCaptions(token);
+  else audio?.play().catch(() => undefined);
+}
+
+export function replay() {
+  const st = usePlayer.getState();
+  if (st.item) void play(st.item, { onEnd: st.onEnd ?? undefined });
+}
+
+/** Mute is remembered, applies to every sound, and never pauses the narration. */
+export function setMuted(muted: boolean) {
+  usePlayer.setState({ muted });
+  useSettings.getState().set({ sound: !muted });
+  if (audio) audio.muted = muted;
+  if (cueGain && cueCtx) cueGain.gain.setTargetAtTime(muted ? 0 : 1, cueCtx.currentTime, 0.03);
+}
+
+export function setRate(rate: 1 | 1.25 | 1.5) {
+  useSettings.getState().set({ rate });
+  if (audio) audio.playbackRate = rate;
+}
+
+const SILENT_WAV =
+  'data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 /**
- * Call from a click or tap. iOS Safari (and some other browsers) only allow speech and audio
- * that begin inside a user gesture; narration that starts a few seconds later (after the
- * opening chime) is otherwise held back or delayed. A silent utterance and a silent audio
- * play inside the gesture unlock both for the rest of the visit.
+ * Call from the Start Mission tap: iOS only lets audio that begins inside a user gesture play
+ * later (the welcome recording starts after the entry cue). A silent play unlocks it.
  */
 let unlocked = false;
 export function unlockAudio() {
   if (unlocked) return;
   unlocked = true;
-  try {
-    if (synth) {
-      void waitVoices();
-      const u = new SpeechSynthesisUtterance(' ');
-      u.volume = 0;
-      synth.speak(u);
-    }
-  } catch {
-    /* speech unavailable */
-  }
   try {
     audio ??= new Audio();
     audio.muted = true;
@@ -260,331 +313,83 @@ export function unlockAudio() {
   }
 }
 
-let endedToken = -1;
-function finished(t: number) {
-  if (t !== token || endedToken === t) return;
-  endedToken = t;
-  clearTimers();
-  const end = usePlayer.getState().onEnd;
-  usePlayer.setState({ playing: false, progress: 1, onEnd: null });
-  end?.();
-}
-
-function setProgress(within = 0) {
-  usePlayer.setState({ progress: Math.min(1, (charsBefore + within) / total) });
-}
-
-function advance(t: number) {
-  if (t !== token) return;
-  charsBefore += sentences[idx].length + 1;
-  idx++;
-  sentenceElapsed = 0;
-  setProgress();
-  if (idx >= sentences.length) return finished(t);
-  runSentence(t);
-}
-
-/** Speak (or, muted / captions, time) the current sentence. */
-function runSentence(t: number) {
-  if (t !== token) return;
-  const st = usePlayer.getState();
-  if (!st.playing) return;
-  const my = ++seq;
-  clearTimers();
-  const text = sentences[idx];
-  const speakIt = st.source === 'device' && !st.muted && synth && voice;
-  if (!speakIt) {
-    if (!st.started) usePlayer.setState({ started: true });
-    // Captions (or muted device voice): advance on a timer so guides keep their pace.
-    const ms = Math.max(200, readMs(text) - sentenceElapsed);
-    sentenceStartedAt = performance.now();
-    const step = () => {
-      if (my !== seq || t !== token) return;
-      const done = sentenceElapsed + (performance.now() - sentenceStartedAt);
-      const frac = Math.min(1, done / readMs(text));
-      setProgress(frac * text.length);
-      if (frac >= 1) return advance(t);
-      timer = window.setTimeout(step, 200);
-    };
-    timer = window.setTimeout(step, Math.min(200, ms));
-    return;
-  }
-  const u = new SpeechSynthesisUtterance(text);
-  current = u;
-  u.voice = voice;
-  u.lang = voice!.lang;
-  u.rate = useSettings.getState().rate;
-  u.pitch = 1;
-  let started = false;
-  u.onstart = () => {
-    started = true;
-    if (t === token && !usePlayer.getState().started) usePlayer.setState({ started: true });
-  };
-  u.onboundary = (e) => my === seq && t === token && setProgress(e.charIndex);
-  u.onend = () => {
-    if (my !== seq || t !== token) return;
-    window.clearTimeout(watchdog);
-    current = null;
-    advance(t);
-  };
-  u.onerror = (e) => {
-    if (my !== seq || t !== token) return;
-    // 'interrupted' / 'canceled' come from our own pause, mute or stop.
-    if (e.error === 'interrupted' || e.error === 'canceled') return;
-    window.clearTimeout(watchdog);
-    if (!started && idx === 0) return toCaptions(t, 'Device voice failed');
-    advance(t);
-  };
-  // Watchdog: some engines never fire "end". Generous (2.5x reading time + 4 s), and it
-  // only moves on while the engine has really gone quiet, so slow voices are not cut.
-  const hardLimit = performance.now() + readMs(text) * 4 + 8000;
-  const guard = () => {
-    if (my !== seq || t !== token) return;
-    if (synth!.speaking && started && performance.now() < hardLimit) {
-      watchdog = window.setTimeout(guard, 1500);
-      return;
-    }
-    seq++;
-    cancelSpeech();
-    if (!started && idx === 0) return toCaptions(t, 'Device voice did not start');
-    advance(t);
-  };
-  watchdog = window.setTimeout(guard, readMs(text) * 2.5 + 4000);
-  // iOS drops an utterance queued immediately after cancel(): give the engine a moment.
-  const wait = Math.max(0, 140 - (performance.now() - lastCancel));
-  if (wait > 0)
-    window.setTimeout(() => {
-      if (my === seq && t === token) synth!.speak(u);
-    }, wait);
-  else synth!.speak(u);
-}
-
-function toCaptions(t: number, note: string) {
-  if (t !== token) return;
-  seq++;
-  cancelSpeech();
-  usePlayer.setState({ source: 'captions', note, playing: true, loading: false });
-  runSentence(t);
-}
-
-/** Start the device voice, or captions when no American English voice exists. */
-async function startSpoken(item: NarrationItem, t: number, noteIfRecordedMissing: string | null) {
-  await waitVoices();
-  if (t !== token) return;
-  voice = americanVoice();
-  sentences = speechChunks(item.speech ?? item.text);
-  idx = 0;
-  charsBefore = 0;
-  sentenceElapsed = 0;
-  total = Math.max(1, sentences.reduce((n, s) => n + s.length + 1, 0));
-  const prefCaptions = useSettings.getState().voice === 'captions';
-  if (prefCaptions || !synth || !voice) {
-    const note = prefCaptions ? null : !synth ? 'Speech is not available in this browser' : 'No American English voice on this device';
-    usePlayer.setState({ source: 'captions', note: note ?? noteIfRecordedMissing, playing: true, loading: false });
-  } else {
-    usePlayer.setState({ source: 'device', note: noteIfRecordedMissing, playing: true, loading: false });
-  }
-  runSentence(t);
-}
-
-/** Play a narration (stops anything playing). */
-export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {}) {
-  token++;
-  silenceOutputs();
-  const t = token;
-  fellBack = false;
-  usePlayer.setState({ item, playing: false, loading: true, progress: 0, note: null, onEnd: opts.onEnd ?? null, started: false });
-  const pref = useSettings.getState().voice;
-  const wantRecorded = !item.calculated && pref === 'recorded';
-  const have = wantRecorded ? (await recordedIds()).has(item.id) : false;
-  if (t !== token) return;
-  if (!have) return startSpoken(item, t, wantRecorded ? 'Recorded narration not installed' : null);
-
-  const fallback = (why: string) => {
-    if (t !== token || fellBack) return;
-    fellBack = true; // audio "error" and a rejected play() can both fire: fall back once
-    window.clearTimeout(loadTimer);
-    if (audio) {
-      audio.onended = audio.onerror = audio.ontimeupdate = audio.onplaying = null;
-      audio.pause();
-    }
-    void startSpoken(item, t, why);
-  };
-  audio ??= new Audio();
-  audio.preload = 'auto';
-  audio.src = assetUrl(`audio/narration/${item.id}.mp3`);
-  audio.playbackRate = useSettings.getState().rate;
-  audio.muted = usePlayer.getState().muted;
-  audio.ontimeupdate = () => t === token && audio && usePlayer.setState({ progress: audio.duration ? audio.currentTime / audio.duration : 0 });
-  audio.onended = () => finished(t);
-  audio.onerror = () => fallback('Recording unavailable');
-  audio.onplaying = () => {
-    window.clearTimeout(loadTimer);
-    if (t === token) usePlayer.setState({ started: true });
-  };
-  loadTimer = window.setTimeout(() => fallback('Recording too slow to load'), 8000);
-  usePlayer.setState({ source: 'recorded' });
-  try {
-    await audio.play();
-    if (t === token && !fellBack) usePlayer.setState({ playing: true, loading: false });
-  } catch (e) {
-    // NotAllowedError: the browser blocked sound (no user gesture). Others: decoding/network.
-    fallback((e as Error)?.name === 'NotAllowedError' ? 'Recording blocked by the browser' : 'Recording unavailable');
-  }
-}
-
-export function playId(id: string, opts?: { onEnd?: () => void }) {
-  const it = ITEMS.get(id);
-  if (it) return play(it, opts);
-}
-
-export function pause() {
-  const st = usePlayer.getState();
-  if (!st.playing) return;
-  usePlayer.setState({ playing: false });
-  if (st.source === 'recorded') return void audio?.pause();
-  // Device voice / captions: cancel the current sentence and keep the cursor.
-  if (st.source === 'captions' || st.muted) sentenceElapsed += performance.now() - sentenceStartedAt;
-  else sentenceElapsed = 0; // speech restarts the sentence
-  seq++;
-  clearTimers();
-  cancelSpeech();
-}
-
-export function resume() {
-  const st = usePlayer.getState();
-  if (!st.item || st.playing || st.loading) return;
-  if (st.progress >= 1) return void play(st.item, { onEnd: st.onEnd ?? undefined });
-  usePlayer.setState({ playing: true });
-  if (st.source === 'recorded') return void audio?.play().catch(() => undefined);
-  runSentence(token);
-}
-
-export function replay() {
-  const st = usePlayer.getState();
-  if (st.item) void play(st.item, { onEnd: st.onEnd ?? undefined });
-}
-
+// ------------------------------------------------------------------ entry cue
+let cueCtx: AudioContext | null = null;
+let cueGain: GainNode | null = null;
+let cueTimer = 0;
+/** Length of the mission-entry cue (s). */
+export const CUE_SECONDS = 0.9;
 /**
- * Mute never pauses: recordings keep playing silently; the device voice continues as timed
- * captions and picks up speaking at the current sentence when unmuted.
+ * Mission-entry cue: an original, synthesised "comms ready" confirmation (two short clean
+ * tones over a soft, quickly fading chord), about 0.9 s at a low level. Played once, from
+ * the Start Mission tap only; silent when sound is off. `onDone` fires after it has fully
+ * faded, so narration never overlaps it.
  */
-export function setMuted(muted: boolean) {
-  const st = usePlayer.getState();
-  if (st.muted === muted) return;
-  if (audio) audio.muted = muted;
-  if (st.source === 'device' && st.playing) {
-    if (muted) {
-      sentenceElapsed = 0;
-      usePlayer.setState({ muted });
-      seq++;
-      cancelSpeech();
-      runSentence(token);
-      return;
-    }
-    usePlayer.setState({ muted });
-    seq++;
-    window.clearTimeout(timer);
-    sentenceElapsed = 0;
-    runSentence(token);
-    return;
-  }
-  usePlayer.setState({ muted });
-}
-
-export function setRate(rate: 1 | 1.25 | 1.5) {
-  useSettings.getState().set({ rate });
-  if (audio) audio.playbackRate = rate;
-}
-
-// ------------------------------------------------------------------ opening chime
-let chimeCtx: AudioContext | null = null;
-let chimeGain: GainNode | null = null;
-let chimeTimer = 0;
-/**
- * A short, quiet opening sound synthesised in the browser (no file, no licence needed): a low
- * atmospheric chord that swells and fades, with two soft communication tones. About 2.6 s,
- * fully faded before `onDone` fires. Plays only from a user gesture.
- */
-export function playChime(onDone: () => void): number {
-  stopChime();
+export function playCue(onDone: () => void) {
+  stopCue();
+  const muted = usePlayer.getState().muted;
   const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  const DURATION = 2.6;
-  if (!AC) {
-    chimeTimer = window.setTimeout(onDone, 300);
-    return 0.3;
-  }
-  try {
-    chimeCtx = new AC();
-    const ctx = chimeCtx;
-    const now = ctx.currentTime + 0.03;
-    const out = ctx.createGain();
-    chimeGain = out;
-    out.gain.value = usePlayer.getState().muted ? 0 : 1;
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 1800;
-    lp.connect(out);
-    out.connect(ctx.destination);
-    // Low chord (A2, E3, A3, C#4): slow swell, long fade.
-    const pad = ctx.createGain();
-    pad.gain.setValueAtTime(0.0001, now);
-    pad.gain.exponentialRampToValueAtTime(0.11, now + 0.7);
-    pad.gain.setValueAtTime(0.11, now + 1.2);
-    pad.gain.exponentialRampToValueAtTime(0.0001, now + DURATION);
-    pad.connect(lp);
-    for (const [f, detune] of [
-      [110, -4],
-      [164.81, 3],
-      [220, -2],
-      [277.18, 5],
-    ] as const) {
-      const o = ctx.createOscillator();
-      o.type = 'sine';
-      o.frequency.value = f;
-      o.detune.value = detune;
-      o.connect(pad);
-      o.start(now);
-      o.stop(now + DURATION + 0.05);
+  if (AC && !muted) {
+    try {
+      cueCtx = new AC();
+      const ctx = cueCtx;
+      const now = ctx.currentTime + 0.02;
+      const out = ctx.createGain();
+      cueGain = out;
+      out.gain.value = 1;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 2400;
+      lp.connect(out);
+      out.connect(ctx.destination);
+      // Soft chord (A3, E4, A4): quick swell, clean fade by 0.85 s.
+      const pad = ctx.createGain();
+      pad.gain.setValueAtTime(0.0001, now);
+      pad.gain.exponentialRampToValueAtTime(0.06, now + 0.12);
+      pad.gain.exponentialRampToValueAtTime(0.0001, now + CUE_SECONDS - 0.05);
+      pad.connect(lp);
+      for (const f of [220, 329.63, 440]) {
+        const o = ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = f;
+        o.connect(pad);
+        o.start(now);
+        o.stop(now + CUE_SECONDS);
+      }
+      // Two short confirmation tones (rising fifth).
+      for (const [at, f] of [
+        [0.06, 1174.66],
+        [0.26, 1760],
+      ] as const) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, now + at);
+        g.gain.exponentialRampToValueAtTime(0.045, now + at + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + at + 0.16);
+        o.connect(g).connect(out);
+        o.start(now + at);
+        o.stop(now + at + 0.18);
+      }
+      void ctx.resume().catch(() => undefined);
+    } catch {
+      stopCue();
     }
-    // Two soft communication tones.
-    for (const [at, f] of [
-      [0.55, 1318.5],
-      [0.82, 1760],
-    ] as const) {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = f;
-      g.gain.setValueAtTime(0.0001, now + at);
-      g.gain.exponentialRampToValueAtTime(0.035, now + at + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + at + 0.32);
-      o.connect(g).connect(out);
-      o.start(now + at);
-      o.stop(now + at + 0.36);
-    }
-    void ctx.resume().catch(() => undefined);
-  } catch {
-    stopChime();
   }
-  // The voice starts only after the chime has fully faded (plus a short breath).
-  chimeTimer = window.setTimeout(() => {
-    stopChime();
+  cueTimer = window.setTimeout(() => {
+    stopCue();
     onDone();
-  }, (DURATION + 0.25) * 1000);
-  return DURATION;
+  }, (CUE_SECONDS + 0.12) * 1000);
 }
-export function setChimeMuted(muted: boolean) {
-  if (chimeGain && chimeCtx) chimeGain.gain.setTargetAtTime(muted ? 0 : 1, chimeCtx.currentTime, 0.04);
-}
-export function stopChime() {
-  window.clearTimeout(chimeTimer);
-  chimeGain = null;
-  if (chimeCtx) {
-    const c = chimeCtx;
-    chimeCtx = null;
+export function stopCue() {
+  window.clearTimeout(cueTimer);
+  cueGain = null;
+  if (cueCtx) {
+    const c = cueCtx;
+    cueCtx = null;
     void c.close().catch(() => undefined);
   }
 }
 
-if (import.meta.env.DEV && typeof window !== 'undefined') Object.assign(window, { __engine: { splitSentences, americanVoice, play, pause, resume, stop, setMuted, playId } });
+if (import.meta.env.DEV && typeof window !== 'undefined') Object.assign(window, { __engine: { splitSentences, play, pause, resume, stop, setMuted, playId, retryVoice } });
