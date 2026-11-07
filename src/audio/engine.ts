@@ -65,6 +65,7 @@ function recordedIds(): Promise<Set<string>> {
 // -------------------------------------------------------------------- outputs
 let audio: HTMLAudioElement | null = null;
 let raf = 0;
+let textTimer = 0;
 let token = 0;
 const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
 
@@ -80,6 +81,7 @@ function pickVoice(): SpeechSynthesisVoice | null {
 function stopOutputs() {
   token++;
   cancelAnimationFrame(raf);
+  window.clearInterval(textTimer);
   if (audio) {
     audio.onended = audio.onerror = audio.ontimeupdate = null;
     audio.pause();
@@ -92,30 +94,104 @@ export function stop() {
   usePlayer.setState({ item: null, playing: false, loading: false, progress: 0, onEnd: null, error: null });
 }
 
+let endedToken = -1;
 function finished(t: number) {
-  if (t !== token) return;
+  if (t !== token || endedToken === t) return;
+  endedToken = t;
   const end = usePlayer.getState().onEnd;
   usePlayer.setState({ playing: false, progress: 1, onEnd: null });
   end?.();
 }
 
-function speak(item: NarrationItem, t: number) {
-  if (!synth) {
-    usePlayer.setState({ source: 'text', playing: false, loading: false });
-    return;
-  }
-  const u = new SpeechSynthesisUtterance(item.text);
+/** Captions only: no voice available. Progress follows reading time, then ends normally. */
+function textOnly(item: NarrationItem, t: number, error: string | null = null) {
+  const words = item.text.split(/\s+/).length;
+  const total = ((words / 2.6) * 1000) / useSettings.getState().rate;
+  let last = performance.now();
+  let done = usePlayer.getState().progress * total;
+  usePlayer.setState({ source: 'text', playing: true, loading: false, error });
+  // A timer, not animation frames: it keeps time in background tabs too.
+  window.clearInterval(textTimer);
+  textTimer = window.setInterval(() => {
+    const now = performance.now();
+    const dt = now - last;
+    last = now;
+    if (t !== token) return window.clearInterval(textTimer);
+    if (!usePlayer.getState().playing) return;
+    done += dt;
+    usePlayer.setState({ progress: Math.min(1, done / total) });
+    if (done >= total) {
+      window.clearInterval(textTimer);
+      finished(t);
+    }
+  }, 200);
+}
+
+// Chrome fills the voice list asynchronously: wait briefly once before deciding there is none.
+let voicesReady: Promise<void> | null = null;
+const waitVoices = () =>
+  (voicesReady ??= new Promise<void>((res) => {
+    if (!synth || synth.getVoices().length) return res();
+    synth.addEventListener('voiceschanged', () => res(), { once: true });
+    window.setTimeout(res, 600);
+  }));
+
+async function speak(item: NarrationItem, t: number) {
+  await waitVoices();
+  if (t !== token) return;
+  if (!synth || synth.getVoices().length === 0) return textOnly(item, t, synth ? 'No voice installed' : 'Speech unavailable');
+  // One utterance per sentence (Chrome can silently stop long utterances). Three independent
+  // ways to end, whichever comes first: the last sentence ends; the engine goes idle after
+  // speaking; or a watchdog at ~2x reading time. If nothing could be spoken, captions take over.
+  const sentences = item.text.match(/[^.!?]+[.!?]+(\s|$)/g)?.map((x) => x.trim()) ?? [item.text];
   const v = pickVoice();
-  if (v) u.voice = v;
-  u.lang = v?.lang ?? 'en-GB';
-  u.rate = useSettings.getState().rate * 0.95;
-  u.pitch = 0.95;
-  u.volume = usePlayer.getState().muted ? 0 : 1;
-  u.onboundary = (e) => t === token && usePlayer.setState({ progress: Math.min(1, e.charIndex / item.text.length) });
-  u.onend = () => finished(t);
-  u.onerror = () => t === token && usePlayer.setState({ playing: false, error: 'Speech unavailable' });
+  const rate = useSettings.getState().rate;
+  const words = item.text.split(/\s+/).length;
+  let started = false;
+  let spoken = 0;
+  const end = () => {
+    window.clearInterval(monitor);
+    window.clearTimeout(watchdog);
+    finished(t);
+  };
+  const monitor = window.setInterval(() => {
+    if (t !== token) return window.clearInterval(monitor);
+    if (started && !synth.speaking && !synth.pending) end();
+  }, 400);
+  const watchdog = window.setTimeout(() => {
+    if (t !== token) return;
+    synth.cancel();
+    end();
+  }, ((words / 2.4) * 1000 * 2) / rate + 3000);
+  const utterances = sentences.map((text, i) => {
+    const u = new SpeechSynthesisUtterance(text);
+    if (v) u.voice = v;
+    u.lang = v?.lang ?? 'en-GB';
+    u.rate = rate * 0.95;
+    u.pitch = 0.95;
+    u.volume = usePlayer.getState().muted ? 0 : 1;
+    u.onstart = () => {
+      started = true;
+    };
+    u.onboundary = (e) => t === token && usePlayer.setState({ progress: Math.min(1, (spoken + e.charIndex) / item.text.length) });
+    u.onend = () => {
+      spoken += text.length + 1;
+      if (t !== token) return;
+      usePlayer.setState({ progress: Math.min(1, spoken / item.text.length) });
+      if (i === sentences.length - 1) end();
+    };
+    u.onerror = () => {
+      if (t !== token || started) return; // mid-way failures end through the monitor
+      window.clearInterval(monitor);
+      window.clearTimeout(watchdog);
+      synth.cancel();
+      textOnly(item, t, 'Speech unavailable');
+    };
+    return u;
+  });
+  // State first, then queue: an immediate error can still switch cleanly to captions.
   usePlayer.setState({ source: 'browser', playing: true, loading: false });
-  synth.speak(u);
+  for (const u of utterances) synth.speak(u);
 }
 
 /** Play a narration (stops anything playing). */
@@ -152,7 +228,7 @@ export function pause() {
   const st = usePlayer.getState();
   if (!st.playing) return;
   if (st.source === 'recorded') audio?.pause();
-  else synth?.pause();
+  else if (st.source === 'browser') synth?.pause();
   usePlayer.setState({ playing: false });
 }
 
@@ -161,7 +237,9 @@ export function resume() {
   if (!st.item || st.playing) return;
   if (st.progress >= 1) return void play(st.item, { onEnd: st.onEnd ?? undefined });
   if (st.source === 'recorded') audio?.play().catch(() => undefined);
-  else if (synth?.paused) synth.resume();
+  else if (st.source === 'text') {
+    /* the reading clock resumes on its own */
+  } else if (synth?.paused) synth.resume();
   else return void play(st.item, { onEnd: st.onEnd ?? undefined });
   usePlayer.setState({ playing: true });
 }

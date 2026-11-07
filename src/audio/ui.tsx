@@ -70,7 +70,7 @@ export function AudioPlayer() {
           <span className="aplayer__title">{item.title}</span>
           <span className="aplayer__src">
             {item.calculated ? 'Calculated now · ' : ''}
-            {loading ? 'Loading…' : error ? 'Voice unavailable · transcript only' : source === 'recorded' ? 'Narrator' : source === 'browser' ? 'Browser voice' : 'Transcript'}
+            {loading ? 'Loading…' : source === 'recorded' ? 'Narrator' : source === 'browser' ? 'Browser voice' : error ? 'No voice here · captions' : 'Captions'}
           </span>
         </div>
         <button type="button" className="aplayer__x" aria-label="Close narration" onClick={close}>

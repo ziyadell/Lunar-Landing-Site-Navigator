@@ -1,0 +1,121 @@
+{
+ "results": [
+  {
+   "eval": "orbital load",
+   "result": {
+    "marks": {
+     "moon-first-frame": 3613,
+     "moon-base-hires": 4457,
+     "moon-hires": 4639
+    },
+    "totalKB": 21330,
+    "textures": [
+     {
+      "f": "terrainMesh.ts",
+      "kb": 24,
+      "end": 551
+     },
+     {
+      "f": "locator.jpg",
+      "kb": 157,
+      "end": 1182
+     },
+     {
+      "f": "moon_normal_1k.jpg",
+      "kb": 115,
+      "end": 3248
+     },
+     {
+      "f": "moon_color_1k.jpg",
+      "kb": 109,
+      "end": 3254
+     },
+     {
+      "f": "wac_cap_2048.jpg",
+      "kb": 1773,
+      "end": 3682
+     },
+     {
+      "f": "nrm_cap_2048.webp",
+      "kb": 4150,
+      "end": 3943
+     },
+     {
+      "f": "moon_color_4k.jpg",
+      "kb": 1561,
+      "end": 3893
+     },
+     {
+      "f": "moon_normal_4k.jpg",
+      "kb": 1655,
+      "end": 3906
+     },
+     {
+      "f": "malapert-massif_wac.jpg",
+      "kb": 1225,
+      "end": 3886
+     },
+     {
+      "f": "malapert-massif_nrm.webp",
+      "kb": 3705,
+      "end": 3928
+     }
+    ],
+    "longTasks": {
+     "count": 9,
+     "totalMs": 2780,
+     "maxMs": 1663
+    }
+   }
+  },
+  {
+   "eval": "region switches (cold, cold, cold, back to first)",
+   "result": {
+    "switches": [
+     {
+      "id": "haworth",
+      "ms": 719
+     },
+     {
+      "id": "slater-plain",
+      "ms": 209
+     },
+     {
+      "id": "mons-mouton-plateau",
+      "ms": 2404
+     },
+     {
+      "id": "haworth",
+      "ms": 270
+     }
+    ],
+    "longTasksDuring": {
+     "count": 4,
+     "totalMs": 2305,
+     "maxMs": 1809
+    }
+   }
+  },
+  {
+   "eval": "enter surface",
+   "result": {
+    "stages": {
+     "tiles": 9413,
+     "mesh": 11813,
+     "firstFrame": 12423
+    },
+    "surfaceEnterMs": 12423,
+    "longTasksDuring": {
+     "count": 7,
+     "totalMs": 10570,
+     "maxMs": 5110
+    },
+    "gl": {
+     "geometries": 5,
+     "textures": 6
+    }
+   }
+  }
+ ],
+ "console": []
+}

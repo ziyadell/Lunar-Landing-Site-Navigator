@@ -36,6 +36,7 @@ interface Tour {
 }
 export const useTour = create<Tour>(() => ({ step: -1, paused: false }));
 export const TOUR_LENGTH = STEPS.length;
+if (import.meta.env.DEV && typeof window !== 'undefined') Object.assign(window, { __tour: useTour, __player: usePlayer });
 
 let timer = 0;
 function go(i: number) {

@@ -1,0 +1,126 @@
+{
+ "results": [
+  {
+   "eval": "orbital load",
+   "result": {
+    "marks": {
+     "moon-first-frame": 2910,
+     "moon-base-hires": 3312,
+     "moon-hires": 3450
+    },
+    "totalKB": 21329,
+    "textures": [
+     {
+      "f": "terrainMesh.ts",
+      "kb": 24,
+      "end": 350
+     },
+     {
+      "f": "locator.jpg",
+      "kb": 157,
+      "end": 855
+     },
+     {
+      "f": "moon_color_1k.jpg",
+      "kb": 109,
+      "end": 2428
+     },
+     {
+      "f": "moon_normal_1k.jpg",
+      "kb": 115,
+      "end": 2426
+     },
+     {
+      "f": "wac_cap_2048.jpg",
+      "kb": 1773,
+      "end": 2957
+     },
+     {
+      "f": "nrm_cap_2048.webp",
+      "kb": 4150,
+      "end": 3161
+     },
+     {
+      "f": "moon_color_4k.jpg",
+      "kb": 1561,
+      "end": 3078
+     },
+     {
+      "f": "moon_normal_4k.jpg",
+      "kb": 1655,
+      "end": 3111
+     },
+     {
+      "f": "malapert-massif_wac.jpg",
+      "kb": 1225,
+      "end": 3095
+     },
+     {
+      "f": "malapert-massif_nrm.webp",
+      "kb": 3705,
+      "end": 3147
+     }
+    ],
+    "longTasks": {
+     "count": 9,
+     "totalMs": 2188,
+     "maxMs": 1410
+    }
+   }
+  },
+  {
+   "eval": "region switches (cold, cold, cold, back to first)",
+   "result": {
+    "switches": [
+     {
+      "id": "haworth",
+      "ms": 394
+     },
+     {
+      "id": "slater-plain",
+      "ms": 3016
+     },
+     {
+      "id": "mons-mouton-plateau",
+      "ms": 404
+     },
+     {
+      "id": "haworth",
+      "ms": 26
+     }
+    ],
+    "longTasksDuring": {
+     "count": 7,
+     "totalMs": 14445,
+     "maxMs": 4155
+    }
+   }
+  },
+  {
+   "eval": "enter surface",
+   "result": {
+    "stages": {
+     "tiles": null,
+     "mesh": null,
+     "firstFrame": null
+    },
+    "surfaceEnterMs": "timeout",
+    "longTasksDuring": {
+     "count": 3,
+     "totalMs": 4175,
+     "maxMs": 4155
+    },
+    "gl": {
+     "geometries": 0,
+     "textures": 4
+    }
+   }
+  }
+ ],
+ "console": [
+  "error: THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Web page caused context loss and was blocked",
+  "error: THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Web page caused context loss and was blocked",
+  "error: THREE.WebGLRenderer: Error creating WebGL context.",
+  "error: %o\n\n%s\n\n%s\n Error: Error creating WebGL context.\n    at new WebGLRenderer (http://localhost:5174/node_modules/.vite/deps/chunk-FMH4HZXN.js?v=a63638c6:30256:19)\n    at createRenderer (http://localhost:"
+ ]
+}

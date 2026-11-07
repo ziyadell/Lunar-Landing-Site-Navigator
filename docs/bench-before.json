@@ -1,0 +1,100 @@
+{
+ "results": [
+  {
+   "eval": "orbital load",
+   "result": {
+    "marks": {
+     "moon-first-frame": 2569,
+     "moon-hires": 3132
+    },
+    "totalKB": 22680,
+    "textures": [
+     {
+      "f": "locator.jpg",
+      "kb": 157,
+      "end": 730
+     },
+     {
+      "f": "moon_color_4k.jpg",
+      "kb": 1561,
+      "end": 2087
+     },
+     {
+      "f": "moon_normal_4k.jpg",
+      "kb": 1655,
+      "end": 2118
+     },
+     {
+      "f": "nrm_cap_2048.png",
+      "kb": 5040,
+      "end": 2322
+     },
+     {
+      "f": "wac_cap_2048.jpg",
+      "kb": 1773,
+      "end": 3111
+     },
+     {
+      "f": "malapert-massif_wac.jpg",
+      "kb": 1225,
+      "end": 3107
+     },
+     {
+      "f": "malapert-massif_nrm.png",
+      "kb": 4585,
+      "end": 3129
+     }
+    ],
+    "longTasks": {
+     "count": 6,
+     "totalMs": 2140,
+     "maxMs": 1164
+    }
+   }
+  },
+  {
+   "eval": "region switches (cold, cold, cold, back to first)",
+   "result": {
+    "switches": [
+     {
+      "id": "haworth",
+      "ms": 80
+     },
+     {
+      "id": "slater-plain",
+      "ms": 270
+     },
+     {
+      "id": "mons-mouton-plateau",
+      "ms": 131
+     },
+     {
+      "id": "haworth",
+      "ms": 97
+     }
+    ],
+    "longTasksDuring": {
+     "count": 3,
+     "totalMs": 4880,
+     "maxMs": 3694
+    }
+   }
+  },
+  {
+   "eval": "enter surface",
+   "result": {
+    "surfaceEnterMs": 8816,
+    "longTasksDuring": {
+     "count": 6,
+     "totalMs": 8631,
+     "maxMs": 3694
+    },
+    "gl": {
+     "geometries": 4,
+     "textures": 5
+    }
+   }
+  }
+ ],
+ "console": []
+}
