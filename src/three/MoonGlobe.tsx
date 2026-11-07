@@ -69,7 +69,20 @@ const useBitmaps = typeof createImageBitmap !== 'undefined' && (safari < 0 || sa
 const bitmapLoader = new THREE.ImageBitmapLoader();
 bitmapLoader.setOptions({ imageOrientation: 'flipY', premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
 const loader = new THREE.TextureLoader();
-export const loadTex = (url: string, srgb: boolean, aniso: number) =>
+// In-flight requests are shared (a second caller for the same file waits for the first).
+const inflight = new Map<string, Promise<THREE.Texture>>();
+export const loadTex = (url: string, srgb: boolean, aniso: number): Promise<THREE.Texture> => {
+  const key = `${url}|${srgb}`;
+  let p = inflight.get(key);
+  if (!p) {
+    p = loadTexOnce(url, srgb, aniso);
+    inflight.set(key, p);
+    const clear = () => inflight.delete(key);
+    p.then(clear, clear);
+  }
+  return p;
+};
+const loadTexOnce = (url: string, srgb: boolean, aniso: number) =>
   new Promise<THREE.Texture>((res, rej) => {
     const done = (t: THREE.Texture) => {
       t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
@@ -164,7 +177,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
     let alive = true;
     track('Polar relief (LOLA)', loadTex(capNormalUrl, false, aniso))
       .then((t) => {
-        if (!alive || capHiState.current === 'done') return t.dispose();
+        if (!alive || capHiState.current === 'done') return; // a remounted effect may still use it
         const old = uniforms.capNormal.value;
         uniforms.capNormal.value = t;
         uniforms.capNrmOn.value = 1;
@@ -174,11 +187,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
       .catch(() => undefined);
     track('Full-resolution Moon imagery', Promise.all([loadTex(hiColor, true, aniso), loadTex(hiNormal, false, aniso)]))
       .then(([c, n]) => {
-        if (!alive) {
-          c.dispose();
-          n.dispose();
-          return;
-        }
+        if (!alive) return; // shared with a remounted effect; nothing uploaded yet
         for (const p of patches) {
           const b = sliceOf(c, p.i, p.j);
           const nm = sliceOf(n, p.i, p.j);
@@ -207,7 +216,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
   }, [uniforms]);
 
   // --- Site detail window: native 100 m imagery + LOLA normals around the selected point.
-  // The last three regions stay on the GPU, so going back is instant; a newer selection
+  // Recent regions stay on the GPU (two, or one on the standard tier), so going back is instant; a newer selection
   // always wins over a slower, older request; neighbours are prefetched into the HTTP cache.
   type Det = { img: THREE.Texture; nrm: THREE.Texture };
   const detailCache = useRef(new Map<string, Det>());
@@ -232,10 +241,11 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
     if (detailFor.current === r.id && uniforms.detailOn.value === 1) return;
     let alive = true;
     const cache = detailCache.current;
+    const keep = tier === 'high' ? 2 : 1; // each region is ~45 MB of GPU memory with mipmaps
     const remember = (id: string, det: Det) => {
       cache.delete(id);
       cache.set(id, det);
-      while (cache.size > 3) {
+      while (cache.size > keep) {
         const [k, v] = cache.entries().next().value as [string, Det];
         cache.delete(k);
         if (uniforms.detailImg.value === v.img) uniforms.detailOn.value = 0;
@@ -291,7 +301,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
     return () => {
       alive = false;
     };
-  }, [regionId, region, sites, uniforms, aniso, invalidate]);
+  }, [regionId, region, sites, uniforms, aniso, invalidate, tier]);
 
   // --- Per-frame: visibility, 16K tile streaming with LRU eviction, polar cap trigger.
   const inFlight = useRef(0);

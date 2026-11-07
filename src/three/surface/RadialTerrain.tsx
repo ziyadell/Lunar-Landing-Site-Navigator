@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { LandingRegion } from '../../data/types';
 import { regolithAlbedoMap, regolithNormalMap } from './regolith';
 import { buildRadialMesh, type TerrainMesh, type TerrainTiles } from './terrainMesh';
+import { markOnce } from '../../utils/perf';
 
 export type { TerrainTiles };
 
@@ -74,6 +75,7 @@ export function useTerrainGeometry(region: LandingRegion, tiles: TerrainTiles, s
   useEffect(() => {
     let alive = true;
     buildMesh(region, tiles, segments).then((m) => {
+      markOnce('surface-mesh');
       if (!alive) return;
       setG((prev) => {
         prev?.geometry.dispose();

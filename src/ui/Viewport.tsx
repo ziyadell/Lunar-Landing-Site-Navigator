@@ -66,6 +66,8 @@ export function Viewport() {
             gl={{ antialias: true, powerPreference: 'high-performance' }}
             onCreated={({ gl }) => {
               if (import.meta.env.DEV) (window as unknown as { __gl: unknown }).__gl = gl;
+              // Let the browser restore the context after a GPU reset instead of blocking the page.
+              gl.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault());
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.05;
             }}
@@ -82,6 +84,7 @@ export function Viewport() {
             gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }}
             onCreated={({ gl }) => {
               if (import.meta.env.DEV) (window as unknown as { __gl: unknown }).__gl = gl;
+              gl.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault());
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.0;
             }}

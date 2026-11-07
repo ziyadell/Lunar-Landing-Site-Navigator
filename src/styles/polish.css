@@ -556,3 +556,28 @@
     padding: 18px;
   }
 }
+
+/* Fixes from the review captures */
+.app:has(.welcome__card) .gm,
+.app:has(.welcome__card) .hud__intro {
+  opacity: 0;
+  pointer-events: none;
+}
+.listen--cond {
+  top: auto;
+  bottom: 10px;
+  right: 40px;
+}
+.vantage__title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.vantage__title .vantage__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hud__audio {
+  bottom: calc(var(--gutter) + 72px);
+}

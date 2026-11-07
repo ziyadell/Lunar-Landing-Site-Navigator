@@ -58,7 +58,10 @@ function useTerrain(region: LandingRegion) {
     setError(null);
     const opt = (f?: { file: string }) => (f ? loadTerrain(f.file).catch(() => null) : Promise.resolve(null));
     Promise.all([loadTerrain(region.terrain.file), opt(region.terrain.far), opt(region.terrain.regional)])
-      .then(([near, far, regional]) => alive && setData({ id: region.id, tiles: { near, far, regional } }))
+      .then(([near, far, regional]) => {
+        markOnce('surface-tiles');
+        if (alive) setData({ id: region.id, tiles: { near, far, regional } });
+      })
       .catch((e: Error) => alive && setError(e.message));
     return () => {
       alive = false;
