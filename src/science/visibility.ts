@@ -1,0 +1,158 @@
+import type {
+  BodyGeometry,
+  HorizonProfile,
+  LandingRegion,
+  ScenarioMetrics,
+  SiteConditions,
+  TopocentricBody,
+} from '../data/types';
+import type { Ephemeris } from './ephemeris';
+import {
+  AU_KM,
+  EARTH_RADIUS_KM,
+  MOON_RADIUS_KM,
+  SUN_RADIUS_KM,
+  discFractionAbove,
+  topocentric,
+  wrap360,
+} from './geometry';
+
+/** Skyline elevation (deg) at an azimuth, linear interpolation of the profile. */
+export function horizonAt(h: HorizonProfile, azDeg: number): number {
+  const n = h.elevationDeg.length;
+  const x = wrap360(azDeg) / h.azStepDeg;
+  const i = Math.floor(x) % n;
+  const f = x - Math.floor(x);
+  return h.elevationDeg[i] * (1 - f) + h.elevationDeg[(i + 1) % n] * f;
+}
+
+function evaluateBody(region: LandingRegion, body: BodyGeometry, bodyRadiusKm: number): TopocentricBody {
+  const p = region.observationPoint;
+  const siteR = MOON_RADIUS_KM + (p.elevationM + p.observerHeightM) / 1000;
+  const { azDeg, elDeg } = topocentric(p.latDeg, p.lonDeg, siteR, body.dir, body.distanceKm);
+  const horizonDeg = horizonAt(region.horizon, azDeg);
+  const marginDeg = elDeg - horizonDeg;
+  const dist = Number.isFinite(body.distanceKm) ? body.distanceKm : AU_KM;
+  const angRadiusDeg = (Math.asin(bodyRadiusKm / dist) * 180) / Math.PI;
+  const discFraction = discFractionAbove(marginDeg, angRadiusDeg);
+  const state = marginDeg > 0 ? 'visible' : elDeg > 0 ? 'terrain-blocked' : 'below-horizontal';
+  return { azDeg, elDeg, horizonDeg, marginDeg, discFraction, state };
+}
+
+export function siteConditions(region: LandingRegion, eph: Ephemeris, timeMs: number): SiteConditions | null {
+  const s = eph.sample(timeMs);
+  if (!s) return null;
+  return {
+    timeMs,
+    sun: evaluateBody(region, s.sun, SUN_RADIUS_KM),
+    earth: evaluateBody(region, s.earth, EARTH_RADIUS_KM),
+  };
+}
+
+export interface SeriesPoint {
+  t: number;
+  sunEl: number;
+  sunHz: number;
+  sunAz: number;
+  earthEl: number;
+  earthHz: number;
+  earthAz: number;
+  sunVis: boolean;
+  earthVis: boolean;
+}
+
+export function computeSeries(
+  region: LandingRegion,
+  eph: Ephemeris,
+  startMs: number,
+  endMs: number,
+  stepMinutes: number,
+): SeriesPoint[] {
+  const out: SeriesPoint[] = [];
+  const step = stepMinutes * 60_000;
+  const a = Math.max(startMs, eph.startMs);
+  const b = Math.min(endMs, eph.endMs);
+  for (let t = a; t <= b; t += step) {
+    const c = siteConditions(region, eph, t);
+    if (!c) continue;
+    out.push({
+      t,
+      sunEl: c.sun.elDeg,
+      sunHz: c.sun.horizonDeg,
+      sunAz: c.sun.azDeg,
+      earthEl: c.earth.elDeg,
+      earthHz: c.earth.horizonDeg,
+      earthAz: c.earth.azDeg,
+      sunVis: c.sun.marginDeg > 0,
+      earthVis: c.earth.marginDeg > 0,
+    });
+  }
+  return out;
+}
+
+/** Contiguous runs where `pred` holds. Each sample represents [t, t+step). */
+export function runs(series: SeriesPoint[], pred: (p: SeriesPoint) => boolean, stepMs: number) {
+  const out: { startMs: number; endMs: number; atStart: boolean; atEnd: boolean }[] = [];
+  let s = -1;
+  for (let i = 0; i <= series.length; i++) {
+    const ok = i < series.length && pred(series[i]);
+    if (ok && s < 0) s = i;
+    if (!ok && s >= 0) {
+      out.push({
+        startMs: series[s].t,
+        endMs: series[i - 1].t + stepMs,
+        atStart: s === 0,
+        atEnd: i === series.length,
+      });
+      s = -1;
+    }
+  }
+  return out;
+}
+
+export function scenarioMetrics(series: SeriesPoint[], stepMinutes: number): ScenarioMetrics | null {
+  if (series.length < 2) return null;
+  const stepMs = stepMinutes * 60_000;
+  const n = series.length;
+  const pct = (f: (p: SeriesPoint) => boolean) => (100 * series.filter(f).length) / n;
+  const longest = (f: (p: SeriesPoint) => boolean) => {
+    const r = runs(series, f, stepMs);
+    let best = { h: 0, truncated: false };
+    for (const x of r) {
+      const h = (x.endMs - x.startMs) / 3_600_000;
+      if (h > best.h) best = { h, truncated: x.atStart || x.atEnd };
+    }
+    return best;
+  };
+  const noSun = longest((p) => !p.sunVis);
+  const noEarth = longest((p) => !p.earthVis);
+  const neither = longest((p) => !p.sunVis && !p.earthVis);
+  const sun = longest((p) => p.sunVis);
+  let sMin = Infinity, sMax = -Infinity, eMin = Infinity, eMax = -Infinity;
+  for (const p of series) {
+    sMin = Math.min(sMin, p.sunEl); sMax = Math.max(sMax, p.sunEl);
+    eMin = Math.min(eMin, p.earthEl); eMax = Math.max(eMax, p.earthEl);
+  }
+  return {
+    periodHours: (n * stepMs) / 3_600_000,
+    sampleMinutes: stepMinutes,
+    sunVisiblePct: pct((p) => p.sunVis),
+    earthVisiblePct: pct((p) => p.earthVis),
+    bothVisiblePct: pct((p) => p.sunVis && p.earthVis),
+    neitherVisiblePct: pct((p) => !p.sunVis && !p.earthVis),
+    longestNoSunHours: noSun.h,
+    longestNoEarthHours: noEarth.h,
+    longestNeitherHours: neither.h,
+    longestSunHours: sun.h,
+    sunElevRange: [sMin, sMax],
+    earthElevRange: [eMin, eMax],
+    noSunTruncated: noSun.truncated,
+    noEarthTruncated: noEarth.truncated,
+  };
+}
+
+export const STATE_LABEL = {
+  visible: 'Above terrain horizon',
+  'terrain-blocked': 'Blocked by terrain',
+  'below-horizontal': 'Below local horizontal',
+} as const;
