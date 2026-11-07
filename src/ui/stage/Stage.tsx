@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { activePreset, SURFACE_PRESETS, useApp, useLook, type SurfacePreset } from '../../state/store';
 import { useConditions } from '../../data/useConditions';
 import { fmtDeg } from '../../utils/format';
@@ -32,11 +33,12 @@ export function Drawer() {
   }, [drawer, close]);
   if (!drawer) return null;
   return (
+    <>
+    <div className="sheet-backdrop sheet-backdrop--drawer" aria-hidden="true" onClick={() => close(null)} />
     <aside ref={ref} className={`drawer drawer--${drawer === 'atlas' ? 'left' : 'right'}`} aria-label={TITLES[drawer]} data-obstacle>
       <header className="drawer__head">
-        <h2 className="drawer__title">
-          {TITLES[drawer]} {DRAWER_ITEM[drawer] && <Listen id={DRAWER_ITEM[drawer]!} />}
-        </h2>
+        <h2 className="drawer__title">{TITLES[drawer]}</h2>
+        {DRAWER_ITEM[drawer] && <Listen id={DRAWER_ITEM[drawer]!} />}
         <button type="button" className="drawer__close" aria-label="Close" onClick={() => close(null)}>
           <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>
         </button>
@@ -53,18 +55,47 @@ export function Drawer() {
         )}
       </div>
     </aside>
+    </>
   );
 }
 
 /* --------------------------------------------------------------- view menu */
 
-function Popover({ label, icon, children, className = '' }: { label: string; icon: ReactNode; children: ReactNode; className?: string }) {
+/** Wide screens: place the panel beside its button (phones override this with a sheet). */
+function anchorStyle(b: HTMLElement | null): React.CSSProperties {
+  if (!b) return {};
+  const r = b.getBoundingClientRect();
+  const W = 300;
+  const left = Math.max(8, Math.min(r.left - W - 10, window.innerWidth - W - 8));
+  const top = Math.max(8, Math.min(r.top, window.innerHeight - 420));
+  return { ['--pop-left' as string]: `${left}px`, ['--pop-top' as string]: `${top}px` };
+}
+
+/**
+ * Small panel anchored to its button on wide screens; a bottom sheet on phones. Always has
+ * a header (title, listen, close); Escape, outside taps and the backdrop close it, and focus
+ * returns to the button.
+ */
+function Popover({ label, icon, listenId, children, className = '' }: { label: string; icon: ReactNode; listenId?: string; children: ReactNode; className?: string }) {
   const [open, setOpen] = useState(false);
   const host = useRef<HTMLDivElement>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const close = () => {
+    setOpen(false);
+    btn.current?.focus();
+  };
   useEffect(() => {
     if (!open) return;
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    const down = (e: PointerEvent) => host.current && !host.current.contains(e.target as Node) && setOpen(false);
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setOpen(false);
+      btn.current?.focus();
+    };
+    const down = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!host.current?.contains(t) && !panel.current?.contains(t)) setOpen(false);
+    };
     window.addEventListener('keydown', key);
     window.addEventListener('pointerdown', down);
     return () => {
@@ -74,14 +105,26 @@ function Popover({ label, icon, children, className = '' }: { label: string; ico
   }, [open]);
   return (
     <div className={`pop ${className}`} ref={host}>
-      <button type="button" className={`icon-tool${open ? ' is-on' : ''}`} aria-label={label} title={label} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button ref={btn} type="button" className={`icon-tool${open ? ' is-on' : ''}`} aria-label={label} title={label} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         {icon}
       </button>
-      {open && (
-        <div className="pop__panel" role="dialog" aria-label={label}>
-          {children}
-        </div>
-      )}
+      {open &&
+        createPortal(
+        <>
+          <div className="sheet-backdrop" aria-hidden="true" />
+          <div ref={panel} className={`pop__panel sheet ${className}__panel`} role="dialog" aria-label={label} style={anchorStyle(btn.current)}>
+            <div className="sheet__head">
+              <span className="sheet__title">{label}</span>
+              {listenId && <Listen id={listenId} />}
+              <button type="button" className="sheet__close" aria-label={`Close ${label.toLowerCase()}`} onClick={close}>
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>
+              </button>
+            </div>
+            <div className="sheet__body">{children}</div>
+          </div>
+        </>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -113,11 +156,7 @@ export function ViewMenu() {
   const layers = useApp((s) => s.layers);
   const active = activePreset(layers);
   return (
-    <Popover label="Display options" icon={LayersIcon} className="pop--view">
-      <div className="pop__listen">
-        <span className="pop__label">Display options</span>
-        <Listen id="view-display" />
-      </div>
+    <Popover label="Display options" icon={LayersIcon} listenId="view-display" className="pop--view">
       {mode === 'surface' && (
         <div className="pop__section">
           <div className="pop__label">Preset</div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { create } from 'zustand';
 import { useSettings } from '../state/settings';
 import { useApp } from '../state/store';
 import { narrationItem, narrationItems, pause, play, playChime, replay, resume, setChimeMuted, setMuted, setRate, stop, stopChime, unlockAudio, usePlayer, type NarrationItem } from './engine';
@@ -18,6 +19,9 @@ const I = {
   replay: <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
   muted: <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5zM11 6l4 4M15 6l-4 4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>,
   sound: <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5zM11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.6a6 6 0 0 1 0 8.8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>,
+  expand: <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 7.5 6 4l3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>,
+  collapse: <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>,
+  close: <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>,
   chev: <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>,
 };
 
@@ -52,6 +56,9 @@ export function Listen({ id, item, className = '' }: { id?: string; item?: Narra
 }
 
 const RATES = [1, 1.25, 1.5] as const;
+
+/** Player view: full card, or hidden to a slim bar while the narration keeps playing. */
+export const useGuideView = create<{ minimized: boolean; set: (m: boolean) => void }>((set) => ({ minimized: false, set: (minimized) => set({ minimized }) }));
 const VIEW_ITEM = { orbital: 'orbit-intro', surface: 'surface-intro', analysis: 'analysis-intro' } as const;
 const SOURCE_LABEL = { recorded: 'Recorded narrator', device: 'Device voice · US English', captions: 'Captions only' } as const;
 
@@ -71,7 +78,7 @@ function GuideMenu({ onClose, anchor }: { onClose: (restore: boolean) => void; a
   const [browse, setBrowse] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    ref.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    ref.current?.querySelector<HTMLButtonElement>('.guide__item')?.focus();
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
@@ -95,7 +102,15 @@ function GuideMenu({ onClose, anchor }: { onClose: (restore: boolean) => void; a
     onClose(true);
   };
   return (
-    <div className="guide__menu" ref={ref} role="dialog" aria-label="Mission guide">
+    <>
+    <div className="sheet-backdrop sheet-backdrop--guide" aria-hidden="true" />
+    <div className="guide__menu sheet" ref={ref} role="dialog" aria-label="Mission guide">
+      <div className="sheet__head">
+        <span className="sheet__title">Mission guide</span>
+        <button type="button" className="sheet__close" aria-label="Close the guide menu" onClick={() => onClose(true)}>
+          {I.close}
+        </button>
+      </div>
       <button type="button" className="guide__item" onClick={() => pick(narrationItem(VIEW_ITEM[mode])!)}>
         <span className="guide__item-t">Explain this view</span>
         <span className="guide__item-s">{narrationItem(VIEW_ITEM[mode])!.title}</span>
@@ -130,6 +145,7 @@ function GuideMenu({ onClose, anchor }: { onClose: (restore: boolean) => void; a
         </div>
       )}
     </div>
+    </>
   );
 }
 
@@ -146,6 +162,8 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
   const intro = useApp((s) => s.intro);
   const mode = useApp((s) => s.mode);
   const tour = useTour();
+  const minimized = useGuideView((s) => s.minimized);
+  const setMin = useGuideView((s) => s.set);
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const close = useRef((restore: boolean) => {
@@ -168,13 +186,42 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
 
   if (intro || (mode === 'orbital' && !welcomeSeen)) return null;
   const inTour = tour.step >= 0;
+  const active = !!(item || inTour);
+  const exit = () => {
+    setMin(false); // the next narration opens in full
+    if (inTour) exitTour();
+    else stop();
+  };
+  const title = inTour ? narrationItem(STEP_IDS[tour.step])?.title : item?.title;
   const status = loading || tour.waiting ? (tour.waiting ? 'Preparing the view…' : 'Loading…') : item?.calculated ? `Calculated now · ${SOURCE_LABEL[source]}` : SOURCE_LABEL[source];
   const playPause = () => (inTour ? toggleTourPause() : playing ? pause() : resume());
   const isPlaying = inTour ? !tour.paused && (playing || tour.waiting) : playing;
 
   return (
-    <section className={`guide guide--${placement}${inTour ? ' is-tour' : ''}`} aria-label="Mission guide" data-obstacle>
-      {(item || inTour) && (
+    <section className={`guide guide--${placement}${inTour ? ' is-tour' : ''}${active ? ' is-active' : ''}${active && minimized ? ' is-min' : ''}`} aria-label="Mission guide" data-obstacle>
+      {active && minimized && (
+        <div className="aplayer-mini" role="group" aria-label="Narration (hidden player)">
+          <button type="button" className="aplayer__btn aplayer__btn--main" aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'} onClick={playPause}>
+            {isPlaying ? I.pause : I.play}
+          </button>
+          <button type="button" className="aplayer-mini__title" onClick={() => setMin(false)} aria-label={`Show player: ${title ?? 'narration'}`}>
+            <span className="aplayer-mini__name">
+              {inTour && <span className="num">{tour.step + 1}/{TOUR_LENGTH} · </span>}
+              {title}
+            </span>
+            <span className="aplayer-mini__bar" aria-hidden="true">
+              <span style={{ width: `${progress * 100}%` }} />
+            </span>
+          </button>
+          <button type="button" className="aplayer__btn" aria-label="Show player" title="Show player" onClick={() => setMin(false)}>
+            {I.expand}
+          </button>
+          <button type="button" className="aplayer__btn" aria-label={inTour ? 'Exit the tour' : 'Stop and close the narration'} title={inTour ? 'Exit tour' : 'Stop and close'} onClick={exit}>
+            {I.close}
+          </button>
+        </div>
+      )}
+      {active && !minimized && (
         <div className="aplayer">
           <div className="aplayer__head">
             <span className="aplayer__icon" aria-hidden="true">
@@ -190,6 +237,14 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
                 {note && !loading ? <span className="aplayer__note"> · {note}</span> : null}
               </span>
             </div>
+            <div className="aplayer__win">
+              <button type="button" className="aplayer__btn" aria-label="Hide player (keep playing)" title="Hide player · keeps playing" onClick={() => setMin(true)}>
+                {I.collapse}
+              </button>
+              <button type="button" className="aplayer__btn" aria-label={inTour ? 'Exit the tour' : 'Stop and close the narration'} title={inTour ? 'Exit tour' : 'Stop and close'} onClick={exit}>
+                {I.close}
+              </button>
+            </div>
           </div>
           <div className="aplayer__bar" role="progressbar" aria-label="Narration progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
             <span style={{ width: `${progress * 100}%` }} />
@@ -200,9 +255,6 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
             </button>
             <button type="button" className="aplayer__btn" aria-label="Replay" title="Replay" onClick={() => (inTour ? replayStep() : replay())}>
               {I.replay}
-            </button>
-            <button type="button" className="aplayer__btn" aria-label={inTour ? 'Stop the tour' : 'Stop'} title={inTour ? 'Stop the tour' : 'Stop'} onClick={() => (inTour ? exitTour() : stop())}>
-              {I.stop}
             </button>
             <button type="button" className="aplayer__btn aplayer__btn--rate num" aria-label={`Playback speed ${rate} times. Change speed.`} title="Playback speed" onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}>
               {rate}×
@@ -227,7 +279,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
           {transcript && item && <p className="aplayer__text">{item.text}</p>}
         </div>
       )}
-      <div className="guide__launch">
+      <div className={`guide__launch${active && minimized ? ' is-hidden' : ''}`}>
         <button ref={btn} type="button" className={`guide__btn${open ? ' is-on' : ''}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((o) => !o)}>
           <Headphones size={14} />
           Mission guide

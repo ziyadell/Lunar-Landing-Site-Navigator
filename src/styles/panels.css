@@ -1,0 +1,435 @@
+/* =====================================================================
+   Consistent panels: one header pattern (title · listen · close), aligned
+   listen buttons, sheets with a backdrop on phones, a hideable player.
+   Loaded after mobile.css.
+   ===================================================================== */
+.listen {
+  flex: none;
+  margin-left: 0;
+}
+/* Headings with a listen button: centred on the text, never raised. */
+.drawer__head,
+.sheet__head,
+.timesheet__title,
+.study__head h3,
+.study__all-title,
+.study__method summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.study__method summary {
+  list-style: none;
+}
+.study__method summary::-webkit-details-marker {
+  display: none;
+}
+.study__title .listen,
+.study__lede .listen,
+.deck-card__name .listen {
+  vertical-align: -0.18em;
+  margin-left: 6px;
+}
+.drawer__head {
+  padding-right: 14px;
+}
+.drawer__title {
+  margin: 0;
+  min-width: 0;
+}
+.drawer__close,
+.sheet__close {
+  margin-left: auto;
+  flex: none;
+}
+.sheet__close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(241, 245, 249, 0.06);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.sheet__close:hover {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.12);
+}
+.sheet__close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.sheet__head {
+  margin: 0 0 12px;
+}
+.sheet__title {
+  font: 600 14px/1.2 var(--font-ui);
+  color: var(--text);
+}
+.sheet-backdrop {
+  display: none;
+}
+/* Desktop: the popover stays beside its button. */
+.pop__panel.sheet {
+  position: fixed;
+  left: var(--pop-left, auto);
+  top: var(--pop-top, auto);
+  right: auto;
+  bottom: auto;
+  z-index: 60;
+  width: 300px;
+  max-height: calc(100vh - var(--pop-top, 0px) - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px 16px;
+  border-radius: var(--r-md);
+  background: #0e1524;
+  border: 1px solid var(--glass-line-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.guide__menu .sheet__head {
+  padding: 6px 4px 0 10px;
+  margin-bottom: 4px;
+}
+
+/* Readings card footer: one row, everything centred. */
+.cond__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px -8px 0;
+}
+.cond__foot .cond__more {
+  flex: 1;
+  width: auto;
+  margin: 0;
+}
+.cond__fold {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.cond__fold:hover {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.08);
+}
+.cond__fold:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.cond--folded {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px !important;
+}
+.cond__mini {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.cond__mini-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.cond__mini-body .num {
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+.cond__mini-body--sun.is-up .num {
+  color: #ffe0a6;
+}
+.cond__mini-body--earth.is-up .num {
+  color: #b7f1fb;
+}
+.cond__mini-state {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* Player header: title block, then hide and close. */
+.aplayer__head {
+  grid-template-columns: 30px minmax(0, 1fr) auto !important;
+}
+.aplayer__win {
+  display: flex;
+  gap: 2px;
+}
+.aplayer__win .aplayer__btn {
+  min-width: 32px;
+  height: 32px;
+}
+/* Hidden player: a slim bar that keeps playing. */
+.aplayer-mini {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: min(360px, calc(100vw - 2 * var(--gutter)));
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-line-strong);
+  box-shadow: var(--glass-shadow);
+}
+.aplayer-mini .aplayer__btn {
+  flex: none;
+}
+.aplayer-mini__title {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 5px;
+  padding: 2px 6px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.aplayer-mini__name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 500;
+}
+.aplayer-mini__bar {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(241, 245, 249, 0.12);
+  overflow: hidden;
+}
+.aplayer-mini__bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.guide__launch.is-hidden {
+  display: none;
+}
+
+/* =====================================================================
+   PHONES (portrait and short landscape): sheets and a bottom player.
+   ===================================================================== */
+@media (max-width: 759px), (orientation: landscape) and (max-height: 500px) {
+  .sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 78;
+    background: rgba(2, 4, 9, 0.55);
+    animation: lsn-fade-in 160ms ease both;
+  }
+  .pop__panel.sheet,
+  .guide__menu.sheet,
+  .app .drawer {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    z-index: 80;
+    width: auto !important;
+    max-height: min(80dvh, 640px) !important;
+    margin: 0 !important;
+    padding: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 20px 20px 0 0 !important;
+    border: 1px solid var(--glass-line-strong);
+    border-bottom: 0;
+    background: #0b111d !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform: none !important;
+    animation: lsn-sheet-up 220ms var(--ease-out) both;
+  }
+  .app .drawer {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 10px 0 0 !important;
+  }
+  .app .drawer .drawer__head {
+    padding: 0 12px 0 20px;
+  }
+  .app .drawer .drawer__body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .pop__panel.sheet::before,
+  .guide__menu.sheet::before,
+  .app .drawer::before {
+    content: '';
+    display: block;
+    flex: none;
+    width: 40px;
+    height: 4px;
+    margin: 0 auto 10px;
+    border-radius: 4px;
+    background: rgba(241, 245, 249, 0.22);
+  }
+  .sheet-backdrop--drawer {
+    z-index: 79;
+  }
+
+  /* Player: a bottom sheet when shown, a slim bar when hidden (both keep playing). */
+  .app .hud__audio .aplayer,
+  .guide--flow .aplayer,
+  .app .hud__audio .aplayer-mini,
+  .guide--flow .aplayer-mini {
+    position: fixed;
+    z-index: 70;
+    left: max(10px, env(safe-area-inset-left, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    width: auto !important;
+  }
+  .app .hud__audio .aplayer,
+  .guide--flow .aplayer {
+    max-height: 52dvh;
+    overflow-y: auto;
+    border-radius: 18px;
+    background: #0b111d;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.55);
+  }
+  .aplayer__text {
+    max-height: 30dvh !important;
+  }
+  /* Room at the end of the page so the bar or sheet never covers the last content. */
+  .app:has(.aplayer-mini) {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .app:has(.aplayer) {
+    padding-bottom: calc(52dvh + 20px) !important;
+  }
+  .guide--flow.is-tour {
+    position: static;
+  }
+}
+
+/* Phones, portrait: scene first, then what you act on. */
+@media (max-width: 759px) and (min-height: 501px) {
+  .app:not(.app--analysis) {
+    grid-template-areas:
+      'head head head'
+      '. cond .'
+      'scene scene scene'
+      '. pano .'
+      '. region .'
+      '. time .'
+      '. guide .'
+      '. intro .' !important;
+    grid-template-rows: auto auto clamp(220px, 40svh, 420px) auto auto auto auto auto !important;
+  }
+  /* Surface: the skyline strip and time controls belong with the view; region after. */
+  .app--surface:not(.app--analysis) {
+    grid-template-areas:
+      'head head head'
+      '. cond .'
+      'scene scene scene'
+      '. pano .'
+      '. time .'
+      '. region .'
+      '. guide .'
+      '. intro .' !important;
+  }
+  .app:not(.app--analysis) .hud__bottom {
+    display: contents !important;
+  }
+  .app .hud__bottom > .pano-strip {
+    grid-area: pano;
+    position: relative;
+    inset: auto;
+    height: auto;
+    padding-bottom: 6px;
+    border-radius: 14px;
+  }
+  .app .hud__bottom > .timepill {
+    grid-area: time;
+    position: relative;
+    z-index: 8;
+  }
+  .app .hud__bottom > .loadchip {
+    grid-area: scene;
+    z-index: 6;
+    align-self: end;
+    justify-self: start;
+    max-width: calc(100% - 2 * var(--gutter) - 150px);
+    margin: 0 0 10px var(--gutter);
+    font-size: 12px;
+  }
+  .app .hud__left .deck-card {
+    padding: 12px 14px;
+  }
+  .app .hud__left .deck-card__foot {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+  /* The guide launcher sits on the scene; the player lives at the bottom. */
+  .app .hud__audio {
+    grid-area: scene !important;
+    z-index: 6;
+    align-self: end;
+    justify-self: end;
+    margin: 0 var(--gutter) 10px 0 !important;
+  }
+  .app:not(.app--analysis) > .welcome:not(.welcome--playing) {
+    grid-area: 7 / 2 / 8 / 3 !important;
+  }
+  .app:not(.app--analysis) > .welcome--playing {
+    grid-area: scene !important;
+  }
+  .app:has(.aplayer) .hud__intro {
+    display: none;
+  }
+  /* Hidden player: docked along the bottom of the scene, covering no controls. */
+  .app .hud__audio:has(.aplayer-mini) {
+    justify-self: stretch;
+    margin: 0 var(--gutter) 10px !important;
+  }
+  .app .hud__audio .aplayer-mini {
+    position: static;
+    width: auto !important;
+  }
+  .app:not(.app--analysis):has(.hud__audio .aplayer-mini) {
+    padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+@keyframes lsn-sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@keyframes lsn-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop,
+  .pop__panel.sheet,
+  .guide__menu.sheet,
+  .app .drawer {
+    animation: none !important;
+  }
+}

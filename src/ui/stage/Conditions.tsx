@@ -6,6 +6,7 @@ import { EarthGlyph, Readout, SunGlyph } from '../primitives';
 import type { TopocentricBody } from '../../data/types';
 import { STATE_LABEL } from '../../science/visibility';
 import { Listen } from '../../audio/ui';
+import { useSettings } from '../../state/settings';
 import type { NarrationItem } from '../../audio/engine';
 
 /**
@@ -61,6 +62,33 @@ export function ConditionsCard() {
   const { ephemeris } = useData();
   const drawer = useApp((s) => s.drawer);
   const openDrawer = useApp((s) => s.openDrawer);
+  const folded = useSettings((s) => s.readingsFolded);
+  const setS = useSettings((s) => s.set);
+  if (folded)
+    return (
+      <section className="cond cond--folded" aria-label="Conditions at the observation point" data-obstacle>
+        {conditions ? (
+          <div className="cond__mini">
+            {(['sun', 'earth'] as const).map((w) => {
+              const b = conditions[w];
+              const up = b.state === 'visible';
+              return (
+                <span key={w} className={`cond__mini-body cond__mini-body--${w}${up ? ' is-up' : ''}`}>
+                  {w === 'sun' ? <SunGlyph size={12} /> : <EarthGlyph size={12} />}
+                  <span className="num">{fmtDeg(b.elDeg, 2)}</span>
+                  <span className="cond__mini-state">{up ? 'Visible' : 'Hidden'}</span>
+                </span>
+              );
+            })}
+          </div>
+        ) : (
+          <span className="cond__mini">No ephemeris for this time</span>
+        )}
+        <button type="button" className="cond__fold" aria-expanded={false} aria-label="Show Sun and Earth readings" title="Show readings" onClick={() => setS({ readingsFolded: false })}>
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
+        </button>
+      </section>
+    );
   return (
     <section className="cond" aria-label="Conditions at the observation point" aria-live="polite" data-obstacle>
       {conditions ? (
@@ -73,11 +101,16 @@ export function ConditionsCard() {
           No ephemeris for this time. Coverage {fmtDate(ephemeris.startMs)} – {fmtDate(ephemeris.endMs)} UTC.
         </p>
       )}
-      {conditions && <Listen item={nowItem(region.name, timeMs, conditions)} className="listen--cond" />}
-      <button type="button" className="cond__more" aria-expanded={drawer === 'details'} onClick={() => openDrawer('details')}>
-        {drawer === 'details' ? 'Hide measurements' : 'All measurements'}
-        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 6.5 5l-3 3" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
-      </button>
+      <div className="cond__foot">
+        <button type="button" className="cond__more" aria-expanded={drawer === 'details'} onClick={() => openDrawer('details')}>
+          {drawer === 'details' ? 'Hide measurements' : 'All measurements'}
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 6.5 5l-3 3" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
+        </button>
+        {conditions && <Listen item={nowItem(region.name, timeMs, conditions)} />}
+        <button type="button" className="cond__fold" aria-expanded={true} aria-label="Hide Sun and Earth readings" title="Hide readings" onClick={() => setS({ readingsFolded: true })}>
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 7.5 6 4l3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
+        </button>
+      </div>
     </section>
   );
 }
