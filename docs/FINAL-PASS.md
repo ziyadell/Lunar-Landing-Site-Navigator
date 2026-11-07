@@ -50,6 +50,29 @@ unchanged.
 3. The guide covered the time controls on phones and the Analysis text on desktop. It now
    sits in the layout flow.
 
+## Deployment state
+
+| Where | State |
+|---|---|
+| Local | Matches the commit below. |
+| GitHub | Branch `review`, commit `8de50d2` (pushed). |
+| Preview | https://lunar-landing-site-navigator-e4yensxel-nexora-5cbe.vercel.app (Ready; behind Vercel login). Vercel's build passed (`tsc -b && vite build`, 118 modules). |
+| Production | Unchanged. `main`; `/favicon.svg` returns 404 there, as expected. |
+
+**Checked on the deployed preview over HTTP** (`vercel curl`):
+
+- The JS and CSS hashes match the local build.
+- The deployed bundle contains the new welcome text and no "Mission briefing".
+- The flash animation is gone from the CSS; the scrollbar, dropdown and guide styles are present.
+- The favicon link is present, and `favicon.svg` is byte-identical to the original artwork.
+- The data files return 200.
+- `audio/narration/manifest.json` returns 404, as expected, since no recordings exist yet.
+
+**Not yet checked in a browser on the deployed preview:** WebGL, the opening timeline,
+the guide and tour, the dropdowns and the layouts. These were tested on the local dev
+server, which runs the identical code. The interactive checks on the preview need a Vercel
+login in the in-app browser.
+
 ## Not verified
 
 - No physical phone or tablet: only emulation.
