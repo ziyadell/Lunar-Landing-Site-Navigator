@@ -122,8 +122,8 @@
 }
 .vantage__pick {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 6px;
   margin: 20px 0 18px;
 }
 .vantage__chip {

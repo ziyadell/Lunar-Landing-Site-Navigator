@@ -16,7 +16,6 @@ export function GlobeLabels() {
   const selectRegion = useApp((s) => s.selectRegion);
   const poleCamera = useApp((s) => s.poleCamera);
   const sel = region(regionId);
-  const f = sel.referenceFeature;
   const { ephemeris } = useData();
   const timeMs = useApp((s) => s.timeMs);
   const host = useRef<HTMLDivElement>(null);
@@ -81,11 +80,10 @@ export function GlobeLabels() {
       )}
 
       <div id="gm-obs" className="gm-note" style={{ visibility: 'hidden' }} aria-hidden="true">
-        Representative observation point · not a NASA-designated landing site
+        Observation point used for the readings
       </div>
-      <div id="gm-ref" className="gm-ref" style={{ visibility: 'hidden' }} aria-hidden="true">
-        <span className="gm-ref__mark" />
-        <span className="gm-ref__text">{f.name} · IAU feature centre</span>
+      <div id="gm-ref" className="gm-ref gm-ref--outline" style={{ visibility: 'hidden' }} aria-hidden="true">
+        <span className="gm-ref__text">NASA region outline</span>
       </div>
     </div>
   );

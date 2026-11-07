@@ -16,8 +16,21 @@ export interface ReferenceFeature extends LunarCoordinate {
   name: string;
   type: string;
   diameterKm: number;
-  gazetteerId: number;
-  url: string;
+  /** null when the feature's Gazetteer record could not be confirmed. */
+  gazetteerId: number | null;
+  url?: string;
+}
+
+/** NASA's official region outline, digitised from the agency's map (see preprocess/register_nasa_regions.py). */
+export interface NasaRegion {
+  source: string;
+  centreLatDeg: number;
+  centreLonDeg: number;
+  /** Width × height of the published box, km. */
+  sizeKm: [number, number];
+  /** Box corners [lat, lon] (deg), clockwise from the top-left of NASA's map. */
+  corners: [number, number][];
+  accuracyKm: number;
 }
 
 /**
@@ -81,10 +94,13 @@ export interface LandingRegion {
   /** How NASA has listed this candidate region. */
   nasaListing: string;
   referenceFeature: ReferenceFeature;
+  nasaRegion: NasaRegion;
   observationPoint: ObservationPoint;
   horizon: HorizonProfile;
   terrain: TerrainTileMeta;
   detail?: SiteDetail;
+  /** Region picture: the NASA outline area from the 100 m mosaic (centre/half-width in polar-stereographic km). */
+  thumb?: { file: string; centerKm: [number, number]; halfExtentKm: number };
   /** Short factual notes, each traceable to the cited source. */
   notes: string[];
 }
@@ -96,6 +112,9 @@ export interface SitesFile {
   polarCap?: { texture: string; standard?: string; extentKm: number; size: number };
   /** NASA candidate regions not represented, with the reason. */
   notRepresented?: Record<string, string>;
+  nasaRegionMap?: { url: string; credit: string; method: string };
+  /** Polar locator image: extent in polar-stereographic km (x east of 0°/90°E axis, y toward 0°E). */
+  locator?: { file: string; xKm: [number, number]; yKm: [number, number]; source: string };
   nasaReferences?: { title: string; date: string; url: string; regions?: string[] }[];
   polarImagery?: {
     product: string;

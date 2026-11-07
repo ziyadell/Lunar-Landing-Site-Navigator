@@ -4,6 +4,9 @@ import * as THREE from 'three';
 import { MoonGlobe, type TextureTier } from './MoonGlobe';
 import { GlobeCamera } from './GlobeCamera';
 import { MarkerProjector } from './MarkerProjector';
+import { OrbitalStars } from './OrbitalStars';
+import { DrawerFrame } from './DrawerFrame';
+import { RegionOutlines } from './RegionOutlines';
 import { useApp } from '../state/store';
 import { useData } from '../data/DataContext';
 import { lonLatToVec, meToThree } from '../science/geometry';
@@ -70,7 +73,8 @@ function BodyVectors() {
 
 /** frameloop="demand": re-render when app state that affects the globe changes. */
 function InvalidateOnState() {
-  const { invalidate } = useThree();
+  const { invalidate, scene, camera } = useThree();
+  if (import.meta.env.DEV) Object.assign(window as object, { __scene: scene, __cam: camera });
   useEffect(() => useApp.subscribe(() => invalidate()), [invalidate]);
   return null;
 }
@@ -87,15 +91,18 @@ export function OrbitalScene({ tier }: { tier: TextureTier }) {
   return (
     <>
       <color attach="background" args={['#05080F']} />
+      <OrbitalStars />
       <ambientLight intensity={0.035} color="#b8c4d8" />
       <SunLight />
       <Suspense fallback={null}>
         <MoonGlobe tier={tier} />
         <BodyVectors />
+        <RegionOutlines />
       </Suspense>
       <GlobeCamera />
       <MarkerProjector />
       <InvalidateOnState />
+      <DrawerFrame />
     </>
   );
 }

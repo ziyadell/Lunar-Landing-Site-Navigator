@@ -115,7 +115,6 @@ export function ViewMenu() {
         </div>
       )}
       <div className="pop__section">
-        <div className="pop__label">Layers</div>
         <LayerToggles />
       </div>
     </Popover>
@@ -132,15 +131,22 @@ export function LookTools() {
   const aim = (az: number, el: number) => look.set({ yaw: az, pitch: el - look.fov * 0.26 });
   const regionId = useApp((s) => s.regionId);
   const has = !!conditions;
-  // On entering (or switching region): face the Sun if it is up, otherwise Earth.
-  useEffect(() => {
-    if (!conditions) return;
+  // Default view (on entry, on region change, and "Reset view"): the Sun if it is up, otherwise Earth.
+  const home = () => {
+    if (!conditions) return look.set({ yaw: 0, pitch: 4, fov: 55 });
     const b = conditions.sun.state === 'visible' ? conditions.sun : conditions.earth;
-    aim(b.azDeg, b.elDeg);
+    look.set({ yaw: b.azDeg, pitch: b.elDeg - 55 * 0.26, fov: 55 });
+  };
+  useEffect(() => {
+    home();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionId, has]);
   return (
     <div className="tool-col" role="toolbar" aria-label="Look" data-obstacle>
+      <button type="button" className="icon-tool" aria-label="Reset view" title="Reset view" onClick={home}>
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      <span className="tool-col__sep" aria-hidden="true" />
       <button type="button" className="icon-tool icon-tool--sun" aria-label="Face the Sun" title="Face the Sun" disabled={!conditions} onClick={() => conditions && aim(conditions.sun.azDeg, conditions.sun.elDeg)}>
         <SunGlyph size={16} />
       </button>

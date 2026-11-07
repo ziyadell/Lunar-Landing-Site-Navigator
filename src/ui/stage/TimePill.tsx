@@ -5,7 +5,17 @@ import { TimeInputs, VisibilityStrip } from '../TimeControls';
 
 const H = 3_600_000;
 const D = 24 * H;
+const SPEEDS = [
+  { hPerS: 1, label: '1 h/s', name: 'one hour per second' },
+  { hPerS: 6, label: '6 h/s', name: 'six hours per second' },
+  { hPerS: 24, label: '1 d/s', name: 'one day per second' },
+];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const fmtDay = (ms: number) => {
+  const d = new Date(ms);
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+};
 
 function parts(ms: number) {
   const d = new Date(ms);
@@ -28,17 +38,37 @@ export function TimePill() {
   const setOpen = useApp((s) => s.setTimeOpen);
   const regionName = useData().region(useApp((s) => s.regionId)).name;
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
   const host = useRef<HTMLDivElement>(null);
 
+  // Playback in simulated hours per real second, updated ~20 times a second and snapped to
+  // whole minutes, so readings change steadily without flicker.
   useEffect(() => {
     if (!playing) return;
-    const id = window.setInterval(() => {
-      const t = useApp.getState().timeMs + 2 * H;
-      if (t > ephemeris.endMs) return setPlaying(false);
-      setTime(t);
-    }, 120);
-    return () => window.clearInterval(id);
-  }, [playing, ephemeris, setTime]);
+    let raf = 0;
+    let last = performance.now();
+    let acc = 0;
+    const tick = (now: number) => {
+      acc += ((now - last) / 1000) * SPEEDS[speed].hPerS * H;
+      last = now;
+      if (acc >= 60_000 && now - lastSet.current > 45) {
+        const step = Math.floor(acc / 60_000) * 60_000;
+        acc -= step;
+        lastSet.current = now;
+        const t = useApp.getState().timeMs + step;
+        if (t > ephemeris.endMs) {
+          setTime(ephemeris.endMs);
+          setPlaying(false);
+          return;
+        }
+        setTime(t);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, speed, ephemeris, setTime]);
+  const lastSet = useRef(0);
 
   // Close on Escape or a click outside.
   useEffect(() => {
@@ -53,7 +83,10 @@ export function TimePill() {
     };
   }, [open, setOpen]);
 
-  const step = (dt: number) => setTime(ephemeris.clamp(timeMs + dt));
+  const step = (dt: number) => {
+    setPlaying(false);
+    setTime(ephemeris.clamp(timeMs + dt));
+  };
   const { date, time } = parts(timeMs);
 
   return (
@@ -61,11 +94,16 @@ export function TimePill() {
       {open && (
         <section className="timesheet" aria-label="Observation time">
           <div className="timesheet__head">
-            <span className="timesheet__title">Observation time</span>
-            <span className="timesheet__sub">Bars show when the Sun and Earth clear the LOLA skyline at {regionName} · drag to scrub</span>
+            <span className="timesheet__title">Observation time · UTC</span>
+            <span className="timesheet__sub">
+              When the Sun (gold) and Earth (cyan) clear the skyline at {regionName}. Drag or use the arrow keys.
+            </span>
           </div>
           <VisibilityStrip />
           <TimeInputs steps={false} />
+          <p className="timesheet__range">
+            JPL Horizons ephemeris available {fmtDay(ephemeris.startMs)} – {fmtDay(ephemeris.endMs)} UTC
+          </p>
         </section>
       )}
       <div className="timepill__bar" role="group" aria-label="Observation time">
@@ -92,7 +130,7 @@ export function TimePill() {
           className={`timepill__play${playing ? ' is-on' : ''}`}
           onClick={() => setPlaying((p) => !p)}
           aria-pressed={playing}
-          aria-label={playing ? 'Pause' : 'Play forward, 2 hours per step'}
+          aria-label={playing ? 'Pause' : `Play forward at ${SPEEDS[speed].name}`}
           title={playing ? 'Pause' : 'Play forward'}
         >
           {playing ? (
@@ -100,6 +138,15 @@ export function TimePill() {
           ) : (
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2v8l6.5-4z" fill="currentColor" /></svg>
           )}
+        </button>
+        <button
+          type="button"
+          className="timepill__speed num"
+          onClick={() => setSpeed((v) => (v + 1) % SPEEDS.length)}
+          aria-label={`Playback speed: ${SPEEDS[speed].name}. Change speed.`}
+          title="Playback speed"
+        >
+          {SPEEDS[speed].label}
         </button>
       </div>
     </div>

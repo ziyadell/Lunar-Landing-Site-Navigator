@@ -88,6 +88,13 @@ export function createMoonMaterial(opts: {
       uniform vec2 detailCenter; uniform float detailHalf; uniform float detailOn;
       uniform float fillAlbedo;
       float gPolarW; vec2 gXY; vec2 gUvCap; vec2 gUvDet; float gDetW;
+      // Display sharpening of measured imagery (no new detail): a slight negative mip bias
+      // plus an unsharp mask against a coarser mip of the same texture.
+      float sharpR(sampler2D t, vec2 uv) {
+        float a = texture2D(t, uv, -0.35).r;
+        float b = texture2D(t, uv, 1.5).r;
+        return max(a + (a - b) * 0.35, 0.0);
+      }
       void polarSetup() {
         vec3 p = normalize(vObjPos);
         float lat = asin(clamp(p.y, -1.0, 1.0));
@@ -112,13 +119,18 @@ export function createMoonMaterial(opts: {
     `;
 
     const albedo = /* glsl */ `
-      #include <map_fragment>
+      #ifdef USE_MAP
+        vec4 sampledDiffuseColor = texture2D( map, vMapUv, -0.35 );
+        vec3 coarseC = texture2D( map, vMapUv, 1.5 ).rgb;
+        sampledDiffuseColor.rgb = max( sampledDiffuseColor.rgb + ( sampledDiffuseColor.rgb - coarseC ) * 0.4, 0.0 );
+        diffuseColor *= sampledDiffuseColor;
+      #endif
       polarSetup();
       if (gPolarW > 0.0) {
         vec3 base = diffuseColor.rgb;
-        vec3 cap = polarAlbedo(base, texture2D(capImg, gUvCap).r);
+        vec3 cap = polarAlbedo(base, sharpR(capImg, gUvCap));
         vec3 pol = mix(base, cap, capImgOn);
-        if (gDetW > 0.0) pol = mix(pol, polarAlbedo(base, texture2D(detailImg, gUvDet).r), gDetW);
+        if (gDetW > 0.0) pol = mix(pol, polarAlbedo(base, sharpR(detailImg, gUvDet)), gDetW);
         diffuseColor.rgb = mix(base, pol, gPolarW);
       }
     `;
@@ -126,7 +138,7 @@ export function createMoonMaterial(opts: {
     const normals = /* glsl */ `
       #include <normal_fragment_maps>
       if (gPolarW > 0.0) {
-        vec3 nObj = texture2D(capNormal, gUvCap).xyz * 2.0 - 1.0;
+        vec3 nObj = texture2D(capNormal, gUvCap, -0.3).xyz * 2.0 - 1.0;
         if (gDetW > 0.0) nObj = mix(nObj, texture2D(detailNrm, gUvDet).xyz * 2.0 - 1.0, gDetW);
         vec3 nView = normalize((viewMatrix * vec4(normalize(nObj), 0.0)).xyz);
         normal = normalize(mix(normal, nView, gPolarW));
@@ -150,6 +162,6 @@ export function createMoonMaterial(opts: {
       shader.fragmentShader = shader.fragmentShader.replace('#include <lights_physical_pars_fragment>', patched);
     }
   };
-  mat.customProgramCacheKey = () => 'moon-v2';
+  mat.customProgramCacheKey = () => 'moon-v3';
   return mat;
 }

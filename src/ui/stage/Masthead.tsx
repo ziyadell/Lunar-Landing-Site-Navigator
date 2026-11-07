@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useApp, type Mode } from '../../state/store';
 import { useData } from '../../data/DataContext';
 
@@ -86,6 +86,48 @@ export function ModeNav() {
   );
 }
 
+/** Focus mode: hides everything but the scene and time. Button, or the F key anywhere. */
+export function FocusToggle() {
+  const focus = useApp((s) => s.focus);
+  const setFocus = useApp((s) => s.setFocus);
+  const mode = useApp((s) => s.mode);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      const t = e.target instanceof Element ? e.target : null;
+      if (e.metaKey || e.ctrlKey || e.altKey || t?.closest('input, select, textarea, [contenteditable]')) return;
+      const st = useApp.getState();
+      if (st.mode === 'analysis') return;
+      if (e.key === 'f' || e.key === 'F') {
+        st.setFocus(!st.focus);
+        e.preventDefault();
+      } else if (e.key === 'Escape' && st.focus && !st.drawer && !st.timeOpen) st.setFocus(false);
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, []);
+  if (mode === 'analysis') return null;
+  return (
+    <button
+      type="button"
+      className={`ghost-btn focus-btn${focus ? ' is-on' : ''}`}
+      aria-pressed={focus}
+      onClick={() => setFocus(!focus)}
+      title={focus ? 'Show controls (F)' : 'Focus on the scene (F)'}
+      data-obstacle
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+        {focus ? (
+          <path d="M5 1.5v3.5H1.5M9 1.5v3.5h3.5M5 12.5V9H1.5M9 12.5V9h3.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
+        ) : (
+          <path d="M1.5 5V1.5H5M12.5 5V1.5H9M1.5 9v3.5H5M12.5 9v3.5H9" fill="none" stroke="currentColor" strokeWidth="1.3" />
+        )}
+      </svg>
+      <span className="ghost-btn__long">{focus ? 'Show controls' : 'Focus'}</span>
+      <kbd className="ghost-btn__kbd" aria-hidden="true">F</kbd>
+    </button>
+  );
+}
+
 export function Masthead() {
   const mode = useApp((s) => s.mode);
   const drawer = useApp((s) => s.drawer);
@@ -99,6 +141,7 @@ export function Masthead() {
       <ModeNav />
       <div className="masthead__aside">
         {!covered && <span className="masthead__warn">Outside ephemeris coverage</span>}
+        <FocusToggle />
         <button
           type="button"
           className={`ghost-btn${drawer === 'about' ? ' is-on' : ''}`}

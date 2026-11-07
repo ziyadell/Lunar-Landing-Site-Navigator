@@ -131,6 +131,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
   // --- Polar cap imagery: load once the south pole is in view and close enough.
   const capState = useRef<'idle' | 'loading' | 'done'>('idle');
   const capHiState = useRef<'idle' | 'loading' | 'done'>('idle');
+  const capHiImg = useRef<'idle' | 'loading' | 'done'>('idle');
   useEffect(() => () => {
     if (uniforms.capImgOn.value) uniforms.capImg.value.dispose();
   }, [uniforms]);
@@ -205,22 +206,39 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
         .catch(() => (capHiState.current = 'idle'));
     }
 
-    if (capState.current === 'idle' && d < 2.8 && camDir.y < -0.35) {
+    // Polar WAC mosaic: the 293 m/px cap as soon as the south pole faces the camera (it is far
+    // sharper there than the global map), upgraded to 146 m/px on the high tier when closer.
+    const setCap = (t: THREE.Texture) => {
+      const old = uniforms.capImgOn.value ? uniforms.capImg.value : null;
+      uniforms.capImg.value = t;
+      uniforms.capImgOn.value = 1;
+      old?.dispose();
+      invalidate();
+    };
+    if (capState.current === 'idle' && camDir.y < -0.2) {
       capState.current = 'loading';
-      const url = tier === 'high' ? sites.polarImagery?.cap.high : sites.polarImagery?.cap.standard;
+      const url = sites.polarImagery?.cap.standard;
       if (url)
         loadTex(url, true, aniso)
           .then((t) => {
-            uniforms.capImg.value = t;
-            uniforms.capImgOn.value = 1;
+            if (capHiImg.current === 'done') return t.dispose();
+            setCap(t);
             capState.current = 'done';
-            invalidate();
           })
           .catch(() => (capState.current = 'idle'));
     }
+    if (tier === 'high' && capHiImg.current === 'idle' && d < 2.8 && camDir.y < -0.35 && sites.polarImagery?.cap.high) {
+      capHiImg.current = 'loading';
+      loadTex(sites.polarImagery.cap.high, true, aniso)
+        .then((t) => {
+          setCap(t);
+          capHiImg.current = 'done';
+        })
+        .catch(() => (capHiImg.current = 'idle'));
+    }
 
     // 16K tiles only help when one screen pixel covers less than ~2 km of ground (4K base ≈ 2.7 km/px).
-    const needTiles = useCameraInfo.getState().metersPerPixel < 2000 || d < 2.2;
+    const needTiles = useCameraInfo.getState().metersPerPixel / Math.min(window.devicePixelRatio || 1, 2) < 2400 || d < 2.2;
     const visible: Patch[] = [];
     for (const p of patches) {
       // Facing test: the patch's nearest point must be on the camera-side hemisphere.

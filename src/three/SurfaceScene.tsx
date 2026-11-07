@@ -9,6 +9,7 @@ import type { LandingRegion } from '../data/types';
 import { RadialTerrain, type TerrainAlbedo, type TerrainTiles } from './surface/RadialTerrain';
 import { assetUrl } from '../data/DataContext';
 import { GroundRings, SkyGrid, SkyLabelProjector, Stars } from './surface/SkyObjects';
+import { DrawerFrame } from './DrawerFrame';
 
 /**
  * Local scene frame: 1 unit = 1 m. +X east, +Y up, −Z north (local north = toward
@@ -102,49 +103,71 @@ function SkylineLine({ region }: { region: LandingRegion }) {
   return <primitive object={line} />;
 }
 
+/**
+ * Earth as seen from the Moon: a 1.9° disc lit by the Sun at the true phase angle.
+ * No surface geography is drawn (the app does not model Earth's rotation), only what
+ * holds for any epoch: a bright blue-white sunlit side with limb darkening, a soft
+ * terminator, a thin atmospheric rim, and a dark night side.
+ */
 const earthMaterial = () =>
   new THREE.ShaderMaterial({
     uniforms: { sunDir: { value: new THREE.Vector3(1, 0, 0) } },
     vertexShader: /* glsl */ `
       varying vec3 vN;
+      varying vec3 vV;
       #include <common>
       #include <logdepthbuf_pars_vertex>
       void main() {
         vN = normalize(mat3(modelMatrix) * normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        vV = normalize(cameraPosition - wp.xyz);
+        gl_Position = projectionMatrix * viewMatrix * wp;
         #include <logdepthbuf_vertex>
       }`,
     fragmentShader: /* glsl */ `
       uniform vec3 sunDir;
       varying vec3 vN;
+      varying vec3 vV;
       #include <logdepthbuf_pars_fragment>
       void main() {
         #include <logdepthbuf_fragment>
-        float d = dot(normalize(vN), normalize(sunDir));
-        vec3 day = vec3(0.42, 0.62, 0.86);
-        vec3 night = vec3(0.02, 0.03, 0.045);
-        gl_FragColor = vec4(mix(night, day, smoothstep(-0.03, 0.12, d)), 1.0);
+        vec3 n = normalize(vN);
+        float mu = clamp(dot(n, normalize(vV)), 0.0, 1.0);
+        float d = dot(n, normalize(sunDir));
+        float lit = smoothstep(-0.06, 0.18, d);
+        vec3 day = mix(vec3(0.30, 0.50, 0.82), vec3(0.86, 0.91, 0.98), 0.38) * (0.55 + 0.45 * pow(mu, 0.45));
+        float rim = pow(1.0 - mu, 3.0) * smoothstep(-0.1, 0.3, d);
+        vec3 col = mix(vec3(0.012, 0.016, 0.026), day * 1.35, lit) + vec3(0.35, 0.6, 1.0) * rim * 0.9;
+        gl_FragColor = vec4(col, 1.0);
       }`,
   });
 
-let glow: THREE.Texture | null = null;
-function glowTexture() {
-  if (glow) return glow;
+const glows: Record<string, THREE.Texture> = {};
+/** Radial falloff sprite. `core` = relative size of the bright centre. */
+function glowTexture(core = 0.12) {
+  const key = core.toFixed(3);
+  if (glows[key]) return glows[key];
   const c = document.createElement('canvas');
-  c.width = c.height = 128;
+  c.width = c.height = 256;
   const g = c.getContext('2d')!;
-  const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grd.addColorStop(0, 'rgba(255,255,255,0.9)');
-  grd.addColorStop(0.12, 'rgba(255,255,255,0.3)');
-  grd.addColorStop(0.4, 'rgba(255,255,255,0.04)');
+  const grd = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grd.addColorStop(0, 'rgba(255,255,255,1)');
+  grd.addColorStop(core, 'rgba(255,255,255,0.35)');
+  grd.addColorStop(Math.min(0.9, core * 3.2), 'rgba(255,255,255,0.06)');
   grd.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = grd;
-  g.fillRect(0, 0, 128, 128);
-  glow = new THREE.CanvasTexture(c);
-  glow.colorSpace = THREE.SRGBColorSpace;
-  return glow;
+  g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  glows[key] = t;
+  return t;
 }
 
+/**
+ * Sun and Earth at their true directions and angular sizes (Sun 0.53°, Earth ≈1.9°).
+ * A restrained glow is added around each so they read as bodies at any field of view;
+ * the glows are depth-tested, so terrain hides them exactly where it hides the body.
+ */
 function SkyBodies() {
   const { conditions } = useConditions();
   const earthMat = useMemo(earthMaterial, []);
@@ -155,18 +178,26 @@ function SkyBodies() {
   earthMat.uniforms.sunDir.value.set(s[0], s[1], s[2]);
   const sunR = BODY_DIST * Math.tan(0.2666 * DEG);
   const earthR = BODY_DIST * Math.tan(0.95 * DEG);
+  const at = (v: number[], k = 1) => [v[0] * BODY_DIST * k, v[1] * BODY_DIST * k, v[2] * BODY_DIST * k] as [number, number, number];
   return (
     <group>
-      <mesh position={[s[0] * BODY_DIST, s[1] * BODY_DIST, s[2] * BODY_DIST]}>
+      <mesh position={at(s)}>
         <sphereGeometry args={[sunR, 32, 16]} />
-        <meshBasicMaterial color="#fff6df" toneMapped={false} />
+        <meshBasicMaterial color="#fffaf0" toneMapped={false} />
       </mesh>
-      <sprite position={[s[0] * BODY_DIST * 0.999, s[1] * BODY_DIST * 0.999, s[2] * BODY_DIST * 0.999]} scale={[sunR * 7, sunR * 7, 1]}>
-        <spriteMaterial map={glowTexture()} color="#FFCA68" transparent opacity={0.45} depthWrite={false} toneMapped={false} />
+      {/* Inner halo (scattered light in optics / the eye), then a faint wide corona. */}
+      <sprite position={at(s, 0.998)} scale={[sunR * 5, sunR * 5, 1]}>
+        <spriteMaterial map={glowTexture(0.2)} color="#fff1cf" transparent opacity={0.85} depthWrite={false} toneMapped={false} />
       </sprite>
-      <mesh position={[e[0] * BODY_DIST, e[1] * BODY_DIST, e[2] * BODY_DIST]} material={earthMat}>
-        <sphereGeometry args={[earthR, 48, 24]} />
+      <sprite position={at(s, 0.997)} scale={[sunR * 26, sunR * 26, 1]}>
+        <spriteMaterial map={glowTexture(0.04)} color="#FFCA68" transparent opacity={0.32} depthWrite={false} toneMapped={false} />
+      </sprite>
+      <mesh position={at(e)} material={earthMat}>
+        <sphereGeometry args={[earthR, 64, 32]} />
       </mesh>
+      <sprite position={at(e, 1.002)} scale={[earthR * 4.2, earthR * 4.2, 1]}>
+        <spriteMaterial map={glowTexture(0.24)} color="#7fb4ff" transparent opacity={0.16} depthWrite={false} toneMapped={false} />
+      </sprite>
     </group>
   );
 }
@@ -224,15 +255,22 @@ function FillLights({ enhanced }: { enhanced: boolean }) {
   const lit = (1 - (s[0] * e[0] + s[1] * e[1] + s[2] * e[2])) / 2;
   const d = azElToLocal(conditions.earth.azDeg, conditions.earth.elDeg);
   const k = conditions.earth.discFraction;
+  // Display aid ("enhanced visibility"): a soft key from the Sun's true azimuth, raised to at
+  // least 7° so relief reads even when the Sun is behind terrain. Weaker when real sunlight lands.
+  const key = azElToLocal(conditions.sun.azDeg, Math.max(conditions.sun.elDeg, 7));
+  const keyI = 0.95 - 0.7 * conditions.sun.discFraction;
   return (
     <>
       <directionalLight
         position={[d[0] * 50_000, Math.max(d[1], 0.02) * 50_000, d[2] * 50_000]}
-        intensity={(enhanced ? 1.1 : 0.12) * lit * k}
-        color="#bcd3ff"
+        intensity={(enhanced ? 0.6 : 0.12) * lit * k}
+        color="#cbd7ec"
       />
       {enhanced ? (
-        <hemisphereLight args={['#8fa3c4', '#2b2925', 0.85]} />
+        <>
+          <directionalLight position={[key[0] * 50_000, key[1] * 50_000, key[2] * 50_000]} intensity={keyI} color="#f6efe2" />
+          <hemisphereLight args={['#aab2c0', '#2c2a26', 0.4]} />
+        </>
       ) : (
         <ambientLight intensity={0.015} color="#c5d3ea" />
       )}
@@ -375,6 +413,7 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
         />
       )}
       {tiles && <ReadySignal />}
+      <DrawerFrame />
     </>
   );
 }

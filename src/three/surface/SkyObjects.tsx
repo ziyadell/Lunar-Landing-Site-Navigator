@@ -14,14 +14,15 @@ interface StarsFile {
 }
 
 let starsPromise: Promise<StarsFile> | null = null;
-const loadStars = () =>
+export type { StarsFile };
+export const loadStars = () =>
   (starsPromise ??= fetch(assetUrl('data/stars.json')).then((r) => {
     if (!r.ok) throw new Error(`stars.json HTTP ${r.status}`);
     return r.json() as Promise<StarsFile>;
   }));
 
 /** Approximate star colour from B−V (blue-white → orange). */
-function bvColor(bv: number): [number, number, number] {
+export function bvColor(bv: number): [number, number, number] {
   const t = THREE.MathUtils.clamp((bv + 0.3) / 2.0, 0, 1);
   const c = new THREE.Color().setHSL(0.6 - t * 0.52, 0.25 + 0.35 * Math.abs(t - 0.3), 0.85);
   return [c.r, c.g, c.b];
@@ -109,7 +110,7 @@ export function Stars({ timeMs, latDeg, lonDeg }: { timeMs: number; latDeg: numb
           void main() {
             #include <logdepthbuf_fragment>
             vec2 p = gl_PointCoord - 0.5;
-            float a = smoothstep(0.5, 0.0, length(p));
+            float a = 1.0 - smoothstep(0.0, 0.5, length(p));
             gl_FragColor = vec4(vColor, a);
           }`,
       }),

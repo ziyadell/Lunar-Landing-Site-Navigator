@@ -160,37 +160,37 @@ def main():
     print(f"WAC mosaic {arr.shape}, {scale * 1000:.0f} m/px, UL=({x0:.1f},{y0:.1f}) km")
     orient = orientation_check(arr, scale, x0, y0)
 
-    # Brightness: match the mosaic's lit-pixel mean in an 80.5–83°S ring to the global map's mean there.
-    # Pixels < 25 DN are baked shadows; the app treats them as 'no albedo data' (see moonMaterial.ts).
-    xs = np.linspace(-280, 280, 600)
-    X, Y = np.meshgrid(xs, xs)
-    lat, _ = pdm.xy_to_ll(X, Y)
-    ring = (lat <= -80.5) & (lat >= -83.0)
-    r, c = wac_rc(X[ring], Y[ring], scale, x0, y0)
-    vals = np.asarray(sample(arr, r, c), dtype=np.float32)
-    # Exclude shadowed pixels (baked shadows would bias the match); compare lit terrain only.
-    wac_mean = float(vals[vals > 25].mean())
-    gmean = global_ring_mean()
-    gain = gmean / max(wac_mean, 1.0)
-    print(f"brightness gain {gain:.3f} (global {gmean:.1f} / WAC lit {wac_mean:.1f})")
-
-    for size in (4096, 2048):
-        img = np.clip(cap_image(arr, scale, x0, y0, size) * gain, 0, 255).astype(np.uint8)
-        Image.fromarray(img, "L").save(OUT_TEX / f"wac_cap_{size}.jpg", quality=90, optimize=True)
-        print("wrote wac_cap", size)
+    sites_only = "--sites-only" in sys.argv
+    if sites_only:
+        prev = json.loads((OUT_DATA / "sites.json").read_text()).get("_polarImagery_prev") or {}
+        gain = float(prev.get("brightnessGain") or 1.5402)  # value recorded by the full run
+        print("sites only; brightness gain", gain)
+    else:
+        # Brightness: match the mosaic's lit-pixel mean in an 80.5–83°S ring to the global map's mean there.
+        # Pixels < 25 DN are baked shadows; the app treats them as 'no albedo data' (see moonMaterial.ts).
+        xs = np.linspace(-280, 280, 600)
+        X, Y = np.meshgrid(xs, xs)
+        lat, _ = pdm.xy_to_ll(X, Y)
+        ring = (lat <= -80.5) & (lat >= -83.0)
+        r, c = wac_rc(X[ring], Y[ring], scale, x0, y0)
+        vals = np.asarray(sample(arr, r, c), dtype=np.float32)
+        wac_mean = float(vals[vals > 25].mean())
+        gmean = global_ring_mean()
+        gain = gmean / max(wac_mean, 1.0)
+        print(f"brightness gain {gain:.3f} (global {gmean:.1f} / WAC lit {wac_mean:.1f})")
+        for size in (4096, 2048):
+            img = np.clip(cap_image(arr, scale, x0, y0, size) * gain, 0, 255).astype(np.uint8)
+            Image.fromarray(img, "L").save(OUT_TEX / f"wac_cap_{size}.jpg", quality=90, optimize=True)
+            print("wrote wac_cap", size)
 
     dem, _ = pdm.load_dem()
-    for size, name in ((2048, "polar/nrm_cap_2048.png"), (4096, "southpole_normal.png")):
-        step = 2 * CAP_KM / size
-        Image.fromarray(normals_grid(box_prefilter(dem, step), 0.0, 0.0, CAP_KM, size), "RGB").save(OUT_TEX.parent / name, optimize=True)
-        print("wrote", name)
+    if not sites_only:
+        for size, name in ((2048, "polar/nrm_cap_2048.png"), (4096, "southpole_normal.png")):
+            step = 2 * CAP_KM / size
+            Image.fromarray(normals_grid(box_prefilter(np.asarray(dem, np.float32) * 0.5, step), 0.0, 0.0, CAP_KM, size), "RGB").save(OUT_TEX.parent / name, optimize=True)
+            print("wrote", name)
 
-    k = 12  # 1 km regional tile from a 12×12 block-mean of the 80 m DEM
-    m = pdm.N_PIX // k * k
-    dem_km = dem[:m, :m].reshape(m // k, k, m // k, k).mean(axis=(1, 3))
-    dem_km = np.repeat(np.repeat(dem_km, k, 0), k, 1).astype(np.float32)
-    pad = np.full((pdm.N_PIX, pdm.N_PIX), np.nan, np.float32)
-    pad[:m, :m] = dem_km
+    pad = pdm.Coarse(dem, 12)  # 1 km regional tile from a 12×12 block-mean of the 80 m DEM
 
     sites = json.loads((OUT_DATA / "sites.json").read_text())
     for reg in sites["regions"]:
@@ -222,6 +222,13 @@ def main():
                                       "note": "12×12 block-mean of LDEM_80S_80M; cells outside the 80°S product set to −20 km"}
         print("site products", reg["id"])
 
+    if sites_only:
+        sites["polarImagery"] = sites.get("_polarImagery_prev") or sites.get("polarImagery")
+        sites.pop("_polarImagery_prev", None)
+        sites["polarCap"]["standard"] = "textures/polar/nrm_cap_2048.png"
+        (OUT_DATA / "sites.json").write_text(json.dumps(sites, indent=1))
+        print("updated sites.json (sites only)")
+        return
     sites["polarImagery"] = {
         "product": "LROC WAC South Pole Summer Mosaic (WAC_ROI_SOUTH_SUMMER_100M)",
         "source": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/BROWSE/WAC_ROI/WAC_ROI_SOUTH_SUMMER/",

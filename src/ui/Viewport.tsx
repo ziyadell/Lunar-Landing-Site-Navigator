@@ -96,7 +96,9 @@ export function Viewport() {
       {mode === 'orbital' && <GlobeLabels />}
       {mode === 'surface' && <SkyLabels />}
       {mode === 'surface' && terrainError && <div className="vp-note is-warn" role="alert">Terrain tile failed to load: {terrainError}</div>}
-      <div className={`vp-fade${transitioning ? ' is-on' : ''}`} aria-hidden="true" />
+      <div className={`vp-fade${transitioning ? ' is-on' : ''}`} aria-hidden={!transitioning} role="status">
+        {transitioning && <span className="vp-fade__label">Loading LOLA terrain…</span>}
+      </div>
     </section>
   );
 }
