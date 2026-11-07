@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { OrbitalScene } from '../three/OrbitalScene';
 import { SurfaceScene } from '../three/SurfaceScene';
 import { probeTextureTier } from '../three/MoonGlobe';
-import { ScaleBar } from './ScaleBar';
+import { CameraStack, ScaleBar } from './ScaleBar';
 import { useApp, useLook } from '../state/store';
 import { useConditions } from '../data/useConditions';
 import { webglAvailable } from '../utils/motion';
@@ -37,16 +37,12 @@ class SceneBoundary extends Component<{ children: ReactNode }, { error: string |
 
 function OrbitalTools() {
   const focus = useApp((s) => s.focusRegion);
-  const reset = useApp((s) => s.resetCamera);
   const enterSurface = useApp((s) => s.enterSurface);
   const transitioning = useApp((s) => s.transitioning);
   return (
     <div className="vp-tools" role="toolbar" aria-label="Camera">
       <button type="button" className="tool" onClick={focus} disabled={transitioning}>
         Focus region
-      </button>
-      <button type="button" className="tool" onClick={reset} disabled={transitioning}>
-        Global view
       </button>
       <button type="button" className="tool tool--primary" onClick={enterSurface} disabled={transitioning}>
         Enter Surface View
@@ -192,7 +188,12 @@ export function Viewport() {
           <SurfacePanorama />
         </>
       )}
-      {mode === 'orbital' && <ScaleBar />}
+      {mode === 'orbital' && (
+        <>
+          <ScaleBar />
+          <CameraStack />
+        </>
+      )}
       <div className={`vp-fade${transitioning ? ' is-on' : ''}`} aria-hidden="true" />
     </section>
   );

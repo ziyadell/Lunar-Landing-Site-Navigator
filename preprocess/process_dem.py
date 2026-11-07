@@ -103,7 +103,46 @@ REGIONS = [
             "Observation point = of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii along radial profiles every 5°), the one with the largest fraction of 2027 hours with the Sun's centre above the LOLA terrain horizon. The crater floor is not used.",
         ],
     },
+    {
+        "id": "peak-near-cabeus-b",
+        "name": "Peak near Cabeus B",
+        "nasaListing": "Artemis III candidate region in NASA's refined list of nine (Oct 28, 2024)",
+        "feature": {"name": "Cabeus B", "type": "Crater", "latDeg": -82.26, "lonDeg": -54.58,
+                    "diameterKm": 59.62, "gazetteerId": 8058},
+        "rule": "peak",
+        "notes": [
+            "Reference feature Cabeus B crater: 59.6 km diameter, centred 82.26°S 54.58°W.",
+            "NASA has not published the location of the peak. Observation point = the highest LOLA elevation (3×3-smoothed) between 0.6 and 1.6 crater radii of the Cabeus B centre, i.e. the most prominent peak adjoining the crater. Provisional reference: it may not coincide with the NASA region.",
+            "Near the 80°S edge of LDEM_80S_80M: horizon rays toward the north (away from the pole) leave the DEM after ~40 km instead of 150 km, so distant terrain in those directions is not included.",
+        ],
+    },
+    {
+        "id": "de-gerlache-rim-2",
+        "name": "de Gerlache Rim 2",
+        "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
+        "feature": {"name": "de Gerlache", "type": "Crater", "latDeg": -88.48, "lonDeg": -88.34,
+                    "diameterKm": 32.71, "gazetteerId": 1439},
+        "rule": "rim",
+        "notes": [
+            "Reference feature de Gerlache crater: 32.7 km diameter, centred 88.48°S 88.34°W.",
+            "NASA has not published coordinates distinguishing 'Rim 1' from 'Rim 2'. Observation point = of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii along radial profiles every 5°), the one with the largest fraction of 2027 hours with the Sun's centre above the LOLA terrain horizon. It is a representative rim location, not necessarily inside the Rim 2 region.",
+        ],
+    },
 ]
+
+NASA_REFERENCES = [
+    {"title": "NASA Provides Update on Artemis III Moon Landing Regions", "date": "2024-10-28",
+     "url": "https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+     "regions": ["Peak near Cabeus B", "Haworth", "Malapert Massif", "Mons Mouton Plateau", "Mons Mouton",
+                 "Nobile Rim 1", "Nobile Rim 2", "de Gerlache Rim 2", "Slater Plain"]},
+    {"title": "NASA Identifies Candidate Regions for Landing Next Americans on Moon (release 22-089)", "date": "2022-08-19",
+     "url": "https://www.nasa.gov/news-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/"},
+]
+NOT_REPRESENTED = {
+    "Mons Mouton Plateau": "No published extent; cannot be distinguished from the Mons Mouton point with public data.",
+    "Nobile Rim 2": "No published coordinates distinguishing it from Nobile Rim 1.",
+    "Slater Plain": "No defensible rule for locating the plain relative to Slater crater (IAU 88.08°S 111.29°E).",
+}
 
 
 # ---------------------------------------------------------------- projection
@@ -194,6 +233,17 @@ def candidate_points(dem_s, reg):
         j = np.nanargmax(h, axis=1)
         idx = np.arange(len(az))
         return la[idx, j], lo[idx, j]
+    if reg["rule"] == "peak":
+        # Highest smoothed point between 0.6 and 1.6 crater radii on a 1 km grid.
+        rad = f["diameterKm"] / 2
+        g = np.arange(-1.6 * rad, 1.6 * rad + 0.01, 1.0)
+        E, N = np.meshgrid(g, g)
+        d = np.hypot(E, N)
+        keep = (d >= 0.6 * rad) & (d <= 1.6 * rad)
+        la, lo = destination(f["latDeg"], f["lonDeg"], np.rad2deg(np.arctan2(E[keep], N[keep])), d[keep])
+        h = height_ll(dem_s, la, lo)
+        i = int(np.nanargmax(h))
+        return np.array([la[i]]), np.array([lo[i]])
     # Mons: 2 km grid within searchKm of the gazetteer centre.
     g = np.arange(-reg["searchKm"], reg["searchKm"] + 0.01, 2.0)
     E, N = np.meshgrid(g, g)
@@ -388,6 +438,8 @@ def main():
             "resolutionM": 80,
             "projection": "Polar stereographic (spherical), MEAN EARTH/POLAR AXIS of DE421",
         },
+        "nasaReferences": NASA_REFERENCES,
+        "notRepresented": NOT_REPRESENTED,
         "polarCap": {"texture": "textures/southpole_normal.png", "standard": "textures/polar/nrm_cap_2048.png", "extentKm": 300.0, "size": 4096},
         "regions": regions,
     }

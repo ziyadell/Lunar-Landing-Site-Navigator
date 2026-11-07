@@ -9,6 +9,7 @@ import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/600.css';
 import './styles/tokens.css';
 import './styles/global.css';
+import './styles/experience.css';
 import { App } from './App';
 
 createRoot(document.getElementById('root')!).render(

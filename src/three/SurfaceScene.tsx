@@ -6,7 +6,8 @@ import { useConditions } from '../data/useConditions';
 import { useApp, useLook } from '../state/store';
 import { azElToLocal, DEG } from '../science/geometry';
 import type { LandingRegion } from '../data/types';
-import { RadialTerrain, type TerrainTiles } from './surface/RadialTerrain';
+import { RadialTerrain, type TerrainAlbedo, type TerrainTiles } from './surface/RadialTerrain';
+import { assetUrl } from '../data/DataContext';
 import { GroundRings, SkyGrid, SkyLabelProjector, Stars } from './surface/SkyObjects';
 
 /**
@@ -15,6 +16,45 @@ import { GroundRings, SkyGrid, SkyLabelProjector, Stars } from './surface/SkyObj
  */
 
 const BODY_DIST = 300_000; // m — beyond the 150 km terrain
+
+/** LROC WAC polar mosaic textures for the terrain drape (site window at 100 m + polar cap). */
+function useAlbedo(region: LandingRegion, enabled: boolean): TerrainAlbedo | null {
+  const { sites } = useData();
+  const [alb, setAlb] = useState<{ id: string; a: TerrainAlbedo } | null>(null);
+  useEffect(() => {
+    const d = region.detail;
+    const capUrl = sites.polarImagery?.cap.standard;
+    if (!enabled || !d || !capUrl) return;
+    let alive = true;
+    const load = (u: string) =>
+      new Promise<THREE.Texture>((res, rej) =>
+        new THREE.TextureLoader().load(assetUrl(u), (t) => {
+          t.colorSpace = THREE.SRGBColorSpace;
+          t.anisotropy = 8;
+          t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+          res(t);
+        }, undefined, rej),
+      );
+    Promise.all([load(d.imagery), load(capUrl)])
+      .then(([detail, cap]) => {
+        if (!alive) {
+          detail.dispose();
+          cap.dispose();
+          return;
+        }
+        setAlb((prev) => {
+          prev?.a.detail.dispose();
+          prev?.a.cap.dispose();
+          return { id: region.id, a: { detail, detailCenter: d.centerKm, detailHalf: d.halfExtentKm, cap, capExtent: sites.polarImagery!.cap.extentKm } };
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [region, enabled, sites]);
+  return enabled && alb?.id === region.id ? alb.a : null;
+}
 
 function useTerrain(region: LandingRegion) {
   const [data, setData] = useState<{ id: string; tiles: TerrainTiles } | null>(null);
@@ -310,6 +350,7 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
   const r = region(regionId);
   const p = r.observationPoint;
   const { tiles, error } = useTerrain(r);
+  const albedo = useAlbedo(r, layers.albedo);
   const segments = useMemo(() => (Math.min(window.innerWidth, window.innerHeight) < 700 ? 240 : 360), []);
   useEffect(() => onError(error), [error, onError]);
   useEffect(() => {
@@ -321,7 +362,7 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
       <SunLight mapSize={shadowMapSize} />
       <FillLights enhanced={layers.enhancedLight} />
       <LookCamera eye={p.observerHeightM} />
-      {tiles && <RadialTerrain region={r} tiles={tiles} detail={layers.regolith} segments={segments} />}
+      {tiles && <RadialTerrain region={r} tiles={tiles} detail={layers.regolith} segments={segments} albedo={albedo} />}
       {tiles && layers.rings && <GroundRings region={r} heights={tiles.near} />}
       {layers.horizonLine && <SkylineLine region={r} />}
       {layers.stars && <Stars timeMs={timeMs} latDeg={p.latDeg} lonDeg={p.lonDeg} />}

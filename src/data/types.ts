@@ -94,6 +94,9 @@ export interface SitesFile {
   referenceRadiusKm: number;
   dem: { name: string; source: string; url: string; resolutionM: number; projection: string };
   polarCap?: { texture: string; standard?: string; extentKm: number; size: number };
+  /** NASA candidate regions not represented, with the reason. */
+  notRepresented?: Record<string, string>;
+  nasaReferences?: { title: string; date: string; url: string; regions?: string[] }[];
   polarImagery?: {
     product: string;
     source: string;

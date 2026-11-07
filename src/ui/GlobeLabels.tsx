@@ -1,6 +1,8 @@
+import { useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/store';
 import { useData } from '../data/DataContext';
-import { fmtLat, fmtLon } from '../utils/format';
+import { fmtDeg, fmtLat, fmtLon } from '../utils/format';
+import { siteConditions } from '../science/visibility';
 
 /**
  * DOM layer for the orbital markers. Every element is positioned each frame by
@@ -15,8 +17,19 @@ export function GlobeLabels() {
   const poleCamera = useApp((s) => s.poleCamera);
   const sel = region(regionId);
   const f = sel.referenceFeature;
+  const { ephemeris } = useData();
+  const timeMs = useApp((s) => s.timeMs);
+  const host = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
+  const hoverRegion = hover ? region(hover.id) : null;
+  const hc = useMemo(() => (hoverRegion ? siteConditions(hoverRegion, ephemeris, timeMs) : null), [hoverRegion, ephemeris, timeMs]);
+  const showTip = (id: string, el: HTMLElement) => {
+    const hb = host.current?.getBoundingClientRect();
+    const b = el.getBoundingClientRect();
+    if (hb) setHover({ id, x: b.left - hb.left, y: b.bottom - hb.top + 6 });
+  };
   return (
-    <div className="gm">
+    <div className="gm" ref={host}>
       <svg className="gm__leaders" aria-hidden="true">
         {sites.regions.map((r) => (
           <line key={r.id} id={`gm-lead-${r.id}`} />
@@ -40,13 +53,32 @@ export function GlobeLabels() {
             <button type="button" id={`gm-dot-${r.id}`} className={`gm-dot${selected ? ' is-selected' : ''}`} style={{ visibility: 'hidden' }}
               onClick={() => selectRegion(r.id)} aria-label={label} aria-pressed={selected} tabIndex={-1} />
             <button type="button" id={`gm-lbl-${r.id}`} className={`gm-label${selected ? ' is-selected' : ''}`} style={{ visibility: 'hidden' }}
-              onClick={() => selectRegion(r.id)} aria-label={label} aria-pressed={selected}>
+              onClick={() => selectRegion(r.id)} aria-label={label} aria-pressed={selected}
+              onPointerEnter={(e) => e.pointerType === 'mouse' && showTip(r.id, e.currentTarget)}
+              onPointerLeave={() => setHover(null)}
+              onFocus={(e) => showTip(r.id, e.currentTarget)}
+              onBlur={() => setHover(null)}>
               <span className="gm-label__idx">{String(i + 1).padStart(2, '0')}</span>
               <span className="gm-label__name">{r.name}</span>
             </button>
           </div>
         );
       })}
+
+      {hover && hoverRegion && hc && (
+        <div className="gm-tip" style={{ transform: `translate(${hover.x}px, ${hover.y}px)` }} role="tooltip">
+          <div className="gm-tip__name">{hoverRegion.name}</div>
+          <div className={`gm-tip__row ${hc.sun.state === 'visible' ? 'is-sun' : 'is-off'}`}>
+            {hc.sun.state === 'visible' ? '●' : '○'} Sun {fmtDeg(hc.sun.elDeg, 1)}
+            <span>{hc.sun.state === 'visible' ? 'visible' : 'not visible'}</span>
+          </div>
+          <div className={`gm-tip__row ${hc.earth.state === 'visible' ? 'is-earth' : 'is-off'}`}>
+            {hc.earth.state === 'visible' ? '●' : '○'} Earth {fmtDeg(hc.earth.elDeg, 1)}
+            <span>{hc.earth.state === 'visible' ? 'visible' : 'not visible'}</span>
+          </div>
+          {hoverRegion.id !== regionId && <div className="gm-tip__hint">Click to select</div>}
+        </div>
+      )}
 
       <div id="gm-obs" className="gm-note" style={{ visibility: 'hidden' }} aria-hidden="true">
         Representative observation point · not a NASA-designated landing site

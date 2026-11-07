@@ -80,7 +80,8 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
   // 4096² (146 m/px, 18 MB lossless) only when zoomed in near the pole.
   const capNormalUrl = sites.polarCap?.standard ?? sites.polarCap?.texture ?? 'textures/southpole_normal.png';
   const [map, normalMap, capNormal] = useLoader(THREE.TextureLoader, [
-    assetUrl('textures/moon_color_4k.jpg'),
+    // High-DPI screens resolve finer than the 4K base at the default view: use the 8K base there.
+    assetUrl(tier === 'high' && (window.devicePixelRatio || 1) >= 1.5 ? 'textures/moon_color_8k.jpg' : 'textures/moon_color_4k.jpg'),
     assetUrl(tier === 'high' ? 'textures/moon_normal_4k.jpg' : 'textures/moon_normal_2k.jpg'),
     assetUrl(capNormalUrl),
   ]);

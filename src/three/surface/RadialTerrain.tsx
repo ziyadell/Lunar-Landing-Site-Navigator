@@ -43,6 +43,18 @@ const smooth = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
+const R_KM = 1737.4;
+const D2R = Math.PI / 180;
+/** South-polar stereographic km for a point `distM` metres from the site along bearing `az` (rad). */
+function stereoAt(lat0: number, lon0: number, az: number, distM: number): [number, number] {
+  const d = distM / 1000 / R_KM;
+  const la1 = lat0 * D2R, lo1 = lon0 * D2R;
+  const la2 = Math.asin(Math.sin(la1) * Math.cos(d) + Math.cos(la1) * Math.sin(d) * Math.cos(az));
+  const lo2 = lo1 + Math.atan2(Math.sin(az) * Math.sin(d) * Math.cos(la1), Math.cos(d) - Math.sin(la1) * Math.sin(la2));
+  const rho = 2 * R_KM * Math.tan(Math.PI / 4 + la2 / 2);
+  return [rho * Math.sin(lo2), rho * Math.cos(lo2)];
+}
+
 export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, azSegments: number) {
   const t = region.terrain;
   const near = sampler(tiles.near, t.n, t.spacingM);
@@ -88,6 +100,11 @@ export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, 
   const verts = 1 + (rings - 1) * azSegments;
   const pos = new Float32Array(verts * 3);
   const uv = new Float32Array(verts * 2);
+  const stereo = new Float32Array(verts * 2);
+  const op = region.observationPoint;
+  const s0 = stereoAt(op.latDeg, op.lonDeg, 0, 0);
+  stereo[0] = s0[0];
+  stereo[1] = s0[1];
   pos[1] = 0;
   let k = 1;
   for (let i = 1; i < rings; i++) {
@@ -101,6 +118,9 @@ export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, 
       pos[k * 3 + 2] = z;
       uv[k * 2] = x;
       uv[k * 2 + 1] = z;
+      const st = stereoAt(op.latDeg, op.lonDeg, a, rr);
+      stereo[k * 2] = st[0];
+      stereo[k * 2 + 1] = st[1];
       k++;
     }
   }
@@ -117,6 +137,7 @@ export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, 
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setAttribute('stereo', new THREE.BufferAttribute(stereo, 2));
   g.setIndex(verts > 65535 ? new THREE.Uint32BufferAttribute(idx, 1) : new THREE.Uint16BufferAttribute(idx, 1));
   g.computeVertexNormals();
 
@@ -144,20 +165,71 @@ export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, 
   return g;
 }
 
+export interface TerrainAlbedo {
+  detail: THREE.Texture;
+  detailCenter: [number, number];
+  detailHalf: number;
+  cap: THREE.Texture;
+  capExtent: number;
+}
+
 export function RadialTerrain({
   region,
   tiles,
   detail,
   segments,
+  albedo,
 }: {
   region: LandingRegion;
   tiles: TerrainTiles;
   detail: boolean;
   segments: number;
+  /** LROC WAC polar mosaic draped by polar-stereographic coordinate (null = uniform albedo). */
+  albedo: TerrainAlbedo | null;
 }) {
   const geometry = useMemo(() => buildRadialGeometry(region, tiles, segments), [region, tiles, segments]);
   const material = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({ color: '#a29e97', roughness: 1, metalness: 0, vertexColors: true });
+    const patches: ((sh: THREE.WebGLProgramParametersWithUniforms) => void)[] = [];
+    if (albedo) {
+      // Real albedo from the LROC WAC South Pole Summer Mosaic. Pixels in 2010 shadow carry
+      // no albedo, so they fall back to the regional mean; current lighting decides darkness.
+      patches.push((sh) => {
+        sh.uniforms.albDetail = { value: albedo.detail };
+        sh.uniforms.albDetailCenter = { value: new THREE.Vector2(...albedo.detailCenter) };
+        sh.uniforms.albDetailHalf = { value: albedo.detailHalf };
+        sh.uniforms.albCap = { value: albedo.cap };
+        sh.uniforms.albCapExtent = { value: albedo.capExtent };
+        sh.vertexShader = sh.vertexShader
+          .replace('#include <common>', `#include <common>
+attribute vec2 stereo;
+varying vec2 vStereo;`)
+          .replace('#include <begin_vertex>', `#include <begin_vertex>
+vStereo = stereo;`);
+        sh.fragmentShader = sh.fragmentShader
+          .replace(
+            '#include <common>',
+            `#include <common>
+             varying vec2 vStereo;
+             uniform sampler2D albDetail; uniform vec2 albDetailCenter; uniform float albDetailHalf;
+             uniform sampler2D albCap; uniform float albCapExtent;`,
+          )
+          .replace(
+            '#include <color_fragment>',
+            `#include <color_fragment>
+             {
+               vec2 ud = (vStereo - albDetailCenter) / (2.0 * albDetailHalf) + 0.5;
+               vec2 e = min(ud, 1.0 - ud);
+               float wd = smoothstep(0.0, 0.03, min(e.x, e.y));
+               float L = mix(texture2D(albCap, vStereo / (2.0 * albCapExtent) + 0.5).r, texture2D(albDetail, ud).r, wd);
+               float lit = smoothstep(0.012, 0.045, L);
+               float a = mix(0.36, L, lit);
+               // Compressed response: the 2010 mosaic also carries its own slope shading.
+               diffuseColor.rgb *= clamp(pow(a / 0.36, 0.6), 0.6, 1.4);
+             }`,
+          );
+      });
+    }
     if (detail) {
       // ILLUSTRATIVE sub-resolution texture (not measured), repeating every 24 m and faded
       // out with distance so it never aliases into moiré bands.
@@ -167,17 +239,18 @@ export function RadialTerrain({
       tex.needsUpdate = true;
       m.normalMap = tex;
       m.normalScale.set(0.32, 0.32);
-      m.onBeforeCompile = (sh) => {
+      patches.push((sh) => {
         sh.fragmentShader = sh.fragmentShader.replace(
           '#include <normal_fragment_maps>',
           `#include <normal_fragment_maps>
            normal = normalize(mix(normal, nonPerturbedNormal, smoothstep(60.0, 320.0, length(vViewPosition))));`,
         );
-      };
-      m.customProgramCacheKey = () => 'terrain-detail-fade';
+      });
     }
+    m.onBeforeCompile = (sh) => patches.forEach((f) => f(sh));
+    m.customProgramCacheKey = () => `terrain-${detail ? 'd' : ''}${albedo ? 'a' : ''}`;
     return m;
-  }, [detail]);
+  }, [detail, albedo]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => {
     material.normalMap?.dispose();

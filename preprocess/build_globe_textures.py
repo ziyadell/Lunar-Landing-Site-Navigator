@@ -7,7 +7,7 @@ Build web textures for the global Moon from the NASA SVS "CGI Moon Kit"
   ldem_16.tif              LOLA elevation, 16 px/deg, km relative to 1737.4 km
 
 Outputs (public/textures/):
-  moon_color_4k.jpg           sRGB albedo/colour base map
+  moon_color_{8k,4k}.jpg      sRGB albedo/colour base maps (8K used on high-DPI screens)
   moon_normal_{4k,2k}.jpg     tangent-space normal map computed from LOLA at true
                               vertical scale (no exaggeration). +X = east, +Y = north.
   tiles/c_<row>_<col>.jpg     16K colour mosaic (lroc_color_poles_16k.tif) as 8x4 tiles of 2048 px
@@ -32,7 +32,7 @@ R_KM = 1737.4
 def colour() -> None:
     img = Image.open(RAW / "lroc_color_poles_8k.tif").convert("RGB")
     print("colour source", img.size)
-    for w, q in ((4096, 88),):  # base map; zoomed detail comes from the 16K tiles
+    for w, q in ((8192, 86), (4096, 88)):  # 8K base for high-DPI screens; 4K otherwise; zoom detail from 16K tiles
         im = img if img.size[0] == w else img.resize((w, w // 2), Image.LANCZOS)
         p = OUT / f"moon_color_{w // 1024}k.jpg"
         im.save(p, quality=q, optimize=True, progressive=True)
