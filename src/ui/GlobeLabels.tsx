@@ -37,12 +37,10 @@ export function GlobeLabels() {
 
       <button type="button" id="gm-cluster" className="gm-cluster" style={{ visibility: 'hidden' }} onClick={poleCamera}
         aria-label={`${sites.regions.length} candidate regions near the south pole. Selected: ${sel.name}. Zoom to the south polar region.`}>
-        <span className="gm-cluster__count" aria-hidden="true">
-          <b className="num">{sites.regions.length}</b> regions
-        </span>
-        <span className="gm-cluster__sel">
-          <i aria-hidden="true" />
-          {sel.name}
+        <i className="gm-cluster__dot" aria-hidden="true" />
+        <span className="gm-cluster__chip" aria-hidden="true">
+          <b className="gm-cluster__n num">{sites.regions.length}</b>
+          <span className="gm-cluster__sel">{sel.name}</span>
         </span>
       </button>
 

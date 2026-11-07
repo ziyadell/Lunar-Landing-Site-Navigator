@@ -1,0 +1,254 @@
+/* =====================================================================
+   Refinement pass: scene tools, region chip, loading status, chevrons,
+   touch states, and the hand-off after the welcome. Loaded last.
+   ===================================================================== */
+
+/* ---------------------------------------------- icons inside small toggles
+   (the skyline strip styles every svg inside it as a chart: keep icons icons) */
+.fold-btn svg,
+.cond__fold svg,
+.pano-strip .fold-btn svg {
+  display: block;
+  width: 12px;
+  height: 12px;
+  cursor: inherit;
+}
+.pano-strip__head {
+  padding-right: 0;
+}
+.pano-strip__head .fold-btn {
+  width: 28px;
+  height: 28px;
+  margin-right: -4px;
+}
+
+/* Touch screens: no "stuck" hover backgrounds after a tap. */
+@media (hover: none) {
+  .fold-btn:hover,
+  .cond__fold:hover,
+  .sheet__close:hover,
+  .icon-tool:hover,
+  .aplayer__btn:hover,
+  .guide__btn:hover {
+    background: none;
+  }
+  .icon-tool.is-on:hover {
+    background: rgba(77, 220, 244, 0.14);
+  }
+}
+.fold-btn:active,
+.cond__fold:active {
+  background: rgba(241, 245, 249, 0.1);
+}
+
+/* ---------------------------------------------- region chip on the globe */
+.gm-cluster {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+.gm-cluster.is-flipped {
+  flex-direction: row-reverse;
+}
+.gm-cluster__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 1px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 3px rgba(77, 220, 244, 0.22),
+    0 0 10px rgba(77, 220, 244, 0.6);
+}
+.gm-cluster__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px 0 4px;
+  border-radius: 999px;
+  background: rgba(5, 8, 15, 0.78);
+  border: 1px solid rgba(77, 220, 244, 0.45);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 11.5px;
+  line-height: 1;
+  color: var(--text);
+  white-space: nowrap;
+}
+.gm-cluster__n {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(77, 220, 244, 0.18);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.gm-cluster__sel {
+  display: inline;
+  padding: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text);
+}
+.gm-cluster__sel::before {
+  content: none;
+}
+.gm-cluster:hover .gm-cluster__chip,
+.gm-cluster:focus-visible .gm-cluster__chip {
+  border-color: var(--accent);
+}
+.gm-cluster:focus-visible {
+  outline: none;
+}
+.gm-cluster.is-covered {
+  opacity: 0.35;
+}
+.gm-cluster {
+  transition: opacity 200ms ease;
+}
+
+/* ---------------------------------------------- loading status: one tidy line */
+.loadchip {
+  max-width: min(320px, calc(100vw - 2 * var(--gutter)));
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 12px 0 10px;
+}
+.loadchip__ring {
+  flex: none;
+}
+.loadchip > span:not(.loadchip__ring) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------- scene tools on phones / short landscape:
+   a slim vertical rack in the scene's top-right corner (never over the centre). */
+@media (max-width: 759px), (orientation: landscape) and (max-height: 500px) {
+  .app .hud__right .tool-col {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start;
+    justify-self: end !important;
+    align-self: start !important;
+    gap: 2px;
+    max-width: none;
+    margin: 10px var(--gutter) 0 0 !important;
+    padding: 4px !important;
+    border-radius: 14px !important;
+  }
+  .app--surface .hud__right .tool-col {
+    margin-top: 50px !important; /* below the heading tape */
+  }
+  .app .hud__right .tool-col .tool-col__sep {
+    width: 20px !important;
+    height: 1px !important;
+    margin: 3px auto !important;
+  }
+  .app .hud__right .tool-col .icon-tool,
+  .app .hud__right .tool-col .tool-col__fold {
+    width: 34px;
+    height: 32px;
+  }
+  .app .hud__right .tool-col {
+    gap: 0 !important;
+  }
+  .app .hud__right .tool-col--folded {
+    padding: 3px !important;
+  }
+  /* The display-options popover opens as a sheet, so its button can live in the rack. */
+  .app .hud__right .tool-col .pop {
+    position: static;
+  }
+  /* Loading status: bottom-left of the scene, never wider than half of it. */
+  .app .hud__bottom > .loadchip {
+    max-width: calc(58% - var(--gutter));
+    height: 28px;
+    font-size: 11.5px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .app .hud__right .tool-col {
+    position: sticky;
+    top: calc(var(--mast-h) + 10px);
+    margin: 10px 10px 0 0 !important;
+  }
+  .app--surface .hud__right .tool-col {
+    top: calc(var(--mast-h) + 50px);
+  }
+}
+
+/* ---------------------------------------------- hand-off after the welcome */
+.app.is-outro .welcome {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+}
+@media (max-width: 759px), (orientation: landscape) and (max-height: 500px) {
+  /* Phones change layout here: let the full-screen scene fade before it re-flows. */
+  .app.is-outro > .viewport {
+    opacity: 0;
+    transition: opacity 360ms ease;
+  }
+  .app.is-reveal > .viewport {
+    animation: lsn-scene-in 700ms var(--ease-out) both;
+  }
+}
+.app.is-reveal .masthead {
+  animation: lsn-reveal 560ms var(--ease-out) both 40ms;
+}
+.app.is-reveal .cond {
+  animation: lsn-reveal 560ms var(--ease-out) both 140ms;
+}
+.app.is-reveal .hud__right .tool-col {
+  animation: lsn-reveal 560ms var(--ease-out) both 260ms;
+}
+.app.is-reveal .deck-card {
+  animation: lsn-reveal 560ms var(--ease-out) both 320ms;
+}
+.app.is-reveal .timepill {
+  animation: lsn-reveal 560ms var(--ease-out) both 400ms;
+}
+.app.is-reveal .guide,
+.app.is-reveal .hud__intro,
+.app.is-reveal .hud__corner {
+  animation: lsn-reveal 560ms var(--ease-out) both 500ms;
+}
+@keyframes lsn-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes lsn-scene-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app.is-outro > .viewport,
+  .app.is-outro .welcome {
+    transition: none;
+  }
+  .app.is-reveal *,
+  .app.is-reveal > .viewport {
+    animation: none !important;
+  }
+}

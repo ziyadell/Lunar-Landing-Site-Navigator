@@ -4,8 +4,7 @@
     {
       "id": "welcome",
       "title": "Welcome",
-      "text": "Welcome to Afuq. We’re approaching the Moon’s south pole. Pick a site, then move through time to see when the Sun and Earth clear the local horizon.",
-      "speech": "Welcome to Ah-fooq. We’re approaching the Moon’s south pole. Pick a site, then move through time to see when the Sun and Earth clear the local horizon."
+      "text": "Welcome to Lunar Navigator. Explore the south pole. Follow the sunlight. Find a view of Earth. Your mission begins now."
     },
     {
       "id": "orbit-intro",

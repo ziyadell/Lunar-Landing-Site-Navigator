@@ -92,15 +92,15 @@ export function MarkerProjector() {
         const cy = visible.reduce((a, i) => a + i.s.y, 0) / visible.length;
         const w = cEl.offsetWidth;
         const h = cEl.offsetHeight;
-        let x = THREE.MathUtils.clamp(cx - 11, MARGIN, W - w - MARGIN);
-        let y = cy - 11;
-        // Slide up/left out of any control it would cover (the pin keeps a leader to the cluster).
-        for (const o of obstacles)
-          if (overlap({ x, y, w, h }, o)) {
-            y = Math.min(y, o.y - h - 6);
-            if (y < MARGIN) x = Math.max(MARGIN, o.x - w - 6);
-          }
-        y = THREE.MathUtils.clamp(y, MARGIN, H - h - MARGIN);
+        // Stays attached to the cluster as the globe turns: the chip starts at the pole point
+        // (its dot sits on it) and only flips to the left near the right edge. It never jumps
+        // away from controls; it fades behind them instead.
+        const right = cx - 9 + w <= W - MARGIN;
+        const x = right ? cx - 9 : cx + 9 - w;
+        const y = THREE.MathUtils.clamp(cy - h / 2, MARGIN, H - h - MARGIN);
+        cEl.classList.toggle('is-flipped', !right);
+        const covered = obstacles.some((o) => overlap({ x, y, w, h }, o));
+        cEl.classList.toggle('is-covered', covered);
         cEl.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
       }
     }
