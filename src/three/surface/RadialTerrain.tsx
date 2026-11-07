@@ -1,7 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import type { LandingRegion } from '../../data/types';
 import { regolithAlbedoMap, regolithNormalMap } from './regolith';
+import { buildRadialMesh, type TerrainMesh, type TerrainTiles } from './terrainMesh';
+
+export type { TerrainTiles };
 
 /**
  * One continuous terrain mesh centred on the observer, out to 150 km — the same
@@ -18,165 +21,71 @@ import { regolithAlbedoMap, regolithNormalMap } from './regolith';
  * (curvature included).
  */
 
-export interface TerrainTiles {
-  near: Float32Array;
-  far: Float32Array | null;
-  regional: Float32Array | null;
+let worker: Worker | null = null;
+let seq = 0;
+const pending = new Map<number, (r: { mesh?: TerrainMesh; error?: string }) => void>();
+function getWorker(): Worker | null {
+  if (worker) return worker;
+  try {
+    worker = new Worker(new URL('./terrainWorker.ts', import.meta.url), { type: 'module' });
+    worker.onmessage = (e) => {
+      pending.get(e.data.id)?.(e.data);
+      pending.delete(e.data.id);
+    };
+    worker.onerror = () => {
+      pending.forEach((f) => f({ error: 'worker failed' }));
+      pending.clear();
+      worker = null;
+    };
+  } catch {
+    worker = null;
+  }
+  return worker;
 }
 
-function sampler(h: Float32Array, n: number, spacing: number) {
-  const half = ((n - 1) / 2) * spacing;
-  return (x: number, z: number): number | null => {
-    const gx = (x + half) / spacing;
-    const gy = (z + half) / spacing;
-    const x0 = Math.floor(gx), y0 = Math.floor(gy);
-    if (x0 < 0 || y0 < 0 || x0 >= n - 1 || y0 >= n - 1) return null;
-    const fx = gx - x0, fy = gy - y0;
-    const c00 = h[y0 * n + x0], c01 = h[y0 * n + x0 + 1], c10 = h[(y0 + 1) * n + x0], c11 = h[(y0 + 1) * n + x0 + 1];
-    // No-data (NaN or the -20 km sentinel) anywhere in the cell: no measurement here.
-    if (!(c00 > -19_000 && c01 > -19_000 && c10 > -19_000 && c11 > -19_000)) return null;
-    const a = h[y0 * n + x0] * (1 - fx) + h[y0 * n + x0 + 1] * fx;
-    const b = h[(y0 + 1) * n + x0] * (1 - fx) + h[(y0 + 1) * n + x0 + 1] * fx;
-    return a * (1 - fy) + b * fy;
-  };
+/** Builds the mesh in a Web Worker (falls back to the main thread if workers are unavailable). */
+function buildMesh(region: LandingRegion, tiles: TerrainTiles, segments: number): Promise<TerrainMesh> {
+  const w = getWorker();
+  const local = () => buildRadialMesh(region, tiles, segments);
+  if (!w) return Promise.resolve().then(local);
+  const id = ++seq;
+  return new Promise((res) => {
+    pending.set(id, (r) => res(r.mesh ?? local()));
+    w.postMessage({ id, region: { terrain: region.terrain, observationPoint: region.observationPoint }, tiles, segments });
+  });
 }
 
-const smooth = (a: number, b: number, x: number) => {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
-  return t * t * (3 - 2 * t);
-};
-
-const R_KM = 1737.4;
-const D2R = Math.PI / 180;
-/** South-polar stereographic km for a point `distM` metres from the site along bearing `az` (rad). */
-function stereoAt(lat0: number, lon0: number, az: number, distM: number): [number, number] {
-  const d = distM / 1000 / R_KM;
-  const la1 = lat0 * D2R, lo1 = lon0 * D2R;
-  const la2 = Math.asin(Math.sin(la1) * Math.cos(d) + Math.cos(la1) * Math.sin(d) * Math.cos(az));
-  const lo2 = lo1 + Math.atan2(Math.sin(az) * Math.sin(d) * Math.cos(la1), Math.cos(d) - Math.sin(la1) * Math.sin(la2));
-  const rho = 2 * R_KM * Math.tan(Math.PI / 4 + la2 / 2);
-  return [rho * Math.sin(lo2), rho * Math.cos(lo2)];
-}
-
-export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, azSegments: number) {
-  const t = region.terrain;
-  const near = sampler(tiles.near, t.n, t.spacingM);
-  const farMeta = t.far;
-  const farRaw = tiles.far && farMeta ? sampler(tiles.far, farMeta.n, farMeta.spacingM) : null;
-  // The far tile was lowered 60 m inside the near tile's footprint (to avoid z-fighting
-  // in the old two-mesh scene); undo that so both products agree.
-  const innerFar = ((t.n - 1) / 2) * t.spacingM - (farMeta?.spacingM ?? 400);
-  const far = farRaw
-    ? (x: number, z: number) => {
-        const v = farRaw(x, z);
-        if (v === null) return null;
-        return Math.abs(x) < innerFar && Math.abs(z) < innerFar ? v + 60 : v;
-      }
-    : null;
-  const regMeta = t.regional;
-  const reg = tiles.regional && regMeta ? sampler(tiles.regional, regMeta.n, regMeta.spacingM) : null;
-
-  const heightAt = (x: number, z: number, r: number) => {
-    let h = near(x, z);
-    if (far && r > 10_000) {
-      const f = far(x, z);
-      if (f !== null) h = h === null ? f : h + (f - h) * smooth(10_000, 11_000, r);
-    }
-    if (reg && r > 50_000) {
-      const g = reg(x, z);
-      if (g !== null) h = h === null ? g : h + (g - h) * smooth(50_000, 55_000, r);
-    }
-    return h;
-  };
-
-  const dTheta = (2 * Math.PI) / azSegments;
-  const radii: number[] = [0];
-  let r = 6;
-  const R_MAX = 150_000;
-  while (r < R_MAX) {
-    radii.push(r);
-    r = Math.max(r + 4, r * (1 + dTheta * 1.15));
-  }
-  radii.push(R_MAX);
-
-  const rings = radii.length;
-  const verts = 1 + (rings - 1) * azSegments;
-  const pos = new Float32Array(verts * 3);
-  const uv = new Float32Array(verts * 2);
-  const stereo = new Float32Array(verts * 2);
-  const op = region.observationPoint;
-  const s0 = stereoAt(op.latDeg, op.lonDeg, 0, 0);
-  stereo[0] = s0[0];
-  stereo[1] = s0[1];
-  pos[1] = 0;
-  // Beyond LOLA coverage (outside 80°S) there is no measured relief: the mesh continues
-  // from the last measured height as a smooth sphere (curvature drop only), never invented terrain.
-  const lastH = new Float64Array(azSegments);
-  const lastR = new Float64Array(azSegments);
-  const R_M = R_KM * 1000;
-  let k = 1;
-  for (let i = 1; i < rings; i++) {
-    const rr = radii[i];
-    for (let j = 0; j < azSegments; j++) {
-      const a = j * dTheta;
-      const x = Math.sin(a) * rr;
-      const z = -Math.cos(a) * rr;
-      let hv = heightAt(x, z, rr);
-      if (hv === null) hv = lastH[j] - (rr * rr - lastR[j] * lastR[j]) / (2 * R_M);
-      else {
-        lastH[j] = hv;
-        lastR[j] = rr;
-      }
-      pos[k * 3] = x;
-      pos[k * 3 + 1] = hv;
-      pos[k * 3 + 2] = z;
-      uv[k * 2] = x;
-      uv[k * 2 + 1] = z;
-      const st = stereoAt(op.latDeg, op.lonDeg, a, rr);
-      stereo[k * 2] = st[0];
-      stereo[k * 2 + 1] = st[1];
-      k++;
-    }
-  }
-  const idx: number[] = [];
-  for (let j = 0; j < azSegments; j++) idx.push(0, 1 + ((j + 1) % azSegments), 1 + j);
-  for (let i = 1; i < rings - 1; i++) {
-    const a0 = 1 + (i - 1) * azSegments;
-    const b0 = 1 + i * azSegments;
-    for (let j = 0; j < azSegments; j++) {
-      const j1 = (j + 1) % azSegments;
-      idx.push(a0 + j, a0 + j1, b0 + j, a0 + j1, b0 + j1, b0 + j);
-    }
-  }
+function toGeometry(m: TerrainMesh) {
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  g.setAttribute('stereo', new THREE.BufferAttribute(stereo, 2));
-  g.setIndex(verts > 65535 ? new THREE.Uint32BufferAttribute(idx, 1) : new THREE.Uint16BufferAttribute(idx, 1));
-  g.computeVertexNormals();
-
-  // DEM-derived occlusion shading: compare each vertex with the mean height of a ring of
-  // samples at ~3× the local mesh spacing (darker in hollows, slightly brighter on crests).
-  const col = new Float32Array(verts * 3);
-  col[0] = col[1] = col[2] = 1;
-  for (let v = 1; v < verts; v++) {
-    const x = pos[v * 3], y = pos[v * 3 + 1], z = pos[v * 3 + 2];
-    const rr = Math.hypot(x, z);
-    const s = Math.max(160, rr * dTheta * 3);
-    let m = 0;
-    for (let q = 0; q < 6; q++) {
-      const a = (q / 6) * Math.PI * 2;
-      const xx = x + Math.cos(a) * s, zz = z + Math.sin(a) * s;
-      m += heightAt(xx, zz, Math.hypot(xx, zz)) ?? y;
-    }
-    m /= 6;
-    const c = (m - y) / s;
-    const shade = THREE.MathUtils.clamp(1 - 2.0 * c, 0.55, 1.1);
-    col[v * 3] = col[v * 3 + 1] = col[v * 3 + 2] = shade;
-  }
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  g.computeBoundingSphere();
+  g.setAttribute('position', new THREE.BufferAttribute(m.position, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(m.normal, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(m.uv, 2));
+  g.setAttribute('stereo', new THREE.BufferAttribute(m.stereo, 2));
+  g.setAttribute('color', new THREE.BufferAttribute(m.color, 3));
+  g.setIndex(new THREE.BufferAttribute(m.index, 1));
+  g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), m.radius);
   return g;
+}
+
+/** Terrain geometry for a region, built off the main thread; null while building. */
+export function useTerrainGeometry(region: LandingRegion, tiles: TerrainTiles, segments: number) {
+  const [g, setG] = useState<{ key: string; geometry: THREE.BufferGeometry } | null>(null);
+  const key = `${region.id}:${segments}`;
+  useEffect(() => {
+    let alive = true;
+    buildMesh(region, tiles, segments).then((m) => {
+      if (!alive) return;
+      setG((prev) => {
+        prev?.geometry.dispose();
+        return { key, geometry: toGeometry(m) };
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [region, tiles, segments, key]);
+  useEffect(() => () => setG((prev) => (prev?.geometry.dispose(), null)), []);
+  return g?.key === key ? g.geometry : null;
 }
 
 export interface TerrainAlbedo {
@@ -193,6 +102,7 @@ export function RadialTerrain({
   detail,
   segments,
   albedo,
+  ready,
 }: {
   region: LandingRegion;
   tiles: TerrainTiles;
@@ -200,8 +110,10 @@ export function RadialTerrain({
   segments: number;
   /** LROC WAC polar mosaic draped by polar-stereographic coordinate (null = uniform albedo). */
   albedo: TerrainAlbedo | null;
+  /** Rendered once the mesh exists (signals that Surface View is ready). */
+  ready?: ReactNode;
 }) {
-  const geometry = useMemo(() => buildRadialGeometry(region, tiles, segments), [region, tiles, segments]);
+  const geometry = useTerrainGeometry(region, tiles, segments);
   const material = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({ color: '#a29e97', roughness: 1, metalness: 0, vertexColors: true });
     const patches: ((sh: THREE.WebGLProgramParametersWithUniforms) => void)[] = [];
@@ -299,10 +211,15 @@ vStereo = stereo;`);
     m.customProgramCacheKey = () => `terrain3-${detail ? 'd' : ''}${albedo ? 'a' : ''}`;
     return m;
   }, [detail, albedo]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => {
     material.normalMap?.dispose();
     material.dispose();
   }, [material]);
-  return <mesh geometry={geometry} material={material} castShadow receiveShadow />;
+  if (!geometry) return null;
+  return (
+    <>
+      <mesh geometry={geometry} material={material} castShadow receiveShadow />
+      {ready}
+    </>
+  );
 }

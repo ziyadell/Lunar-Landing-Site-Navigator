@@ -1,0 +1,19 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "goto": "http://localhost:5174/?mode=orbital&site=malapert-massif&t=2027-01-13T14:00Z", "after": 500 },
+    {
+      "label": "orbital load",
+      "eval": "const P=()=>window.__perf; const t0=performance.now(); while(!(P()&&P().marks['moon-first-frame']) && performance.now()-t0<90000) await new Promise(r=>setTimeout(r,200)); while(!(P().marks['moon-hires']) && performance.now()-t0<120000) await new Promise(r=>setTimeout(r,200)); const res=performance.getEntriesByType('resource'); const kb=Math.round(res.reduce((a,e)=>a+(e.transferSize||e.encodedBodySize||0),0)/1024); const tex=res.filter(e=>/textures|terrain/.test(e.name)).map(e=>({f:e.name.split('/').slice(-1)[0], kb:Math.round((e.encodedBodySize||0)/1024), end:Math.round(e.responseEnd)})); return {marks:P().marks, totalKB:kb, textures:tex, longTasks:{...P().longTasks}}"
+    },
+    {
+      "label": "region switches (cold, cold, cold, back to first)",
+      "eval": "const A=window.__app.getState(); const P=window.__perf; const lt0={...P.longTasks}; const out=[]; for (const id of ['haworth','slater-plain','mons-mouton-plateau','haworth']) { const n=P.regionSwitch.length; A.selectRegion(id); const t0=performance.now(); while(P.regionSwitch.length===n && performance.now()-t0<40000) await new Promise(r=>setTimeout(r,100)); out.push({id, ms:P.regionSwitch[P.regionSwitch.length-1] ?? 'timeout'}); await new Promise(r=>setTimeout(r,600)); } return {switches:out, longTasksDuring:{count:P.longTasks.count-lt0.count, totalMs:Math.round(P.longTasks.totalMs-lt0.totalMs), maxMs:Math.round(P.longTasks.maxMs)}}"
+    },
+    {
+      "label": "enter surface",
+      "eval": "const A=window.__app.getState(); const P=window.__perf; const lt0={...P.longTasks}; A.enterSurface(); const t0=performance.now(); while(!P.marks['surface-ready'] && performance.now()-t0<90000) await new Promise(r=>setTimeout(r,100)); return {surfaceEnterMs:P.surfaceEnter[0] ?? 'timeout', longTasksDuring:{count:P.longTasks.count-lt0.count, totalMs:Math.round(P.longTasks.totalMs-lt0.totalMs), maxMs:Math.round(P.longTasks.maxMs)}, gl: window.__gl ? {...window.__gl.info.memory} : null}"
+    }
+  ]
+}

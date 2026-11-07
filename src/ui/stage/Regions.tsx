@@ -4,6 +4,7 @@ import { useData } from '../../data/DataContext';
 import { siteConditions } from '../../science/visibility';
 import { fmtDeg, fmtLat, fmtLon } from '../../utils/format';
 import type { LandingRegion, SiteConditions } from '../../data/types';
+import { Listen } from '../../audio/ui';
 
 /**
  * Region discovery, told through real geography:
@@ -159,7 +160,11 @@ export function RegionDeck() {
           <div className="deck-card__eyebrow">
             NASA candidate region <span className="num">{i + 1}</span> of <span className="num">{n}</span>
           </div>
-          <h2 className="deck-card__name" aria-live="polite">{r.name}</h2>
+          <h2 className="deck-card__name" aria-live="polite">
+            {r.name}
+            <Listen id={`region-${r.id}`} />
+            {!orbital && <Listen id="surface-intro" className="listen--alt" />}
+          </h2>
           <div className="deck-card__meta">
             <span className="num">
               {fmtLat(p.latDeg, 2)} {fmtLon(p.lonDeg, 2)}

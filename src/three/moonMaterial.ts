@@ -22,6 +22,8 @@ import * as THREE from 'three';
 
 export interface MoonUniforms {
   capNormal: { value: THREE.Texture };
+  /** 0 until the polar LOLA normals have streamed in (the globe draws without them meanwhile). */
+  capNrmOn: { value: number };
   capExtent: { value: number };
   capImg: { value: THREE.Texture };
   capImgOn: { value: number };
@@ -42,6 +44,7 @@ const blank = () => {
 export function createMoonUniforms(capNormal: THREE.Texture, capExtentKm: number): MoonUniforms {
   return {
     capNormal: { value: capNormal },
+    capNrmOn: { value: 0 },
     capExtent: { value: capExtentKm },
     capImg: { value: blank() },
     capImgOn: { value: 0 },
@@ -82,7 +85,7 @@ export function createMoonMaterial(opts: {
     const header = /* glsl */ `
       #include <common>
       varying vec3 vObjPos;
-      uniform sampler2D capNormal; uniform float capExtent;
+      uniform sampler2D capNormal; uniform float capExtent; uniform float capNrmOn;
       uniform sampler2D capImg; uniform float capImgOn;
       uniform sampler2D detailImg; uniform sampler2D detailNrm;
       uniform vec2 detailCenter; uniform float detailHalf; uniform float detailOn;
@@ -138,10 +141,16 @@ export function createMoonMaterial(opts: {
     const normals = /* glsl */ `
       #include <normal_fragment_maps>
       if (gPolarW > 0.0) {
-        vec3 nObj = texture2D(capNormal, gUvCap, -0.3).xyz * 2.0 - 1.0;
-        if (gDetW > 0.0) nObj = mix(nObj, texture2D(detailNrm, gUvDet).xyz * 2.0 - 1.0, gDetW);
-        vec3 nView = normalize((viewMatrix * vec4(normalize(nObj), 0.0)).xyz);
-        normal = normalize(mix(normal, nView, gPolarW));
+        float haveN = capNrmOn;
+        vec3 nObj = capNrmOn > 0.5 ? texture2D(capNormal, gUvCap, -0.3).xyz * 2.0 - 1.0 : vec3(0.0, -1.0, 0.0);
+        if (gDetW > 0.0) {
+          nObj = mix(nObj, texture2D(detailNrm, gUvDet).xyz * 2.0 - 1.0, gDetW);
+          haveN = max(haveN, gDetW);
+        }
+        if (haveN > 0.0) {
+          vec3 nView = normalize((viewMatrix * vec4(normalize(nObj), 0.0)).xyz);
+          normal = normalize(mix(normal, nView, gPolarW * haveN));
+        }
       }
     `;
 
@@ -162,6 +171,6 @@ export function createMoonMaterial(opts: {
       shader.fragmentShader = shader.fragmentShader.replace('#include <lights_physical_pars_fragment>', patched);
     }
   };
-  mat.customProgramCacheKey = () => 'moon-v3';
+  mat.customProgramCacheKey = () => 'moon-v4';
   return mat;
 }

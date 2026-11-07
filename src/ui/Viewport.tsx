@@ -3,15 +3,12 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OrbitalScene } from '../three/OrbitalScene';
 import { SurfaceScene } from '../three/SurfaceScene';
-import { probeTextureTier } from '../three/MoonGlobe';
+import { renderSettings, useSettings } from '../state/settings';
 import { useApp } from '../state/store';
 import { webglAvailable } from '../utils/motion';
 import { GlobeLabels } from './GlobeLabels';
 import { SkyLabels } from './SurfaceOverlay';
 
-// Full device resolution (capped at 2×). No adaptive down-scaling: it softened the
-// Moon's limb and fine detail while interacting.
-const DPR = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
 
 class SceneBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
@@ -34,9 +31,12 @@ export function Viewport() {
   const mode = useApp((s) => s.mode);
   const transitioning = useApp((s) => s.transitioning);
   const hasGL = useMemo(webglAvailable, []);
-  // Decided before the GL context exists so only one set of base textures loads.
-  const tier = useMemo(probeTextureTier, []);
-  const [shadowSize, setShadowSize] = useState(4096);
+  // Quality (Auto / Performance / High) decides pixel density, texture tier, shadow map and
+  // mesh density before the GL context exists. Changing it re-creates the scene once.
+  const quality = useSettings((s) => s.quality);
+  const rs = useMemo(() => renderSettings(quality), [quality]);
+  const tier = rs.tier;
+  const DPR = rs.dpr;
   const [terrainError, setTerrainError] = useState<string | null>(null);
   const onTerrainError = useCallback((m: string | null) => {
     setTerrainError(m);
@@ -56,7 +56,7 @@ export function Viewport() {
 
   return (
     <section className={`viewport viewport--${mode}`} aria-label={mode === 'orbital' ? '3D Moon' : 'Local surface'}>
-      <SceneBoundary key={mode}>
+      <SceneBoundary key={`${mode}-${quality}`}>
         {mode === 'orbital' ? (
           <Canvas
             className="viewport__canvas"
@@ -84,11 +84,9 @@ export function Viewport() {
               if (import.meta.env.DEV) (window as unknown as { __gl: unknown }).__gl = gl;
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.0;
-              const small = Math.min(window.innerWidth, window.innerHeight) < 700;
-              setShadowSize(small || gl.capabilities.maxTextureSize < 8192 ? 2048 : 4096);
             }}
           >
-            <SurfaceScene shadowMapSize={shadowSize} onError={onTerrainError} />
+            <SurfaceScene shadowMapSize={rs.shadowMap} segments={rs.terrainSegments} onError={onTerrainError} />
           </Canvas>
         )}
       </SceneBoundary>

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Listen } from '../../audio/ui';
 import { useApp, type Scenario } from '../../state/store';
 import { useData } from '../../data/DataContext';
 import { computeSeries, scenarioMetrics, type SeriesPoint } from '../../science/visibility';
@@ -59,30 +60,25 @@ function Vantage({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
   return (
     <section className={`vantage vantage--${res.key}`} aria-labelledby={`${id}-title`}>
       <div className="vantage__head">
-        <img className="vantage__img" src={thumbUrl(res.region.id)} alt={`LROC WAC 100 m image, 24 km square, centred on the ${res.region.name} observation point`} width={120} height={120} />
+        <img className="vantage__img" src={thumbUrl(res.region.id)} alt={`LROC WAC 100 m image of NASA's ${res.region.name} region outline`} width={72} height={72} />
         <div className="vantage__title">
-          <span className="vantage__key">Scenario {res.key}</span>
-          <h3 id={`${id}-title`} className="vantage__name">{res.region.name}</h3>
-          <span className="vantage__coord num">
+          <label className="vantage__key" htmlFor={`${id}-region`}>
+            Scenario {res.key}
+          </label>
+          <div className="vantage__select">
+            <select id={`${id}-region`} className="vantage__name" value={res.region.id} onChange={(e) => set(i, { regionId: e.target.value })}>
+              {sites.regions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
+          </div>
+          <span className="vantage__coord num" id={`${id}-title`}>
             {fmtLat(p.latDeg, 2)} {fmtLon(p.lonDeg, 2)} · {p.elevationM.toFixed(0)} m
           </span>
         </div>
-      </div>
-      <div className="vantage__pick" role="radiogroup" aria-label={`Region for scenario ${res.key}`}>
-        {sites.regions.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            role="radio"
-            aria-checked={r.id === res.region.id}
-            className={`vantage__chip${r.id === res.region.id ? ' is-on' : ''}`}
-            title={r.name}
-            aria-label={r.name}
-            onClick={() => set(i, { regionId: r.id })}
-          >
-            <img src={thumbUrl(r.id)} alt="" width={40} height={40} loading="lazy" />
-          </button>
-        ))}
       </div>
       <div className="vantage__when">
         <div className="field">
@@ -388,10 +384,11 @@ export default function AnalysisView() {
     <main className="study" aria-label="Mission analysis">
       <header className="study__hero">
         <span className="study__eyebrow">Mission analysis</span>
-        <h2 className="study__title">How much sunlight and Earth contact does each site get?</h2>
+        <h2 className="study__title">
+          How much sunlight and Earth contact does each site get? <Listen id="analysis-intro" />
+        </h2>
         <p className="study__lede">
-          Choose two observation points and periods. Every {step} minutes the Sun and Earth are checked against the measured LOLA
-          skyline, from 2 m above the surface.
+          Pick two regions and periods; every {step} minutes the Sun and Earth are checked against the measured LOLA skyline.
         </p>
       </header>
 
@@ -418,7 +415,9 @@ export default function AnalysisView() {
 
       <section className="study__block">
         <div className="study__head">
-          <h3>Through time</h3>
+          <h3>
+            Through time <Listen id="term-intervals" />
+          </h3>
           <p>Bars mark when each body clears the skyline. Hover for exact values; click to pin a moment and open it in 3D.</p>
         </div>
         <div className="study__card">

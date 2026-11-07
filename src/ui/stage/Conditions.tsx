@@ -5,6 +5,8 @@ import { compass, fmtDate, fmtDeg, fmtLat, fmtLon } from '../../utils/format';
 import { EarthGlyph, Readout, SunGlyph } from '../primitives';
 import type { TopocentricBody } from '../../data/types';
 import { STATE_LABEL } from '../../science/visibility';
+import { Listen } from '../../audio/ui';
+import type { NarrationItem } from '../../audio/engine';
 
 /**
  * The essential answer, always on screen: can you see the Sun and Earth from
@@ -35,8 +37,27 @@ function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
   );
 }
 
+/** Spoken summary of the current readings (calculated from app state, never invented). */
+function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<typeof useConditions>['conditions']>): NarrationItem {
+  const d = new Date(timeMs);
+  const when = `${d.getUTCDate()} ${d.toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' })} ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC`;
+  const say = (name: string, b: TopocentricBody) => {
+    const el = `${Math.abs(b.elDeg).toFixed(1)} degrees ${b.elDeg >= 0 ? 'above' : 'below'} the horizontal`;
+    if (b.state === 'visible') return `${name} is visible, ${el}, clearing the skyline by ${b.marginDeg.toFixed(1)} degrees.`;
+    if (b.state === 'below-horizontal') return `${name} is not visible: it is ${el}.`;
+    return `${name} is hidden by terrain: it is ${el}, ${Math.abs(b.marginDeg).toFixed(1)} degrees below the skyline.`;
+  };
+  return {
+    id: `now-${timeMs}`,
+    title: 'Conditions now',
+    calculated: true,
+    text: `Calculated for ${regionName}, ${when}. ${say('The Sun', c.sun)} ${say('The Earth', c.earth)} Earth visibility is a geometric line of sight, not a guaranteed communication link.`,
+  };
+}
+
 export function ConditionsCard() {
-  const { conditions } = useConditions();
+  const { conditions, region } = useConditions();
+  const timeMs = useApp((s) => s.timeMs);
   const { ephemeris } = useData();
   const drawer = useApp((s) => s.drawer);
   const openDrawer = useApp((s) => s.openDrawer);
@@ -52,6 +73,7 @@ export function ConditionsCard() {
           No ephemeris for this time. Coverage {fmtDate(ephemeris.startMs)} – {fmtDate(ephemeris.endMs)} UTC.
         </p>
       )}
+      {conditions && <Listen item={nowItem(region.name, timeMs, conditions)} className="listen--cond" />}
       <button type="button" className="cond__more" aria-expanded={drawer === 'details'} onClick={() => openDrawer('details')}>
         {drawer === 'details' ? 'Hide measurements' : 'All measurements'}
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 6.5 5l-3 3" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
@@ -97,6 +119,11 @@ export function DetailsDrawer() {
           <BodyTable which="earth" b={conditions.earth} range={sample.earth.distanceKm} />
         </div>
       )}
+      <p className="details__terms">
+        <span>Listen:</span>
+        <Listen id="term-elevation" /> Elevation <Listen id="term-azimuth" /> Azimuth <Listen id="term-skyline" /> Skyline{' '}
+        <Listen id="term-clearance" /> Clearance <Listen id="term-coordinates" /> Coordinates
+      </p>
       <section className="mtable">
         <h3 className="mtable__head">Observation point</h3>
         <dl className="readouts">
