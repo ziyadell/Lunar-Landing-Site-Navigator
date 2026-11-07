@@ -1,0 +1,74 @@
+{
+ "method": "Horizons topocentric apparent Az/El (quantity 4, CENTER=coord@301, airless) vs app vector method from hourly sub-point table",
+ "period": "2027-01-01 00:00 to 2027-02-28 00:00 UTC, step 6h",
+ "note": "Azimuth error is scaled by cos(elevation) (great-circle error on the sky).",
+ "retrievedUtc": "2026-11-07T00:16:32Z",
+ "sites": [
+  {
+   "id": "malapert-massif",
+   "sun": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0007,
+    "maxAzErrDeg": 0.0002
+   },
+   "earth": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0006,
+    "meanElevErrDeg": 0.0003,
+    "maxAzErrDeg": 0.006
+   }
+  },
+  {
+   "id": "mons-mouton",
+   "sun": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0007,
+    "maxAzErrDeg": 0.0002
+   },
+   "earth": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0006,
+    "meanElevErrDeg": 0.0003,
+    "maxAzErrDeg": 0.006
+   }
+  },
+  {
+   "id": "nobile-rim-1",
+   "sun": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0007,
+    "maxAzErrDeg": 0.0002
+   },
+   "earth": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0006,
+    "meanElevErrDeg": 0.0003,
+    "maxAzErrDeg": 0.006
+   }
+  },
+  {
+   "id": "haworth",
+   "sun": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0007,
+    "meanElevErrDeg": 0.0007,
+    "maxAzErrDeg": 0.0002
+   },
+   "earth": {
+    "samples": 233,
+    "maxElevErrDeg": 0.0006,
+    "meanElevErrDeg": 0.0003,
+    "maxAzErrDeg": 0.006
+   }
+  }
+ ],
+ "moonOrientation": {
+  "method": "Sun J2000 direction from Moon centre (Horizons quantity 1) rotated with the IAU 2009 Moon model vs Horizons sub-solar point",
+  "samples": 122,
+  "maxErrDeg": 0.0083,
+  "meanErrDeg": 0.0056
+ }
+}

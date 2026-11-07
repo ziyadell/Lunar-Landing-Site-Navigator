@@ -1,0 +1,22 @@
+# dependencies & builds
+node_modules
+dist
+*.tsbuildinfo
+.vite
+
+# raw NASA source downloads (~500 MB) — regenerate with preprocess/
+data_raw
+
+# python
+__pycache__
+*.pyc
+
+# local tooling / environment
+.claude
+.vercel
+.env
+.env.*
+*.local
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,77 @@
+/* ------------------------------------------------------------------
+   Design tokens — the single source of colour, type, and spacing.
+   Palette is fixed by the project brief; secondary neutrals are derived
+   only for readable hierarchy (muted text, hairlines).
+   ------------------------------------------------------------------ */
+:root {
+  /* Core palette */
+  --space-black: #05080f;
+  --deep-navy: #111827;
+  --lunar-white: #f1f5f9;
+  --electric-cyan: #4ddcf4;
+  --solar-gold: #ffca68;
+  --coral-red: #ff6b6b;
+
+  /* Derived neutrals (readability only) */
+  --navy-raised: #162033;
+  --text-secondary: #a3afc2; /* 8.6:1 on navy */
+  --text-tertiary: #7d8aa0; /* 5.0:1 on navy */
+  --hairline: rgba(241, 245, 249, 0.09);
+  --hairline-strong: rgba(241, 245, 249, 0.18);
+  --cyan-dim: rgba(77, 220, 244, 0.14);
+  --gold-dim: rgba(255, 202, 104, 0.14);
+  --coral-dim: rgba(255, 107, 107, 0.14);
+
+  /* Semantic */
+  --bg: var(--space-black);
+  --surface: var(--deep-navy);
+  --surface-raised: var(--navy-raised);
+  --text: var(--lunar-white);
+  --accent: var(--electric-cyan);
+  --sun: var(--solar-gold);
+  --earth: var(--electric-cyan);
+  --warn: var(--coral-red);
+  --focus-ring: 0 0 0 2px var(--space-black), 0 0 0 4px var(--electric-cyan);
+
+  /* Type */
+  --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+
+  --fs-micro: 10.5px;
+  --fs-label: 11.5px;
+  --fs-body: 13px;
+  --fs-body-lg: 14px;
+  --fs-value: 15px;
+  --fs-value-lg: 22px;
+  --fs-title: 17px;
+  --fs-heading: 20px;
+
+  --tracking-label: 0.08em;
+
+  /* Space (4px grid) */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+
+  --radius: 2px;
+  --topbar-h: 52px;
+  --dock-h: 128px;
+  --panel-w-left: 288px;
+  --panel-w-right: 328px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 140ms;
+  --dur-med: 260ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-med: 0ms;
+  }
+}
