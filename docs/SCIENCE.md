@@ -110,6 +110,13 @@ The ray-traced skyline (§3.1) is drawn as a thin annotation line. It coincides
 with the rendered terrain edge. A Python check confirmed that the rendered
 tiles never exceed the profile by more than 0.10° at any azimuth.
 
+**Albedo:** the LROC WAC South Pole Summer Mosaic (100 m) is draped by each
+vertex's exact polar-stereographic coordinate (site window, then the polar cap).
+Pixels in 2010 shadow use the regional mean, and the response is compressed
+(`(a/ā)^0.6`, 0.6–1.4). Within 5 km of the sites, 24–65 % of mosaic pixels are
+shadowed, and the visible foreground spans one or two pixels, so the effect is
+km-scale and subtle. It adds no fine detail.
+
 Cast shadows cover ±80 km (~39 m per shadow texel at 4096²). Beyond that,
 terrain is shaded but casts no shadows. Direct sunlight is scaled by the
 visible fraction of the solar disc at the observation point.
@@ -158,7 +165,7 @@ Aug 2022). On **Oct 28, 2024** NASA refined the list to nine regions: Peak near
 Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile
 Rim 1, Nobile Rim 2, de Gerlache Rim 2 and Slater Plain
 ([NASA](https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/)).
-All four regions used here are on that list. NASA does not publish coordinates for them, so the app anchors each
+All six regions used here are on that list. Mons Mouton Plateau, Nobile Rim 2 and Slater Plain are not represented: their extents are unpublished, and no defensible public-data rule distinguishes them from the points used here. NASA does not publish coordinates for them, so the app anchors each
 region to an IAU Gazetteer of Planetary Nomenclature feature (retrieved
 2026-11-07) and selects **one representative observation point** with a stated rule:
 
@@ -168,6 +175,8 @@ region to an IAU Gazetteer of Planetary Nomenclature feature (retrieved
 | Mons Mouton (Oct 2024 list; distinct from "Mons Mouton Plateau") | Mons Mouton (ID 16070), 130 km | −84.60, 31.00 | Same as above |
 | Nobile Rim 1 | Nobile crater (ID 4321), 79.3 km | −85.28, 53.27 | Of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii on radial profiles every 5°), the most sunlit in 2027. NASA does not distinguish Rim 1 from Rim 2 by coordinates, so this is a representative rim point. |
 | Haworth | Haworth crater (ID 14502), 51.4 km | −87.45, −5.17 | Same rim-crest rule |
+| Peak near Cabeus B | Cabeus B crater (ID 8058), 59.6 km | −82.26, −54.58 | Highest 3×3-smoothed LOLA point between 0.6 and 1.6 crater radii (provisional; NASA's peak location is unpublished). Northward horizon rays leave the 80°S DEM after ~40 km. |
+| de Gerlache Rim 2 | de Gerlache crater (ID 1439), 32.7 km | −88.48, −88.34 | Same rim-crest rule |
 
 Resulting points (LOLA elevation; 2027 Sun-visible fraction used for selection):
 
@@ -177,6 +186,8 @@ Resulting points (LOLA elevation; 2027 Sun-visible fraction used for selection):
 | Mons Mouton | −84.3683 | 32.0082 | 5600 m | 51.0 % |
 | Nobile Rim 1 | −85.5525 | 37.5526 | 6099 m | 70.7 % |
 | Haworth | −87.0201 | −24.4343 | 1721 m | 54.2 % |
+| Peak near Cabeus B | −81.3478 | −57.5836 | 1294 m | 48.6 % |
+| de Gerlache Rim 2 | −89.0037 | −96.5972 | 1552 m | 72.3 % |
 
 The rule deliberately favours well-lit locations because the real candidate
 regions were chosen with illumination as a criterion. The points remain
@@ -196,7 +207,7 @@ suitability ranking or score is computed.
 
 | Level | When | Imagery | Relief |
 |---|---|---|---|
-| Global | always | LROC WAC mosaic, 4K base map (≈2.7 km/px at the equator) | LOLA `ldem_16` normal map, 1.9 km |
+| Global | always | LROC WAC mosaic, 4K base map (≈2.7 km/px at the equator); 8K base (≈1.3 km/px) on high-DPI screens | LOLA `ldem_16` normal map, 1.9 km |
 | Regional | visible patches when on-screen ground resolution < 2 km/px | 16K mosaic tiles (16384 × 8192; **≈0.67 km/px at the equator**, 0.022° per pixel in latitude) | as above |
 | South polar cap (poleward of 80.6°S) | pole in view | **LROC WAC South Pole Summer Mosaic**, 643 nm, 100 m native, as a 4096² texture (146 m/px; 2048² on small screens) | LOLA `LDEM_80S_80M` object-space normals, 2048² (293 m) at start, 4096² (146 m) when zoomed |
 | Selected site | the selected region | the same mosaic at its **native 100 m**, 2048² window (204.8 km) | LOLA normals on the same 100 m grid |

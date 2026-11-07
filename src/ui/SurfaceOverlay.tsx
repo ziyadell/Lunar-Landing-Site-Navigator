@@ -146,7 +146,8 @@ export function SurfaceInfo({ error }: { error: string | null }) {
           <p>
             <strong>Measured:</strong> one continuous LOLA terrain mesh to 150 km (80 m within 11 km, 400 m to 55 km,
             1 km beyond), the same range as the ray-traced skyline,
-            Sun and Earth from JPL Horizons, stars from the Yale Bright Star Catalogue placed with the IAU Moon rotation
+            surface albedo from the LROC WAC South Pole Summer Mosaic (100 m; its 2010 shadows are replaced by the
+            regional mean), Sun and Earth from JPL Horizons, stars from the Yale Bright Star Catalogue placed with the IAU Moon rotation
             model. Shadows are cast by the terrain in the scene; direct sunlight is scaled to the visible solar disc
             {conditions ? ` (${(conditions.sun.discFraction * 100).toFixed(0)}% now)` : ''}.
           </p>

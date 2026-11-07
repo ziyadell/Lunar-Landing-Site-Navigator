@@ -24,8 +24,9 @@ it has a direct line of sight to Earth. Built for the NASA Space Apps Challenge
 Region, time and mode stay synchronised across views and live in the URL, e.g.
 [`?mode=surface&site=haworth&t=2027-01-12T06:00Z`](https://lunar-landing-site-navigator-six.vercel.app/?mode=surface&site=haworth&t=2027-01-12T06:00Z).
 
-Before/after evidence and root causes for the November 2026 quality pass:
-[docs/QUALITY-PASS.md](docs/QUALITY-PASS.md).
+Before/after evidence and root causes: [docs/QUALITY-PASS.md](docs/QUALITY-PASS.md)
+(rendering, camera, markers, terrain) and [docs/EXPERIENCE-PASS.md](docs/EXPERIENCE-PASS.md)
+(interface, interaction, regions, references).
 
 ### Screenshots (live deployment, initial release)
 
@@ -128,7 +129,7 @@ docs/            SCIENCE.md, ATTRIBUTION.md, VALIDATION.md, screenshots/
 
 ## Known limitations
 
-- Four of NASA's candidate regions, one observation point each; no free point picking.
+- Six of NASA's nine Oct 2024 candidate regions, one observation point each (three not representable with public data; see the app); no free point picking.
 - Ephemeris coverage fixed to 2026-07-01 – 2028-12-31 UTC.
 - Visibility uses the disc centre (partial-disc fraction shown in readings only);
   geometric line of sight only — no link budgets, antennas, thermal or slope hazards.

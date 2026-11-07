@@ -99,3 +99,9 @@ validation checks for this branch are documented in
 - Polar mosaic georeferencing verified against five permanently shadowed craters.
 - Edge (headless, software WebGL) and Firefox 159 (local GPU) pass all three modes with no console errors.
 - WebKit/Safari, real touch devices, screen readers and GPU frame-rate profiling remain untested.
+
+## 8. Experience pass (branch `experience-pass`)
+
+Six regions validated (≤ 0.0009° vs Horizons; Moon orientation ≤ 0.0083°).
+Edge (all sizes) and Firefox 159 (local GPU) pass all modes with no console
+errors. Details: [EXPERIENCE-PASS.md](EXPERIENCE-PASS.md).

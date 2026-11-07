@@ -19,6 +19,8 @@ export interface Layers {
   skyGrid: boolean;
   rings: boolean;
   regolith: boolean;
+  /** LROC WAC polar mosaic draped on Surface View terrain (measured imagery). */
+  albedo: boolean;
 }
 
 export type SurfacePreset = 'scientific' | 'clean' | 'realistic';
@@ -33,17 +35,17 @@ export const SURFACE_PRESETS: Record<SurfacePreset, { label: string; hint: strin
   scientific: {
     label: 'Scientific',
     hint: 'All annotations: LOLA skyline, az/el grid, range rings. Enhanced visibility.',
-    layers: { enhancedLight: true, horizonLine: true, stars: true, skyGrid: true, rings: true, regolith: false },
+    layers: { enhancedLight: true, horizonLine: true, stars: true, skyGrid: true, rings: true, regolith: false, albedo: true },
   },
   clean: {
     label: 'Clean',
     hint: 'Terrain, Sun, Earth and stars without overlays. Enhanced visibility.',
-    layers: { enhancedLight: true, horizonLine: false, stars: true, skyGrid: false, rings: false, regolith: false },
+    layers: { enhancedLight: true, horizonLine: false, stars: true, skyGrid: false, rings: false, regolith: false, albedo: true },
   },
   realistic: {
     label: 'Realistic',
     hint: 'Physical lighting only; adds the illustrative sub-80 m texture.',
-    layers: { enhancedLight: false, horizonLine: false, stars: true, skyGrid: false, rings: false, regolith: true },
+    layers: { enhancedLight: false, horizonLine: false, stars: true, skyGrid: false, rings: false, regolith: true, albedo: true },
   },
 };
 
@@ -85,6 +87,9 @@ interface AppState {
   poleCamera: () => void;
   /** Zoom toward an arbitrary surface point (double-click). */
   pointCamera: (latDeg: number, lonDeg: number) => void;
+  /** Button / keyboard zoom: factor < 1 zooms in. */
+  zoomCommand: { factor: number; seq: number };
+  zoomCamera: (factor: number) => void;
   /** Orbital → dive animation → Surface (instant from other modes). */
   enterSurface: () => void;
   setTransitioning: (v: boolean) => void;
@@ -123,6 +128,7 @@ export const useApp = create<AppState>((set) => ({
     skyGrid: true,
     rings: true,
     regolith: false,
+    albedo: true,
   },
   scenarios: [
     { regionId: 'malapert-massif', startMs: Date.UTC(2027, 0, 1), durationDays: 30 },
@@ -136,6 +142,8 @@ export const useApp = create<AppState>((set) => ({
   focusRegion: () => set((s) => ({ cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 } })),
   resetCamera: () => set((s) => ({ cameraCommand: { kind: 'global', seq: s.cameraCommand.seq + 1 } })),
   poleCamera: () => set((s) => ({ cameraCommand: { kind: 'pole', seq: s.cameraCommand.seq + 1 } })),
+  zoomCommand: { factor: 1, seq: 0 },
+  zoomCamera: (factor) => set((s) => ({ zoomCommand: { factor, seq: s.zoomCommand.seq + 1 } })),
   pointCamera: (latDeg, lonDeg) => set((s) => ({ cameraCommand: { kind: 'point', seq: s.cameraCommand.seq + 1, latDeg, lonDeg } })),
   enterSurface: () =>
     set((s) =>

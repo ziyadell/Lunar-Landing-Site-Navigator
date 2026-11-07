@@ -6,6 +6,7 @@ const LAYER_LABELS: { k: keyof Layers; label: string; modes: ('orbital' | 'surfa
   { k: 'sunVector', label: 'Sun vector', modes: ['orbital'] },
   { k: 'earthVector', label: 'Earth vector', modes: ['orbital'] },
   { k: 'enhancedLight', label: 'Enhanced visibility', modes: ['surface'] },
+  { k: 'albedo', label: 'LROC albedo (100 m)', modes: ['surface'] },
   { k: 'horizonLine', label: 'LOLA skyline', modes: ['surface'] },
   { k: 'stars', label: 'Stars (BSC5)', modes: ['surface'] },
   { k: 'skyGrid', label: 'Az / El grid', modes: ['surface'] },

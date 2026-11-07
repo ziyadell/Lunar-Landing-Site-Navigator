@@ -53,6 +53,9 @@ export const useCameraInfo = create<{
   metersPerPixel: number;
 }>(() => ({ mode: 'global', latDeg: -90, lonDeg: 0, rangeKm: 0, metersPerPixel: 0 }));
 
+/** Surface coordinate under the pointer (null when off the globe). */
+export const useCursorLL = create<{ ll: { latDeg: number; lonDeg: number } | null }>(() => ({ ll: null }));
+
 function frame(mode: Pose['mode'], target: THREE.Vector3) {
   if (mode === 'global') {
     return { U: new THREE.Vector3(0, 1, 0), N: new THREE.Vector3(1, 0, 0), E: new THREE.Vector3(0, 0, -1) };
@@ -126,6 +129,11 @@ export function GlobeCamera() {
   const up = useRef(new THREE.Vector3(0, 1, 0));
   const rate = useRef(7);
   const dive = useRef<{ until: number } | null>(null);
+  const zoomRef = useRef<(f: number) => void>(() => undefined);
+  const zoomCmd = useApp((s) => s.zoomCommand);
+  useEffect(() => {
+    if (zoomCmd.seq > 0) zoomRef.current(zoomCmd.factor);
+  }, [zoomCmd]);
 
   const aspect = () => (camera as THREE.PerspectiveCamera).aspect || 1;
 
@@ -254,7 +262,7 @@ export function GlobeCamera() {
       cur.current = poseFrom('site', p.target, camera.position, cur.current!.heading);
       setGoal(p, 12);
     };
-    const zoom = (factor: number) => {
+    const zoom = (zoomRef.current = (factor: number) => {
       const p = g();
       const c = cur.current!;
       // Hand over only once the camera itself (not just the goal) has reached the limit,
@@ -270,7 +278,7 @@ export function GlobeCamera() {
       const q = g();
       q.logRange += Math.log(factor);
       setGoal(q, 10);
-    };
+    });
 
     const down = (e: PointerEvent) => {
       try {
@@ -286,9 +294,26 @@ export function GlobeCamera() {
       }
       dive.current = null;
     };
+    let raf = 0;
+    const hover = (e: PointerEvent) => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const rect = el.getBoundingClientRect();
+        const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(ndc, camera);
+        const hit = ray.ray.intersectSphere(new THREE.Sphere(new THREE.Vector3(), 1), new THREE.Vector3());
+        useCursorLL.setState({ ll: hit ? vecToLonLat([hit.x, -hit.z, hit.y]) : null });
+      });
+    };
+    const leave = () => useCursorLL.setState({ ll: null });
     const move = (e: PointerEvent) => {
       const prev = pointers.get(e.pointerId);
-      if (!prev) return;
+      if (!prev) {
+        if (e.pointerType === 'mouse') hover(e);
+        return;
+      }
       const dx = e.clientX - prev.x;
       const dy = e.clientY - prev.y;
       pointers.set(e.pointerId, { ...prev, x: e.clientX, y: e.clientY });
@@ -350,6 +375,7 @@ export function GlobeCamera() {
     el.addEventListener('dblclick', dbl);
     el.addEventListener('keydown', key);
     el.addEventListener('contextmenu', ctx);
+    el.addEventListener('pointerleave', leave);
     el.style.touchAction = 'none';
     return () => {
       el.removeEventListener('pointerdown', down);
@@ -360,6 +386,8 @@ export function GlobeCamera() {
       el.removeEventListener('dblclick', dbl);
       el.removeEventListener('keydown', key);
       el.removeEventListener('contextmenu', ctx);
+      el.removeEventListener('pointerleave', leave);
+      cancelAnimationFrame(raf);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gl, camera, size.height]);

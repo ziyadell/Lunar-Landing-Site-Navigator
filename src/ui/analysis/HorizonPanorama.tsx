@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { ScenarioResult } from './AnalysisView';
 
 const W = 720;
@@ -40,12 +40,26 @@ export function HorizonPanorama({ res }: { res: ScenarioResult }) {
     return res.series.filter((_, i) => i % stride === 0);
   }, [res.series]);
 
+  const [hAz, setHAz] = useState<number | null>(null);
+  const skyAt = (az: number) => {
+    const xx = az / step;
+    const i = Math.floor(xx) % prof.length;
+    const f = xx - Math.floor(xx);
+    return prof[i] * (1 - f) + prof[(i + 1) % prof.length] * f;
+  };
   const yTicks: number[] = [];
   const yStep = hi - lo > 12 ? 4 : 2;
   for (let v = Math.ceil(lo / yStep) * yStep; v <= hi; v += yStep) yTicks.push(v);
 
   return (
     <svg className="pano" viewBox={`0 0 ${W} ${H}`} role="img"
+      onPointerMove={(e) => {
+        const b = e.currentTarget.getBoundingClientRect();
+        const vx = ((e.clientX - b.left) / b.width) * W;
+        const az = ((vx - PAD.l) / (W - PAD.l - PAD.r)) * 360;
+        setHAz(az >= 0 && az <= 360 ? az : null);
+      }}
+      onPointerLeave={() => setHAz(null)}
       aria-label={`Horizon panorama for ${res.region.name}: terrain skyline elevation by azimuth with Sun and Earth positions over the scenario period.`}>
       {yTicks.map((v) => (
         <g key={v}>
@@ -66,6 +80,16 @@ export function HorizonPanorama({ res }: { res: ScenarioResult }) {
         <circle key={`s${p.t}`} cx={x(p.sunAz)} cy={y(p.sunEl)} r="1.8" className={p.sunVis ? 'pano__sun' : 'pano__sun is-hidden'} />
       ))}
       <path d={skyline} className="pano__terrain" />
+      {hAz !== null && (
+        <g className="pano__cursor">
+          <line x1={x(hAz)} x2={x(hAz)} y1={PAD.t} y2={H - PAD.b} />
+          <circle cx={x(hAz)} cy={y(skyAt(hAz))} r="3.5" />
+          <text x={x(hAz) + (hAz > 270 ? -8 : 8)} y={PAD.t + 12} textAnchor={hAz > 270 ? 'end' : 'start'}>
+            Az {hAz.toFixed(1)}° · skyline {skyAt(hAz) >= 0 ? '+' : ''}
+            {skyAt(hAz).toFixed(2)}°
+          </text>
+        </g>
+      )}
       <text x={W - PAD.r - 4} y={PAD.t + 10} className="pano__note">LOLA skyline · obs. 2 m</text>
     </svg>
   );
