@@ -38,8 +38,8 @@
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
 
-  --fs-micro: 10.5px;
-  --fs-label: 11.5px;
+  --fs-micro: 11px;
+  --fs-label: 12px;
   --fs-body: 13px;
   --fs-body-lg: 14px;
   --fs-value: 15px;
@@ -62,6 +62,7 @@
   --topbar-h: 52px;
   --dock-h: 128px;
   --panel-w-left: 288px;
+  --rail-w: 52px;
   --panel-w-right: 328px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

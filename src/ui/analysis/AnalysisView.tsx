@@ -6,6 +6,7 @@ import type { LandingRegion, ScenarioMetrics } from '../../data/types';
 import { fmtDate, fmtDeg, fmtHours, fmtLat, fmtLon } from '../../utils/format';
 import { SectionHead } from '../primitives';
 import { ScenarioTimeline } from './ScenarioTimeline';
+import { useMedia } from '../../utils/useMedia';
 import { HorizonPanorama } from './HorizonPanorama';
 
 const DURATIONS = [7, 14, 30, 60, 90, 180, 365];
@@ -133,7 +134,52 @@ function cell(m: ScenarioMetrics | null, row: Row) {
   return row.truncated?.(m) ? `≥ ${v}` : v;
 }
 
+function deltaText(row: Row, a: ScenarioResult, b: ScenarioResult) {
+  const range = row.label.endsWith('range');
+  const d = !range && a.metrics && b.metrics ? row.get(b.metrics) - row.get(a.metrics) : null;
+  const isPct = row.unit.startsWith('%');
+  return d === null || Math.abs(d) < 1e-9 ? '—' : `${d > 0 ? '+' : '−'}${isPct ? Math.abs(d).toFixed(1) + ' pp' : fmtHours(Math.abs(d))}`;
+}
+
+/** Narrow screens: one card per metric with A / B / difference side by side. */
+function MetricsStack({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
+  const groups = [...new Set(ROWS.map((r) => r.group))];
+  return (
+    <div className="mstack">
+      {groups.map((g) => (
+        <section key={g} className="mstack__group" aria-label={g}>
+          <h4 className="mstack__head">{g}</h4>
+          {ROWS.filter((r) => r.group === g).map((row) => (
+            <div key={row.label} className="mstack__row">
+              <div className="mstack__label">
+                {row.label}
+                {row.unit && <span className="metrics__unit"> {row.unit}</span>}
+              </div>
+              <dl className="mstack__vals">
+                <div>
+                  <dt>A</dt>
+                  <dd className="num">{cell(a.metrics, row)}</dd>
+                </div>
+                <div className="is-b">
+                  <dt>B</dt>
+                  <dd className="num">{cell(b.metrics, row)}</dd>
+                </div>
+                <div className="is-d">
+                  <dt>B − A</dt>
+                  <dd className="num">{deltaText(row, a, b)}</dd>
+                </div>
+              </dl>
+            </div>
+          ))}
+        </section>
+      ))}
+    </div>
+  );
+}
+
 function MetricsTable({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
+  const narrow = useMedia('(max-width: 640px)');
+  if (narrow) return <MetricsStack a={a} b={b} />;
   let lastGroup = '';
   return (
     <div className="table-wrap">

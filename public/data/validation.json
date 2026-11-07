@@ -2,7 +2,7 @@
  "method": "Horizons topocentric apparent Az/El (quantity 4, CENTER=coord@301, airless) vs app vector method from hourly sub-point table",
  "period": "2027-01-01 00:00 to 2027-02-28 00:00 UTC, step 6h",
  "note": "Azimuth error is scaled by cos(elevation) (great-circle error on the sky).",
- "retrievedUtc": "2026-11-07T00:16:32Z",
+ "retrievedUtc": "2026-11-07T04:39:35Z",
  "sites": [
   {
    "id": "malapert-massif",

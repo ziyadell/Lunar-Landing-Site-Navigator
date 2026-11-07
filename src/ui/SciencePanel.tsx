@@ -2,6 +2,7 @@ import { useConditions } from '../data/useConditions';
 import { useData } from '../data/DataContext';
 import { compass, fmtDate, fmtDeg, fmtLat, fmtLon, fmtUtc } from '../utils/format';
 import { EarthGlyph, Readout, SectionHead, StateTag, SunGlyph } from './primitives';
+import { CollapseButton } from './PanelRails';
 import type { TopocentricBody } from '../data/types';
 
 function BodyBlock({ body, b, extra }: { body: 'sun' | 'earth'; b: TopocentricBody; extra?: React.ReactNode }) {
@@ -86,6 +87,10 @@ export function DataSources() {
           <dd>{sites.dem.name}, {sites.dem.resolutionM} m/px</dd>
         </div>
         <div>
+          <dt>Imagery</dt>
+          <dd>LROC WAC global mosaic (NASA SVS); south of 80.6°S the LROC WAC South Pole Summer Mosaic, 100 m/px</dd>
+        </div>
+        <div>
           <dt>Visibility</dt>
           <dd>Terrain-corrected: disc centre above the LOLA skyline (rays to 150 km)</dd>
         </div>
@@ -111,6 +116,7 @@ export function DataSources() {
 export function SciencePanel() {
   return (
     <aside className="panel panel--right" aria-label="Scientific readings">
+      <div className="panel__collapse"><CollapseButton side="right" /></div>
       <ScienceReadings />
       <DataSources />
     </aside>

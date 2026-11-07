@@ -18,6 +18,11 @@ export function initUrlSync(validSites: string[]) {
     const v = Date.parse(t);
     if (!Number.isNaN(v)) patch.timeMs = v;
   }
+  // Optional camera deep link: view=pole | focus, range=<km> (site focus distance).
+  const view = q.get('view');
+  const range = Number(q.get('range'));
+  if (view === 'pole' || view === 'focus')
+    patch.cameraCommand = { kind: view, seq: 1, ...(Number.isFinite(range) && range > 0 ? { rangeKm: range } : {}) };
   if (Object.keys(patch).length) useApp.setState(patch);
 
   let timer = 0;

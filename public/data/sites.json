@@ -9,15 +9,16 @@
   "projection": "Polar stereographic (spherical), MEAN EARTH/POLAR AXIS of DE421"
  },
  "polarCap": {
-  "texture": "textures/southpole_normal.jpg",
+  "texture": "textures/southpole_normal.png",
   "extentKm": 300.0,
-  "size": 4096
+  "size": 4096,
+  "standard": "textures/polar/nrm_cap_2048.png"
  },
  "regions": [
   {
    "id": "malapert-massif",
    "name": "Malapert Massif",
-   "nasaListing": "Artemis III candidate region, NASA release 22-089 (Aug 2022)",
+   "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Mons Malapert",
     "type": "Mons",
@@ -773,17 +774,34 @@
      "file": "data/terrain/malapert-massif_far.bin",
      "n": 301,
      "spacingM": 400.0
+    },
+    "regional": {
+     "file": "data/terrain/malapert-massif_regional.bin",
+     "n": 301,
+     "spacingM": 1000.0,
+     "note": "12\u00d712 block-mean of LDEM_80S_80M; cells outside the 80\u00b0S product set to \u221220 km"
     }
    },
    "notes": [
     "Reference feature Mons Malapert: IAU-approved 2024, 67 km across, centred 85.98\u00b0S 1.67\u00b0W.",
     "Observation point = of candidate points on a 2 km grid within 15 km of the gazetteer centre, the one where the Sun's centre is above the LOLA terrain horizon for the largest fraction of 2027 (hourly)."
-   ]
+   ],
+   "detail": {
+    "imagery": "textures/polar/malapert-massif_wac.jpg",
+    "normals": "textures/polar/malapert-massif_nrm.png",
+    "centerKm": [
+     -10.7,
+     124.7
+    ],
+    "halfExtentKm": 102.4,
+    "imageryResolutionM": 100.0,
+    "reliefSource": "LOLA LDEM_80S_80M sampled at 100 m"
+   }
   },
   {
    "id": "mons-mouton",
    "name": "Mons Mouton",
-   "nasaListing": "Listed as 'Leibnitz Beta Plateau' in NASA release 22-089 (Aug 2022); the mountain was named Mons Mouton by the IAU in 2022",
+   "nasaListing": "Artemis III candidate region added in NASA's refined list of nine (Oct 28, 2024), listed separately from 'Mons Mouton Plateau'",
    "referenceFeature": {
     "name": "Mons Mouton",
     "type": "Mons",
@@ -1539,17 +1557,34 @@
      "file": "data/terrain/mons-mouton_far.bin",
      "n": 301,
      "spacingM": 400.0
+    },
+    "regional": {
+     "file": "data/terrain/mons-mouton_regional.bin",
+     "n": 301,
+     "spacingM": 1000.0,
+     "note": "12\u00d712 block-mean of LDEM_80S_80M; cells outside the 80\u00b0S product set to \u221220 km"
     }
    },
    "notes": [
     "Reference feature Mons Mouton: IAU-approved 2022, 130 km across, centred 84.60\u00b0S 31.00\u00b0E.",
     "Observation point = of candidate points on a 2 km grid within 15 km of the gazetteer centre, the one where the Sun's centre is above the LOLA terrain horizon for the largest fraction of 2027 (hourly)."
-   ]
+   ],
+   "detail": {
+    "imagery": "textures/polar/mons-mouton_wac.jpg",
+    "normals": "textures/polar/mons-mouton_nrm.png",
+    "centerKm": [
+     90.5,
+     145.0
+    ],
+    "halfExtentKm": 102.4,
+    "imageryResolutionM": 100.0,
+    "reliefSource": "LOLA LDEM_80S_80M sampled at 100 m"
+   }
   },
   {
    "id": "nobile-rim-1",
    "name": "Nobile Rim 1",
-   "nasaListing": "Artemis III candidate region, NASA release 22-089 (Aug 2022)",
+   "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Nobile",
     "type": "Crater",
@@ -2305,17 +2340,34 @@
      "file": "data/terrain/nobile-rim-1_far.bin",
      "n": 301,
      "spacingM": 400.0
+    },
+    "regional": {
+     "file": "data/terrain/nobile-rim-1_regional.bin",
+     "n": 301,
+     "spacingM": 1000.0,
+     "note": "12\u00d712 block-mean of LDEM_80S_80M; cells outside the 80\u00b0S product set to \u221220 km"
     }
    },
    "notes": [
     "Reference feature Nobile crater: 79.3 km diameter, centred 85.28\u00b0S 53.27\u00b0E.",
     "NASA has not published coordinates distinguishing 'Rim 1' from 'Rim 2'. Observation point = of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii along radial profiles every 5\u00b0), the one with the largest fraction of 2027 hours with the Sun's centre above the LOLA terrain horizon. It is a representative rim location, not necessarily inside the Rim 1 region."
-   ]
+   ],
+   "detail": {
+    "imagery": "textures/polar/nobile-rim-1_wac.jpg",
+    "normals": "textures/polar/nobile-rim-1_nrm.png",
+    "centerKm": [
+     82.2,
+     107.0
+    ],
+    "halfExtentKm": 102.4,
+    "imageryResolutionM": 100.0,
+    "reliefSource": "LOLA LDEM_80S_80M sampled at 100 m"
+   }
   },
   {
    "id": "haworth",
    "name": "Haworth",
-   "nasaListing": "Artemis III candidate region, NASA release 22-089 (Aug 2022)",
+   "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Haworth",
     "type": "Crater",
@@ -3071,12 +3123,97 @@
      "file": "data/terrain/haworth_far.bin",
      "n": 301,
      "spacingM": 400.0
+    },
+    "regional": {
+     "file": "data/terrain/haworth_regional.bin",
+     "n": 301,
+     "spacingM": 1000.0,
+     "note": "12\u00d712 block-mean of LDEM_80S_80M; cells outside the 80\u00b0S product set to \u221220 km"
     }
    },
    "notes": [
     "Reference feature Haworth crater: 51.4 km diameter, centred 87.45\u00b0S 5.17\u00b0W.",
     "Observation point = of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii along radial profiles every 5\u00b0), the one with the largest fraction of 2027 hours with the Sun's centre above the LOLA terrain horizon. The crater floor is not used."
+   ],
+   "detail": {
+    "imagery": "textures/polar/haworth_wac.jpg",
+    "normals": "textures/polar/haworth_nrm.png",
+    "centerKm": [
+     -37.4,
+     82.3
+    ],
+    "halfExtentKm": 102.4,
+    "imageryResolutionM": 100.0,
+    "reliefSource": "LOLA LDEM_80S_80M sampled at 100 m"
+   }
+  }
+ ],
+ "polarImagery": {
+  "product": "LROC WAC South Pole Summer Mosaic (WAC_ROI_SOUTH_SUMMER_100M)",
+  "source": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/BROWSE/WAC_ROI/WAC_ROI_SOUTH_SUMMER/",
+  "acquired": "2010-09-21 to 2010-10-23 (selected for minimal shadows)",
+  "band": "643 nm",
+  "nativeResolutionM": 100,
+  "cap": {
+   "high": "textures/polar/wac_cap_4096.jpg",
+   "standard": "textures/polar/wac_cap_2048.jpg",
+   "extentKm": 300.0
+  },
+  "brightnessGain": 1.5402,
+  "orientationCheck": {
+   "Shackleton": [
+    1,
+    1,
+    180,
+    1
+   ],
+   "Haworth": [
+    1,
+    1,
+    92,
+    151
+   ],
+   "Faustini": [
+    1,
+    70,
+    2,
+    198
+   ],
+   "Shoemaker": [
+    1,
+    128,
+    1,
+    1
+   ],
+   "Cabeus": [
+    1,
+    1,
+    61,
+    63
    ]
+  }
+ },
+ "nasaReferences": [
+  {
+   "title": "NASA Provides Update on Artemis III Moon Landing Regions",
+   "date": "2024-10-28",
+   "url": "https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+   "regions": [
+    "Peak near Cabeus B",
+    "Haworth",
+    "Malapert Massif",
+    "Mons Mouton Plateau",
+    "Mons Mouton",
+    "Nobile Rim 1",
+    "Nobile Rim 2",
+    "de Gerlache Rim 2",
+    "Slater Plain"
+   ]
+  },
+  {
+   "title": "NASA Identifies Candidate Regions for Landing Next Americans on Moon (release 22-089)",
+   "date": "2022-08-19",
+   "url": "https://www.nasa.gov/news-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/"
   }
  ]
 }

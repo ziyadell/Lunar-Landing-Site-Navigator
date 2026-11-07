@@ -2,6 +2,7 @@ import { useApp } from '../state/store';
 import { useData } from '../data/DataContext';
 import { fmtLat, fmtLon } from '../utils/format';
 import { SectionHead } from './primitives';
+import { CollapseButton } from './PanelRails';
 
 export function SiteList({ onPick }: { onPick?: () => void }) {
   const { sites } = useData();
@@ -79,8 +80,9 @@ export function RegionDetail() {
 export function SitePanel() {
   return (
     <aside className="panel panel--left" aria-label="Landing regions">
-      <SectionHead aside="4 selected">Candidate Regions</SectionHead>
+      <SectionHead aside={<CollapseButton side="left" />}>Candidate Regions</SectionHead>
       <SiteList />
+      <p className="site-list__note">4 of NASA's 9 Artemis III candidate regions (Oct 2024).</p>
       <SectionHead>Selected Region</SectionHead>
       <RegionDetail />
     </aside>
