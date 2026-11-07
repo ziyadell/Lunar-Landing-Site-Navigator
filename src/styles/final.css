@@ -1,0 +1,653 @@
+/* =====================================================================
+   Final refinement pass. Loaded last; scoped overrides only.
+   ===================================================================== */
+
+:root {
+  color-scheme: dark; /* native controls, date pickers and scrollbars follow the dark theme */
+  --sb-thumb: rgba(163, 175, 194, 0.34);
+  --sb-thumb-hover: rgba(163, 175, 194, 0.55);
+  --sb-track: rgba(5, 8, 15, 0.55);
+}
+
+/* ------------------------------------------------------------ scrollbars
+   Blink/WebKit: subdued track, rounded thumb, no arrow buttons. Firefox (and other
+   engines without ::-webkit-scrollbar): the standard properties. Scrolling itself is
+   untouched (wheel, touch, keyboard), and forced-colors mode keeps system scrollbars. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--sb-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  min-height: 32px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sb-thumb-hover);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: var(--sb-thumb) var(--sb-track);
+  }
+}
+.app--analysis {
+  scrollbar-gutter: stable; /* no layout shift when the page becomes scrollable */
+}
+@media (forced-colors: active) {
+  ::-webkit-scrollbar,
+  ::-webkit-scrollbar-thumb,
+  ::-webkit-scrollbar-track {
+    all: unset;
+  }
+}
+
+/* ------------------------------------------------------------ readings
+   Values update in place: no background, flash or motion; fixed-width digits. */
+.cond__value,
+.readout__value,
+.timepill__when,
+.tool-col__read,
+.glance__v,
+.metrics td {
+  font-variant-numeric: tabular-nums;
+}
+.cond__value {
+  background: none;
+  animation: none;
+  min-height: 1.05em;
+}
+
+/* ------------------------------------------------------------ select */
+.sel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+}
+.sel__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--glass-line-strong);
+  border-radius: 10px;
+  background: rgba(5, 8, 15, 0.6);
+  color: var(--text);
+  font: 400 13.5px/1 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.sel__btn:hover {
+  border-color: rgba(241, 245, 249, 0.28);
+  background: rgba(17, 24, 39, 0.8);
+}
+.sel__btn.is-open {
+  border-color: rgba(77, 220, 244, 0.55);
+}
+.sel__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.sel__val {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sel__chev {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: var(--text-secondary);
+  transition: transform var(--dur-fast) ease;
+}
+.sel__btn.is-open + .sel__chev,
+.sel__btn.is-open .sel__chev {
+  transform: rotate(180deg);
+}
+.sel--native select option {
+  background: #111827;
+  color: var(--text);
+}
+/* The listbox lives in <body>, positioned in the viewport (never clipped by a card). */
+.sel__list {
+  position: fixed;
+  z-index: 90;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 12px;
+  background: #0e1524;
+  border: 1px solid var(--glass-line-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  outline: none;
+  font: 400 13.5px/1.2 var(--font-ui);
+  color: var(--text);
+}
+.sel__list.is-up {
+  transform: translateY(-100%);
+}
+.sel__opt {
+  display: grid;
+  grid-template-columns: 1fr auto 14px;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.sel__opt.is-active {
+  background: rgba(241, 245, 249, 0.07);
+  color: var(--text);
+}
+.sel__list:focus-visible .sel__opt.is-active {
+  box-shadow: inset 0 0 0 1px rgba(77, 220, 244, 0.5);
+}
+.sel__opt.is-selected {
+  color: var(--text);
+  font-weight: 500;
+}
+.sel__opt-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.sel__check {
+  color: var(--accent);
+  visibility: hidden;
+}
+.sel__opt.is-selected .sel__check {
+  visibility: visible;
+}
+
+/* Region name as the scenario title: same select, title typography. */
+.sel--region {
+  margin: 2px 0;
+}
+.sel--region .sel__btn {
+  height: auto;
+  min-height: 36px;
+  padding: 2px 30px 2px 0;
+  border: 0;
+  border-bottom: 1px dashed rgba(241, 245, 249, 0.25);
+  border-radius: 0;
+  background: none;
+  font: 600 22px/1.25 var(--font-display);
+  letter-spacing: -0.01em;
+}
+.sel--region .sel__btn:hover,
+.sel--region .sel__btn.is-open {
+  background: none;
+  border-bottom-color: var(--accent);
+}
+.sel--region .sel__chev {
+  right: 6px;
+}
+
+/* ------------------------------------------------------------ scenario controls
+   Same three columns in both cards: start date · duration presets · more durations. */
+.vantage__when {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.9fr) minmax(200px, 1.4fr) minmax(128px, 0.8fr);
+  align-items: end;
+  gap: 12px;
+}
+.vantage__when .field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.vantage__when .field label,
+.vantage__when .field__label {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.vantage__when .field input[type='date'] {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--glass-line-strong);
+  border-radius: 10px;
+  background: rgba(5, 8, 15, 0.6);
+  color: var(--text);
+  font: 400 13.5px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color-scheme: dark;
+  transition: border-color var(--dur-fast) ease;
+}
+.vantage__when .field input[type='date']:hover {
+  border-color: rgba(241, 245, 249, 0.28);
+}
+.vantage__when .field input[type='date']:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.vantage__when .field input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0.7;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 3px;
+}
+.vantage__when .field input[type='date']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background: rgba(241, 245, 249, 0.08);
+}
+.vantage__when .seg {
+  height: 40px;
+  padding: 3px;
+  align-items: stretch;
+}
+.vantage__when .seg--period .seg__btn {
+  height: auto;
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sel--dur {
+  width: 100%;
+}
+.sel--dur.is-custom .sel__btn {
+  border-color: rgba(77, 220, 244, 0.45);
+  background: rgba(77, 220, 244, 0.08);
+}
+@media (max-width: 900px) {
+  .vantage__when {
+    grid-template-columns: 1fr 1fr;
+  }
+  .vantage__when .field--dur {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+@media (max-width: 420px) {
+  .vantage__when {
+    grid-template-columns: 1fr;
+  }
+}
+@media (pointer: coarse) {
+  .sel__btn,
+  .vantage__when .field input[type='date'],
+  .vantage__when .seg {
+    height: 44px;
+  }
+}
+
+/* ------------------------------------------------------------ shared states */
+.seg__btn:hover:not(.is-active):not(:disabled) {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.06);
+}
+.seg__btn:focus-visible,
+.aplayer__btn:focus-visible,
+.aplayer__next:focus-visible,
+.guide__btn:focus-visible,
+.guide__item:focus-visible,
+.guide__topic:focus-visible,
+.welcome__link:focus-visible,
+.welcome__enter:focus-visible,
+.text-btn:focus-visible,
+.vp-note__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+button:disabled {
+  cursor: default;
+}
+.aplayer__next:disabled {
+  opacity: 0.4;
+}
+
+/* ------------------------------------------------------------ analysis: lower bounds */
+.glance__verdict.is-limited {
+  color: var(--text-tertiary);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.metrics__note {
+  margin: 12px 2px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------ mission guide */
+.guide {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+.guide__launch {
+  position: relative;
+}
+.guide__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--glass-line-strong);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  box-shadow: var(--glass-shadow);
+  color: var(--text);
+  font: 500 13px/1 var(--font-ui);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
+}
+.guide__btn svg {
+  color: var(--accent);
+}
+.guide__btn:hover,
+.guide__btn.is-on {
+  border-color: rgba(77, 220, 244, 0.45);
+}
+.guide__menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 60;
+  width: 280px;
+  max-height: min(60vh, 440px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border-radius: 14px;
+  background: #0e1524;
+  border: 1px solid var(--glass-line-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.guide__item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.guide__item:hover {
+  background: rgba(241, 245, 249, 0.06);
+}
+.guide__item-t {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.guide__item-s {
+  grid-column: 1;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.guide__chev {
+  grid-row: 1;
+  grid-column: 2;
+  color: var(--text-secondary);
+  transition: transform var(--dur-fast) ease;
+}
+.guide__chev.is-open {
+  transform: rotate(180deg);
+}
+.guide__topics {
+  padding: 2px 4px 4px;
+  border-top: 1px solid var(--glass-line);
+  margin-top: 4px;
+}
+.guide__group-h {
+  margin: 10px 6px 4px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.guide__topic {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.guide__topic:hover {
+  background: rgba(241, 245, 249, 0.06);
+  color: var(--text);
+}
+.aplayer__head {
+  grid-template-columns: 30px 1fr;
+}
+.aplayer__step {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+.aplayer__src {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.aplayer__note {
+  color: var(--text-tertiary);
+}
+.aplayer__ctrl {
+  flex-wrap: wrap;
+}
+.aplayer__tour {
+  gap: 6px;
+}
+.aplayer__next {
+  background: rgba(241, 245, 249, 0.08);
+  color: var(--text);
+}
+.aplayer__next--primary {
+  background: var(--accent);
+  color: #04121a;
+}
+/* Above the scale bar / heading readout in the bottom-right corner. */
+.hud .hud__audio {
+  bottom: calc(var(--gutter) + 104px);
+}
+/* Focus mode keeps the guide (it is how a narration is paused or stopped). */
+.app.is-focus .hud__audio {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: none !important;
+}
+/* Analysis: the guide sits in the page header, in the document flow. Only during the
+   guided tour (which scrolls the page) does its player stay pinned within reach. */
+.study__guide {
+  margin-top: 16px;
+}
+.guide--flow {
+  justify-items: start;
+}
+.guide--flow .guide__menu {
+  top: calc(100% + 8px);
+  bottom: auto;
+  left: 0;
+  right: auto;
+}
+.guide--flow .aplayer {
+  width: min(420px, 100%);
+}
+.guide--flow.is-tour {
+  position: fixed;
+  z-index: 45;
+  right: 24px;
+  bottom: 24px;
+  justify-items: end;
+}
+.guide--flow.is-tour .guide__launch {
+  display: none;
+}
+@media (max-width: 759px) {
+  /* Phones: the guide joins the HUD column between the time controls and the region
+     card, so it never covers either; the first-visit hint follows the card. */
+  .hud .hud__audio {
+    position: static;
+    order: 3;
+    max-width: none;
+  }
+  .hud .hud__left {
+    order: 4;
+  }
+  .hud .hud__intro {
+    position: static;
+    order: 5;
+  }
+  .hud:has(.aplayer) .hud__intro {
+    display: none; /* the hint returns when the narration ends */
+  }
+  .hud .hud__audio .guide {
+    justify-items: stretch;
+  }
+  .hud .hud__audio .guide__launch {
+    justify-self: end;
+  }
+  .hud .hud__audio .aplayer {
+    width: auto;
+  }
+  .aplayer__text {
+    max-height: 84px;
+  }
+  .guide--flow.is-tour {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+  .guide--flow.is-tour .aplayer {
+    width: 100%;
+  }
+}
+
+/* ------------------------------------------------------------ tour outline (static) */
+[data-tour-spot='time'] .timepill__bar,
+[data-tour-spot='conditions'] .cond,
+[data-tour-spot='camera'] .hud__right .tool-col,
+[data-tour-spot='look'] .hud__right .tool-col,
+[data-tour-spot='region'] .hud__left .deck-card,
+[data-tour-spot='glance'] .glance,
+[data-tour-spot='csv'] .pano-card__cap .text-btn {
+  box-shadow:
+    0 0 0 1px rgba(77, 220, 244, 0.7),
+    0 0 0 5px rgba(77, 220, 244, 0.12);
+}
+
+/* ------------------------------------------------------------ welcome */
+.welcome__caption {
+  min-height: 1.3em;
+  opacity: 0;
+  animation: none;
+  transition: opacity 600ms var(--ease-out);
+}
+.welcome__caption.is-on {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome__caption {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------ recovery note */
+.vp-note__btn {
+  margin-left: 8px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid rgba(241, 245, 249, 0.25);
+  border-radius: 999px;
+  background: rgba(5, 8, 15, 0.5);
+  color: var(--text);
+  font-size: 12.5px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.vp-note__btn:hover {
+  border-color: var(--accent);
+}
+
+/* Short phones: while a narration plays, the player and the region card both stay on
+   screen (two-line scrollable captions; the card keeps its name and actions). */
+@media (max-width: 759px) and (max-height: 760px) {
+  .hud:has(.aplayer) .aplayer__text {
+    max-height: 42px;
+  }
+  .hud:has(.aplayer) .aplayer {
+    padding: 10px 10px 8px;
+  }
+  .hud:has(.aplayer) .aplayer__bar {
+    margin: 8px 0 6px;
+  }
+  .hud:has(.aplayer) .deck-card .lights,
+  .hud:has(.aplayer) .deck-card__coord,
+  .hud:has(.aplayer) .deck-card__eyebrow {
+    display: none;
+  }
+  .hud:has(.aplayer) .guide__launch {
+    display: none; /* the open player already holds the controls */
+  }
+}
+
+/* Field labels share one baseline in every column. */
+.vantage__when .field > label,
+.vantage__when .field > .field__label {
+  display: block;
+  height: 16px;
+  margin: 0 0 6px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.vantage__when .sel__btn {
+  height: 40px;
+}
+@media (pointer: coarse) {
+  .vantage__when .sel__btn,
+  .vantage__when .field input[type='date'],
+  .vantage__when .seg {
+    height: 44px;
+  }
+}
+.glance__verdict .num {
+  white-space: nowrap;
+}

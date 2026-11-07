@@ -29,7 +29,7 @@ function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
         {which === 'sun' ? 'Sun' : 'Earth'}
         <span className="cond__state">{up ? 'Visible' : 'Not visible'}</span>
       </div>
-      <div className="cond__value num" key={b.elDeg.toFixed(2)}>
+      <div className="cond__value num">
         {fmtDeg(b.elDeg, 2)}
       </div>
       <div className="cond__plain">{plain(b)}</div>
@@ -40,7 +40,7 @@ function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
 /** Spoken summary of the current readings (calculated from app state, never invented). */
 function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<typeof useConditions>['conditions']>): NarrationItem {
   const d = new Date(timeMs);
-  const when = `${d.getUTCDate()} ${d.toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' })} ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC`;
+  const when = `${d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })} ${d.getUTCDate()}, ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC`;
   const say = (name: string, b: TopocentricBody) => {
     const el = `${Math.abs(b.elDeg).toFixed(1)} degrees ${b.elDeg >= 0 ? 'above' : 'below'} the horizontal`;
     if (b.state === 'visible') return `${name} is visible, ${el}, clearing the skyline by ${b.marginDeg.toFixed(1)} degrees.`;

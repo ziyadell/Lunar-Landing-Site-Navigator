@@ -33,7 +33,7 @@ export function SettingsPanel() {
       </section>
 
       <section className="settings__group">
-        <h3 className="settings__h">Audio Guide</h3>
+        <h3 className="settings__h">Mission guide</h3>
         <label className="check">
           <input type="checkbox" checked={s.audioGuide} onChange={() => s.set({ audioGuide: !s.audioGuide })} />
           <span className="check__box" aria-hidden="true" />
@@ -49,9 +49,9 @@ export function SettingsPanel() {
             Voice
           </span>
           <div className="seg" role="radiogroup" aria-labelledby="voice-l">
-            {(['recorded', 'browser'] as const).map((v) => (
+            {(['recorded', 'device', 'captions'] as const).map((v) => (
               <button key={v} type="button" role="radio" aria-checked={s.voice === v} className={`seg__btn${s.voice === v ? ' is-active' : ''}`} onClick={() => s.set({ voice: v })}>
-                {v === 'recorded' ? 'Narrator' : 'Browser voice'}
+                {v === 'recorded' ? 'Recorded' : v === 'device' ? 'Device voice' : 'Captions'}
               </button>
             ))}
           </div>
@@ -69,14 +69,15 @@ export function SettingsPanel() {
           </div>
         </div>
         <p className="settings__note">
-          Narrator clips play when they have been generated for this build; otherwise the browser&rsquo;s own voice reads the same
-          text{hasSpeech ? '' : ' (not available in this browser: transcripts only)'}. Nothing plays until you press a listen button.
+          Recorded narration plays when clips have been generated for this build; otherwise an American English voice on your
+          device reads the same text{hasSpeech ? '' : ' (speech is not available in this browser: captions only)'}. If the device has no
+          American English voice, captions are shown instead. Nothing plays until you ask.
         </p>
       </section>
 
       <section className="settings__group">
         <h3 className="settings__h">Guided exploration</h3>
-        <p className="settings__note">A five-step narrated tour: the Moon, the south pole, a region, the surface, and the analysis. Pause or exit at any time.</p>
+        <p className="settings__note">A twelve-step narrated tour, from the Moon in orbit to the data sources and limits. Pause, skip ahead or exit at any time.</p>
         <div className="settings__actions">
           <button
             type="button"

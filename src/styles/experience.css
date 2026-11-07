@@ -142,15 +142,6 @@ body {
 
 /* ---------- Science panel ---------- */
 
-@keyframes value-in {
-  from {
-    background: rgba(77, 220, 244, 0.1);
-  }
-  to {
-    background: transparent;
-  }
-}
-
 .readouts {
   padding: 0;
 }

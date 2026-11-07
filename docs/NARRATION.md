@@ -1,114 +1,118 @@
-# Narration: welcome, Audio Guide and guided tour
+# Narration: opening, Mission guide and guided tour
 
-All narration is **optional** and **off by default**:
-
-- Nothing plays without a click.
-- Nothing audio-related loads at startup.
-- No paid API is ever called from the browser.
+Nothing plays without a click. No paid speech API is ever called from the browser.
 
 ## How it works
 
 | Piece | File | Notes |
 |---|---|---|
-| Scripts (single source of truth) | `src/audio/narration.json` | The same text feeds the transcripts and the generated clips, so they cannot drift apart. |
-| Engine | `src/audio/engine.ts` | One narration at a time. Picks the narrator clip if it exists, otherwise the browser's own voice, otherwise transcript only. |
-| Interface | `src/audio/ui.tsx` | Listen buttons, the floating player and the welcome. |
-| Guided tour | `src/audio/tour.ts` | Five steps, each a real camera or mode action plus its narration. |
-| Settings | Settings drawer | Audio Guide on/off, voice (Narrator / Browser voice), speed (1×, 1.25×, 1.5×), transcripts, start tour, replay welcome. Saved in `localStorage`. |
-| Clip generation | `scripts/generate-narration.mjs` | Run once at development time. |
+| Scripts (single source of truth) | `src/audio/narration.json` | 31 items, written in American English. The same text feeds the captions and the generated clips. |
+| Engine | `src/audio/engine.ts` | One narration at a time. Recorded clip, then an American English device voice, then captions only. |
+| Interface | `src/audio/ui.tsx` | Mission guide (launcher, menu and player), listen buttons, and the opening. |
+| Guided tour | `src/audio/tour.ts` | Twelve steps. Each step performs an app action, waits until that view is ready, then narrates. |
+| Settings | Settings drawer | Listen buttons on/off, voice (Recorded / Device voice / Captions), speed, captions, tour, replay the opening. |
+| Clip generation | `scripts/generate-narration.mjs` | Run once at development time, with your own ElevenLabs key. |
 
-**The player:**
+### Opening (Enter mission)
 
-- Play/pause, replay, progress, speed, mute and a transcript (CC).
-- In the tour it also shows the step number and Next/Finish.
-- Starting a new narration stops the previous one.
-- A region narration stops when another region is selected; the tour is the exception.
+1. *Enter mission* (a click) starts a quiet chime of about 2.6 s. It is synthesised in the
+   browser with the Web Audio API: a low A-major chord that swells and fades, plus two soft
+   communication tones. There is no audio file, so no licence is needed.
+2. The chime fades out completely. About 0.25 s later the welcome narration starts, with
+   captions:
 
-**Calculated readings ("Conditions now"):**
+   > Welcome to Lunar Navigator. Explore the south pole. Follow the sunlight. Find a view of
+   > Earth. Your mission begins now.
+3. *Mute/Unmute* applies to both the chime and the voice. *Skip intro*, or any click or key
+   elsewhere, ends the opening at once: timers, chime and narration are all cancelled.
+4. A hard limit of 20 s ensures the opening can never block the app. *Explore without sound*
+   skips it entirely. Under reduced motion, the camera approach is skipped.
 
-- Built from the live, validated app state at the moment you press listen.
-- Labelled *Calculated now* and always read by the browser voice. They are never
-  pre-recorded, because the values change with time.
-- They end by stating that Earth line of sight is not a guaranteed communication link.
+### Mission guide
 
-**Welcome:**
+After the opening, a *Mission guide* button is always visible: bottom right in Orbit and
+Surface (also in focus mode), and at the end of the page in Mission Analysis. It offers:
 
-- On a first visit, a small *Enter mission* card sits over the already-rendered Moon.
-- Choosing it does three things:
-  - the camera makes a slow approach (none under reduced motion);
-  - the greeting plays;
-  - the interface reappears after the greeting, after 7 s at most, or at once on any click or key.
-- *Skip* and *Mute* are always visible.
-- *Explore without sound* dismisses it.
-- It never replays unless *Replay welcome* is chosen in Settings.
+- *Explain this view*: the narration for the current view.
+- *Full tour*: twelve steps covering:
+  1. the Moon;
+  2. navigation;
+  3. the south pole;
+  4. a region;
+  5. time and playback;
+  6. Sun and Earth readings;
+  7. Surface View;
+  8. surface controls and layers;
+  9. Mission Analysis;
+  10. comparing scenarios;
+  11. CSV export;
+  12. data sources and limits.
+- *Browse topics*: views, the nine regions, and terms.
 
-## Generating the narrator clips (ElevenLabs)
+The player has Play/Pause, Replay, Stop, speed (1×, 1.25×, 1.5×), Mute and captions (CC).
+It always says which source is in use:
 
-This build ships **without** narrator clips, because no ElevenLabs credentials were
-available. Until clips exist, the same scripts are read by the browser's own voice
-(Settings → Voice; with no clips, the *Narrator* setting falls back to it). The welcome
-then shows its caption with the browser voice, or text only where speech synthesis is
-unavailable.
+- *Recorded narrator*;
+- *Device voice · US English*;
+- *Captions only*.
 
-**To add the narrator:**
+When a preferred source is missing, it also gives the reason, for example "Recorded narration
+not installed" or "No American English voice on this device".
 
-1. Choose a voice you are licensed to use commercially: an ElevenLabs library voice under
-   your plan's terms, or a voice you created yourself.
-   - Do not clone a real person without written consent.
+### Rules the engine enforces
+
+- **No silent substitution.** Only `en-US` device voices are used. When none is available,
+  captions are shown, timed to reading speed, and the reason is stated.
+- **Stale callbacks.** Every callback carries the token of the narration that created it. A
+  newer narration, Stop, Next, Replay or Exit invalidates all older ones.
+- **Single fallback.** When a recording fails, the error event and the rejected `play()`
+  can both fire; the engine falls back only once.
+- **Time limits.** The manifest times out after 4 s and a recording after 8 s.
+- **Speech that never ends.** Device speech runs one sentence at a time, each with its own
+  watchdog.
+- **Sentence splitting.** Text splits only at `.`, `!` or `?` followed by a space, so
+  decimals such as 2.31 and a final fragment without punctuation stay intact.
+- **Pause and Mute.** Pause stops at the current sentence and Play continues from there.
+  Mute never pauses: the narration continues silently, and Unmute resumes speaking at the
+  current sentence.
+- **Tour pacing.** Pausing the tour never advances it. A region or time change stops a
+  calculated reading or a region narration that no longer matches the screen (the tour is
+  exempt).
+
+### Calculated readings
+
+*Conditions now* is built from the live, validated app state. It is labelled *Calculated
+now*, read by the device voice, and never pre-recorded.
+
+## Generating the recorded narrator (ElevenLabs)
+
+**This build ships without recorded clips**, because no ElevenLabs credentials were
+available. Until they exist, the guide uses an American English device voice or captions,
+and says so.
+
+1. Choose an **American English** voice you are licensed to use: an ElevenLabs library voice
+   or your own.
+   - Do not clone a real person without consent.
    - Do not imitate a NASA announcer.
-   - Suggested direction: calm, cinematic, slightly deep, warm, natural English
-     pronunciation, no effects.
-2. In a terminal (the key stays in your environment; never commit it or put it in `.env`
-   files that are deployed):
+2. Check the voice. The script reads its labels and refuses a voice not labelled
+   American:
+
+   ```bash
+   ELEVENLABS_API_KEY=your_key ELEVENLABS_VOICE_ID=your_voice_id node scripts/generate-narration.mjs --check-voice
+   ```
+
+   If ElevenLabs has no accent label for the voice, listen to it, and only then add
+   `--accept-voice`.
+3. Generate the clips:
 
    ```bash
    ELEVENLABS_API_KEY=your_key ELEVENLABS_VOICE_ID=your_voice_id node scripts/generate-narration.mjs
    ```
 
-   - `--dry-run` lists what would be generated.
-   - `--only welcome,orbit-intro` limits the run.
-   - `--force` regenerates everything.
-   - Unchanged clips are skipped (hash of voice, model and text).
-3. The script writes `public/audio/narration/<id>.mp3` (mono, 22 kHz, 32 kbps) and
-   `manifest.json`. Commit both and redeploy. The app uses the clips automatically.
-
-**Size and cost:**
-
-- 24 clips, 7,150 characters in total, which is a small one-off credit cost on any paid
-  plan.
-- At 32 kbps the whole set is roughly 0.9 MB. The welcome is about 15 KB.
-- Clips download only when played and are then cached by the browser.
-
-**Licensing note for the record:**
-
-- Keep a copy of the ElevenLabs terms in force when you generate, and the voice's licence.
-- The scripts are original text written for this project.
-
-## Scripts and sources
-
-The full text is in `src/audio/narration.json`.
-
-**Facts and their sources:**
-
-| Fact used in narration | Source |
-|---|---|
-| Nine Artemis III candidate regions, names | NASA release, 28 Oct 2024; George et al., LPSC 2026 #1901 |
-| Region outlines, sizes, "closest to the pole" | NASA's official region map, digitised here (docs/REVIEW.md §1) |
-| Some south-polar crater floors never receive direct sunlight and can hold water ice | NASA LRO and LCROSS results (NASA Science, *Moon's south pole*) |
-| LCROSS struck Cabeus in October 2009 and detected water | NASA LCROSS mission results (Colaprete et al., *Science* 330, 2010) |
-| Crater and mountain sizes (Cabeus B 59.6 km, Haworth 51.4 km, Mons Malapert 67 km, Mons Mouton 130 km, Nobile 79.3 km, de Gerlache 32.7 km, Slater 25.1 km) | IAU Gazetteer of Planetary Nomenclature; Slater from secondary sources (see sites.json) |
-| Name origins: Charles Malapert; Melba Roy Mouton (NASA mathematician); Umberto Nobile; Adrien de Gerlache; David C. Slater (SwRI) | IAU Gazetteer feature descriptions; SwRI release (2015) for Slater |
-| Haworth floor permanently shadowed | LRO / LOLA illumination studies of the south pole |
-| Sunlight shares per region (for example "about 63 percent of 2027") | **This app's calculation** at its observation point (LOLA skyline, JPL Horizons). Stated as such in each script. |
-| "Highest" and "lowest" share among the nine | This app's calculation (Mons Mouton 66.8 %, Nobile Rim 2 50.6 %) |
-
-**Claims deliberately not made:**
-
-- No landing-site recommendation.
-- No communication availability; Earth is always described as *line of sight*.
-- No crater depths or ages.
-- No continents on Earth.
-- Nothing about cancelled missions.
-
-**If an observation point changes:** if `preprocess/process_dem.py` is re-run with new
-points, the percentages in the region scripts must be updated and the clips regenerated.
+   - Only missing or changed clips are generated. The hash covers the text, voice, model,
+     format and settings.
+   - Progress is saved after every clip, with atomic writes, so an interrupted run resumes.
+   - `--dry-run` lists the work: 31 clips, 9,421 characters.
+   - `--only id1,id2` limits the run; `--force` regenerates everything.
+4. Commit `public/audio/narration/*.mp3` and `manifest.json`, then redeploy. The key stays in
+   your shell environment. Never put it in code or in deployed `.env` files.

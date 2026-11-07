@@ -1,4 +1,4 @@
-import { Component, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OrbitalScene } from '../three/OrbitalScene';
@@ -42,6 +42,52 @@ export function Viewport() {
     setTerrainError(m);
     if (m) useApp.getState().setTransitioning(false); // don't leave the fade covering an error
   }, []);
+  // Recovery: if Surface View has not drawn its first frame after 25 s, lift the fade and say so.
+  const sceneReady = useApp((s) => s.sceneReady);
+  const terrainRetry = useApp((s) => s.terrainRetry);
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    setStalled(false);
+    if (mode !== 'surface' || sceneReady === 'surface') return;
+    const t = window.setTimeout(() => {
+      setStalled(true);
+      useApp.getState().setTransitioning(false);
+    }, 25_000);
+    return () => window.clearTimeout(t);
+  }, [mode, sceneReady, terrainRetry]);
+  // GPU context loss (driver reset, memory pressure): wait briefly for the browser to restore
+  // it; otherwise rebuild the 3D view with a fresh context, at most twice, then explain.
+  const [glLost, setGlLost] = useState(false);
+  const [glGen, setGlGen] = useState(0);
+  const [glFailed, setGlFailed] = useState(false);
+  useEffect(() => {
+    if (!glLost) return;
+    const t = window.setTimeout(() => {
+      if (glGen >= 2) return setGlFailed(true);
+      setGlLost(false);
+      setGlGen((g) => g + 1);
+    }, 2500);
+    return () => window.clearTimeout(t);
+  }, [glLost, glGen]);
+  // Only the canvas on screen counts: switching views unmounts the previous canvas, which
+  // releases its context on purpose and must not be mistaken for a GPU failure.
+  const activeCanvas = useRef<HTMLCanvasElement | null>(null);
+  const watchContext = (el: HTMLCanvasElement) => {
+    activeCanvas.current = el;
+    el.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault(); // allow the browser to restore it
+      window.setTimeout(() => {
+        if (el.isConnected && activeCanvas.current === el) setGlLost(true);
+      }, 200);
+    });
+    el.addEventListener('webglcontextrestored', () => setGlLost(false));
+  };
+  useEffect(() => setGlLost(false), [mode]);
+  const retry = () => {
+    setTerrainError(null);
+    setStalled(false);
+    useApp.getState().retryTerrain();
+  };
 
   if (!hasGL) {
     return (
@@ -56,7 +102,7 @@ export function Viewport() {
 
   return (
     <section className={`viewport viewport--${mode}`} aria-label={mode === 'orbital' ? '3D Moon' : 'Local surface'}>
-      <SceneBoundary key={`${mode}-${quality}`}>
+      <SceneBoundary key={`${mode}-${quality}-${glGen}`}>
         {mode === 'orbital' ? (
           <Canvas
             className="viewport__canvas"
@@ -66,8 +112,7 @@ export function Viewport() {
             gl={{ antialias: true, powerPreference: 'high-performance' }}
             onCreated={({ gl }) => {
               if (import.meta.env.DEV) (window as unknown as { __gl: unknown }).__gl = gl;
-              // Let the browser restore the context after a GPU reset instead of blocking the page.
-              gl.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault());
+              watchContext(gl.domElement);
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.05;
             }}
@@ -84,7 +129,7 @@ export function Viewport() {
             gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }}
             onCreated={({ gl }) => {
               if (import.meta.env.DEV) (window as unknown as { __gl: unknown }).__gl = gl;
-              gl.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault());
+              watchContext(gl.domElement);
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.0;
             }}
@@ -94,9 +139,30 @@ export function Viewport() {
         )}
       </SceneBoundary>
 
+      {glFailed && (
+        <div className="viewport__fallback" role="alert">
+          <strong>The 3D view stopped: the graphics processor reset.</strong> This usually means the device is short of graphics
+          memory. Readings, time controls and Mission Analysis still work.{' '}
+          <button type="button" className="vp-note__btn" onClick={() => window.location.reload()}>
+            Reload
+          </button>
+        </div>
+      )}
+      {glLost && !glFailed && (
+        <div className="vp-note" role="status">
+          Restoring the 3D view…
+        </div>
+      )}
       {mode === 'orbital' && <GlobeLabels />}
       {mode === 'surface' && <SkyLabels />}
-      {mode === 'surface' && terrainError && <div className="vp-note is-warn" role="alert">Terrain tile failed to load: {terrainError}</div>}
+      {mode === 'surface' && (terrainError || (stalled && sceneReady !== 'surface')) && (
+        <div className="vp-note is-warn" role="alert">
+          {terrainError ? `LOLA terrain failed to load (${terrainError}).` : 'Surface View is taking longer than expected to load.'}{' '}
+          <button type="button" className="vp-note__btn" onClick={retry}>
+            Retry
+          </button>
+        </div>
+      )}
       <div className={`vp-fade${transitioning ? ' is-on' : ''}`} aria-hidden={!transitioning} role="status">
         {transitioning && <span className="vp-fade__label">Loading LOLA terrain…</span>}
       </div>

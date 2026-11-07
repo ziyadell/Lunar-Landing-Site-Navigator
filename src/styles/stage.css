@@ -319,7 +319,6 @@
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.05;
-  animation: value-in 600ms var(--ease-out);
 }
 .cond__body--sun.is-up .cond__value {
   color: #ffe0a6;
@@ -989,7 +988,6 @@
   flex: 1;
   overflow-y: auto;
   padding: 0 20px 20px;
-  scrollbar-width: thin;
 }
 .drawer__lede {
   margin: 0 0 18px;

@@ -1,3 +1,4 @@
+import { useApp } from '../../state/store';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import type { LandingRegion } from '../../data/types';
@@ -50,9 +51,32 @@ function buildMesh(region: LandingRegion, tiles: TerrainTiles, segments: number)
   const local = () => buildRadialMesh(region, tiles, segments);
   if (!w) return Promise.resolve().then(local);
   const id = ++seq;
-  return new Promise((res) => {
-    pending.set(id, (r) => res(r.mesh ?? local()));
-    w.postMessage({ id, region: { terrain: region.terrain, observationPoint: region.observationPoint }, tiles, segments });
+  return new Promise<TerrainMesh>((res, rej) => {
+    // A worker that errors, or never answers, falls back to building on the main thread.
+    const timer = window.setTimeout(() => {
+      if (!pending.has(id)) return;
+      pending.delete(id);
+      fallback();
+    }, 20_000);
+    const fallback = () => {
+      try {
+        res(local());
+      } catch (e) {
+        rej(e);
+      }
+    };
+    pending.set(id, (r) => {
+      window.clearTimeout(timer);
+      if (r.mesh) res(r.mesh);
+      else fallback();
+    });
+    try {
+      w.postMessage({ id, region: { terrain: region.terrain, observationPoint: region.observationPoint }, tiles, segments });
+    } catch {
+      pending.delete(id);
+      window.clearTimeout(timer);
+      fallback();
+    }
   });
 }
 
@@ -74,14 +98,20 @@ export function useTerrainGeometry(region: LandingRegion, tiles: TerrainTiles, s
   const key = `${region.id}:${segments}`;
   useEffect(() => {
     let alive = true;
-    buildMesh(region, tiles, segments).then((m) => {
-      markOnce('surface-mesh');
-      if (!alive) return;
-      setG((prev) => {
-        prev?.geometry.dispose();
-        return { key, geometry: toGeometry(m) };
+    buildMesh(region, tiles, segments)
+      .then((m) => {
+        markOnce('surface-mesh');
+        if (!alive) return;
+        setG((prev) => {
+          prev?.geometry.dispose();
+          return { key, geometry: toGeometry(m) };
+        });
+      })
+      .catch((e: unknown) => {
+        // Neither the worker nor the main thread could build it: release the loading fade.
+        console.error('Terrain mesh failed', e);
+        if (alive) useApp.getState().setTransitioning(false);
       });
-    });
     return () => {
       alive = false;
     };

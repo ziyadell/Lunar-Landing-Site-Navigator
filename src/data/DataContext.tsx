@@ -31,33 +31,79 @@ async function getJson<T>(p: string): Promise<T> {
   return (await r.json()) as T;
 }
 
+/**
+ * Essential data (regions + ephemeris) is fetched once per page, even when React StrictMode
+ * mounts the provider twice; a failed attempt is forgotten so a reload of the provider retries.
+ */
+let core: Promise<[SitesFile, EphemerisFile]> | null = null;
+function loadCore() {
+  core ??= Promise.all([getJson<SitesFile>('data/sites.json'), getJson<EphemerisFile>('data/ephemeris.json')]).catch((e) => {
+    core = null;
+    throw e;
+  });
+  return core;
+}
+
+/** Optional validation metadata: never blocks the workspace; fetched once it is interactive. */
+let validationP: Promise<ValidationFile | null> | null = null;
+function loadValidation() {
+  validationP ??= getJson<ValidationFile>('data/validation.json').catch(() => {
+    validationP = null;
+    return null;
+  });
+  return validationP;
+}
+
+const idle = (f: () => void) => {
+  const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+  if (w.requestIdleCallback) {
+    const id = w.requestIdleCallback(f, { timeout: 2500 });
+    return () => w.cancelIdleCallback?.(id);
+  }
+  const id = window.setTimeout(f, 800);
+  return () => window.clearTimeout(id);
+};
+
 export function DataProvider({ children, fallback }: { children: ReactNode; fallback: (s: LoadState) => ReactNode }) {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const ready = state.status === 'ready';
   useEffect(() => {
     let alive = true;
-    Promise.all([
-      getJson<SitesFile>('data/sites.json'),
-      getJson<EphemerisFile>('data/ephemeris.json'),
-      getJson<ValidationFile>('data/validation.json').catch(() => null),
-    ])
-      .then(([sites, eph, validation]) => {
+    let unsubscribe: (() => void) | null = null;
+    loadCore()
+      .then(([sites, eph]) => {
         if (!alive) return;
         const ephemeris = new Ephemeris(eph);
         const byId = new Map(sites.regions.map((r) => [r.id, r]));
-        initUrlSync(sites.regions.map((r) => r.id));
+        unsubscribe = initUrlSync(sites.regions.map((r) => r.id));
         // Default epoch: now, clamped to the precomputed coverage.
         const t = useApp.getState().timeMs;
         if (!ephemeris.covers(t)) useApp.setState({ timeMs: ephemeris.clamp(t) });
         setState({
           status: 'ready',
-          data: { sites, ephemeris, validation, region: (id) => byId.get(id) ?? sites.regions[0] },
+          data: { sites, ephemeris, validation: null, region: (id) => byId.get(id) ?? sites.regions[0] },
         });
       })
       .catch((e: unknown) => alive && setState({ status: 'error', message: e instanceof Error ? e.message : String(e) }));
     return () => {
       alive = false;
+      unsubscribe?.();
     };
   }, []);
+  // Validation record: after the workspace is interactive, when the browser is idle.
+  useEffect(() => {
+    if (!ready) return;
+    let alive = true;
+    const cancel = idle(() =>
+      void loadValidation().then((validation) => {
+        if (alive && validation) setState((s) => (s.status === 'ready' ? { status: 'ready', data: { ...s.data, validation } } : s));
+      }),
+    );
+    return () => {
+      alive = false;
+      cancel();
+    };
+  }, [ready]);
   if (state.status !== 'ready') return <>{fallback(state)}</>;
   return <Ctx.Provider value={state.data}>{children}</Ctx.Provider>;
 }
@@ -77,7 +123,12 @@ export function loadTerrain(file: string): Promise<Float32Array> {
         if (!r.ok) throw new Error(`${file}: HTTP ${r.status}`);
         return r.arrayBuffer();
       })
-      .then((b) => new Float32Array(b));
+      .then((b) => new Float32Array(b))
+      .catch((e) => {
+        // Forget failures so a retry fetches again; successes stay cached.
+        if (terrainCache.get(file) === p) terrainCache.delete(file);
+        throw e;
+      });
     terrainCache.set(file, p);
   }
   return p;
