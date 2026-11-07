@@ -100,6 +100,10 @@ interface AppState {
   /** Interface hidden while the welcome plays. */
   intro: boolean;
   setIntro: (v: boolean) => void;
+  /** The welcome is handing over to the interface (brief fade-out). */
+  outro: boolean;
+  /** The interface is arriving after the welcome (staggered fade-in). */
+  reveal: boolean;
   /** Regional view of the south-polar cluster. */
   poleCamera: () => void;
   /** Zoom toward an arbitrary surface point (double-click). */
@@ -180,6 +184,8 @@ export const useApp = create<AppState>((set) => ({
   introCamera: () => set((s) => ({ cameraCommand: { kind: 'intro', seq: s.cameraCommand.seq + 1 } })),
   intro: false,
   setIntro: (intro) => set({ intro }),
+  outro: false,
+  reveal: false,
   poleCamera: () => set((s) => ({ cameraCommand: { kind: 'pole', seq: s.cameraCommand.seq + 1 } })),
   zoomCommand: { factor: 1, seq: 0 },
   zoomCamera: (factor) => set((s) => ({ zoomCommand: { factor, seq: s.zoomCommand.seq + 1 } })),

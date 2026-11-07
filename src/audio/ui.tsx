@@ -318,8 +318,16 @@ export function Welcome() {
     clearAll();
     stopChime();
     if (usePlayer.getState().item?.id === 'welcome') stop();
-    useApp.getState().setIntro(false);
-    setS({ welcomeSeen: true });
+    if (!useApp.getState().intro || useApp.getState().outro) return;
+    // Hand-off: the welcome scene eases out, then the interface comes in, piece by piece.
+    const done = () => {
+      useApp.setState({ intro: false, outro: false, reveal: true });
+      setS({ welcomeSeen: true });
+      window.setTimeout(() => useApp.setState({ reveal: false }), 1400);
+    };
+    if (reducedMotion()) return done();
+    useApp.setState({ outro: true });
+    window.setTimeout(done, 380);
   };
   const finishRef = useRef(finish);
   finishRef.current = finish;
