@@ -7,7 +7,7 @@ export default defineConfig({
   base: './',
   optimizeDeps: {
     // Pre-bundle everything up front so the dev server never re-optimises mid-session.
-    include: ['three', '@react-three/fiber', '@react-three/drei', 'three-stdlib', 'gsap', 'zustand', 'react', 'react-dom/client'],
+    include: ['three', '@react-three/fiber', 'zustand', 'react', 'react-dom/client'],
   },
   build: {
     target: 'es2020',
@@ -16,7 +16,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           three: ['three'],
-          r3f: ['@react-three/fiber', '@react-three/drei'],
+          r3f: ['@react-three/fiber'],
         },
       },
     },

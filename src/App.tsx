@@ -3,6 +3,7 @@ import { DataProvider } from './data/DataContext';
 import { useApp } from './state/store';
 import { TopBar } from './ui/TopBar';
 import { SitePanel } from './ui/SitePanel';
+import { ScienceRail, SiteRail } from './ui/PanelRails';
 import { SciencePanel } from './ui/SciencePanel';
 import { TimeDock } from './ui/TimeDock';
 import { Viewport } from './ui/Viewport';
@@ -29,6 +30,7 @@ function Boot({ state }: { state: { status: 'loading' } | { status: 'error'; mes
 function Workspace() {
   const mode = useApp((s) => s.mode);
   const compact = useMedia('(max-width: 899px)');
+  const panels = useApp((s) => s.panels);
 
   if (mode === 'analysis') {
     return (
@@ -44,12 +46,15 @@ function Workspace() {
   return (
     <div className={`shell ${compact ? 'shell--compact' : 'shell--deck'}`}>
       <TopBar />
-      <main className="deck" aria-label={mode === 'orbital' ? 'Orbital view' : 'Surface view'}>
+      <main
+        className={`deck${panels.left ? '' : ' deck--left-rail'}${panels.right ? '' : ' deck--right-rail'}`}
+        aria-label={mode === 'orbital' ? 'Orbital view' : 'Surface view'}
+      >
         <Viewport />
         {!compact && (
           <>
-            <SitePanel />
-            <SciencePanel />
+            {panels.left ? <SitePanel /> : <SiteRail />}
+            {panels.right ? <SciencePanel /> : <ScienceRail />}
           </>
         )}
       </main>

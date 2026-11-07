@@ -60,6 +60,19 @@ export interface TerrainTileMeta {
   dem: string;
   /** Coarser ring tile (same encoding) for distant terrain; inner area lowered 60 m beneath the near tile. */
   far?: { file: string; n: number; spacingM: number };
+  /** ±150 km at 1 km (block mean); cells outside the DEM set to −20 km. */
+  regional?: { file: string; n: number; spacingM: number; note?: string };
+}
+
+/** Native 100 m LROC imagery + LOLA normals in a window around the observation point. */
+export interface SiteDetail {
+  imagery: string;
+  normals: string;
+  /** Window centre in south-polar stereographic km. */
+  centerKm: [number, number];
+  halfExtentKm: number;
+  imageryResolutionM: number;
+  reliefSource: string;
 }
 
 export interface LandingRegion {
@@ -71,6 +84,7 @@ export interface LandingRegion {
   observationPoint: ObservationPoint;
   horizon: HorizonProfile;
   terrain: TerrainTileMeta;
+  detail?: SiteDetail;
   /** Short factual notes, each traceable to the cited source. */
   notes: string[];
 }
@@ -79,7 +93,16 @@ export interface SitesFile {
   generatedUtc: string;
   referenceRadiusKm: number;
   dem: { name: string; source: string; url: string; resolutionM: number; projection: string };
-  polarCap?: { texture: string; extentKm: number; size: number };
+  polarCap?: { texture: string; standard?: string; extentKm: number; size: number };
+  polarImagery?: {
+    product: string;
+    source: string;
+    acquired: string;
+    band: string;
+    nativeResolutionM: number;
+    cap: { high: string; standard: string; extentKm: number };
+    brightnessGain: number;
+  };
   regions: LandingRegion[];
 }
 

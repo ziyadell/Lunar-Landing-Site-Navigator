@@ -25,7 +25,8 @@ export function regolithNormalMap(): THREE.DataTexture {
   const wrap = (v: number) => ((v % N) + N) % N;
 
   // Value-noise fBm (tileable).
-  for (const [cells, amp] of [[8, 1.0], [16, 0.55], [32, 0.3], [64, 0.16], [128, 0.08]] as const) {
+  // No low octaves: broad undulations would read as fake terrain (LOLA already provides shape).
+  for (const [cells, amp] of [[32, 0.3], [64, 0.2], [128, 0.12], [256, 0.06]] as const) {
     const g = new Float32Array(cells * cells).map(() => r());
     const step = N / cells;
     for (let y = 0; y < N; y++)
@@ -41,9 +42,9 @@ export function regolithNormalMap(): THREE.DataTexture {
       }
   }
   // Small craters: bowl + raised rim, power-law sizes.
-  for (let k = 0; k < 260; k++) {
+  for (let k = 0; k < 420; k++) {
     const cx = r() * N, cy = r() * N;
-    const rad = 3 + Math.pow(r(), 3) * 38;
+    const rad = 2 + Math.pow(r(), 3) * 22;
     const depth = rad * 0.035;
     const R = Math.ceil(rad * 1.6);
     for (let dy = -R; dy <= R; dy++)

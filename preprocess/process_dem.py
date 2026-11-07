@@ -9,7 +9,7 @@ Input  : data_raw/ldem_80s_80m.img (+ .lbl)  — LRO LOLA GDR, PDS Geosciences N
 Outputs:
   public/data/sites.json                 regions, observation points, horizon profiles
   public/data/terrain/<id>.bin           float32 local heightfield for Surface View
-  public/textures/southpole_normal.jpg   object-space normal map for the globe's polar cap
+  (polar-cap normals, imagery and site detail: see build_polar_products.py, run afterwards)
 
 Method summary (also documented in docs/SCIENCE.md):
   * Observation point: a reproducible rule per region (see REGIONS below), applied
@@ -56,7 +56,7 @@ REGIONS = [
     {
         "id": "malapert-massif",
         "name": "Malapert Massif",
-        "nasaListing": "Artemis III candidate region, NASA release 22-089 (Aug 2022)",
+        "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
         "feature": {"name": "Mons Malapert", "type": "Mons", "latDeg": -85.98, "lonDeg": -1.67,
                     "diameterKm": 67.0, "gazetteerId": 16338},
         "rule": "summit",
@@ -69,7 +69,7 @@ REGIONS = [
     {
         "id": "mons-mouton",
         "name": "Mons Mouton",
-        "nasaListing": "Listed as 'Leibnitz Beta Plateau' in NASA release 22-089 (Aug 2022); the mountain was named Mons Mouton by the IAU in 2022",
+        "nasaListing": "Artemis III candidate region added in NASA's refined list of nine (Oct 28, 2024), listed separately from 'Mons Mouton Plateau'",
         "feature": {"name": "Mons Mouton", "type": "Mons", "latDeg": -84.60, "lonDeg": 31.00,
                     "diameterKm": 130.0, "gazetteerId": 16070},
         "rule": "summit",
@@ -82,7 +82,7 @@ REGIONS = [
     {
         "id": "nobile-rim-1",
         "name": "Nobile Rim 1",
-        "nasaListing": "Artemis III candidate region, NASA release 22-089 (Aug 2022)",
+        "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
         "feature": {"name": "Nobile", "type": "Crater", "latDeg": -85.28, "lonDeg": 53.27,
                     "diameterKm": 79.27, "gazetteerId": 4321},
         "rule": "rim",
@@ -94,7 +94,7 @@ REGIONS = [
     {
         "id": "haworth",
         "name": "Haworth",
-        "nasaListing": "Artemis III candidate region, NASA release 22-089 (Aug 2022)",
+        "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
         "feature": {"name": "Haworth", "type": "Crater", "latDeg": -87.45, "lonDeg": -5.17,
                     "diameterKm": 51.42, "gazetteerId": 14502},
         "rule": "rim",
@@ -376,8 +376,7 @@ def main():
             "notes": reg["notes"],
         })
 
-    cap = polar_cap_normals(dem)
-    Image.fromarray(cap, "RGB").save(OUT_TEX / "southpole_normal.jpg", quality=93, optimize=True)
+    # Polar-cap relief normals are produced (anti-aliased) by build_polar_products.py.
 
     out = {
         "generatedUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -389,7 +388,7 @@ def main():
             "resolutionM": 80,
             "projection": "Polar stereographic (spherical), MEAN EARTH/POLAR AXIS of DE421",
         },
-        "polarCap": {"texture": "textures/southpole_normal.jpg", "extentKm": 300.0, "size": 4096},
+        "polarCap": {"texture": "textures/southpole_normal.png", "standard": "textures/polar/nrm_cap_2048.png", "extentKm": 300.0, "size": 4096},
         "regions": regions,
     }
     (OUT_DATA / "sites.json").write_text(json.dumps(out, indent=1))

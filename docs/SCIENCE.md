@@ -80,30 +80,59 @@ from the Sun–Moon distance; Earth radius 6371 km at the current range).
 This is a **geometric** line-of-sight calculation. Earth visibility indicates a
 possible direct-to-Earth path, not a working communication link.
 
-### 3.2 Surface View heightfields
+### 3.2 Surface View terrain
 
-Two tiles per site, both in the observation point's local tangent frame
+Three height tiles per site, all in the observation point's local tangent frame
 (heights include the curvature drop):
-- near: 301 × 301 samples, 80 m spacing (24 km);
-- far: 301 × 301 samples, 400 m spacing (120 km), from a 5 × 5 block-averaged
-  DEM; cells under the near tile are lowered 60 m so the near tile always renders on top.
+- near: 301 × 301 samples, 80 m spacing (±12 km), from `LDEM_80S_80M`;
+- far: 301 × 301 samples, 400 m spacing (±60 km), 5 × 5 block mean;
+- regional: 301 × 301 samples, 1 km spacing (±150 km), 12 × 12 block mean
+  (`preprocess/build_polar_products.py`). Cells outside the 80°S product are
+  set to −20 km (below any skyline).
 
-Beyond 60 km the computed skyline is drawn as a wall on a 90 km ring whose
-normals face the observer, so skyline segments opposite the Sun receive light.
+The scene renders **one continuous radial mesh** centred on the observer
+(360 azimuth segments, 240 on small screens; ring spacing ≈ r·Δθ) out to
+150 km, the same range as the horizon ray-tracing. Heights are bilinearly
+sampled from the three tiles and cross-faded at 10–11 km and 50–55 km, so
+there are no seams or level steps. The far tile's original −60 m offset
+inside the near tile's footprint is removed before blending.
 
-Vertex shading on both tiles is derived from the DEM: cells lower than the
-mean of their 5×5 and 17×17 neighbourhoods are darkened, crests slightly
-brightened (an ambient-occlusion approximation computed only from LOLA heights).
+Within 11 km the mesh is denser than the 80 m DEM; those vertices are
+bilinear interpolations, so they add **no** measured detail. The near field
+is smooth by construction.
 
-**Display aids (not measurements), all labelled and switchable in the UI:**
-- *Enhanced visibility* (default on): a hemisphere fill light and ~9× brighter
-  Earthshine so shadowed terrain stays readable. Off = physical lighting
-  (sunlight + faint Earthshine only).
-- *Fine texture (illustrative)*: a procedurally generated, tileable small-crater /
-  regolith normal map on the near tile (24 m repeat). LOLA cannot resolve
-  anything this small; the texture only conveys surface roughness.
-- Az/El grid (10° altitude circles, 30° azimuth spokes), ground range rings at
-  1, 2, 5 and 10 km draped on the DEM, and a 360° skyline strip.
+Vertex shading is derived from the DEM: each vertex is compared with the mean
+height of six samples at ~3× the local mesh spacing, so hollows are darkened
+and crests slightly brightened (an ambient-occlusion approximation computed
+only from LOLA heights).
+
+The ray-traced skyline (§3.1) is drawn as a thin annotation line. It coincides
+with the rendered terrain edge. A Python check confirmed that the rendered
+tiles never exceed the profile by more than 0.10° at any azimuth.
+
+Cast shadows cover ±80 km (~39 m per shadow texel at 4096²). Beyond that,
+terrain is shaded but casts no shadows. Direct sunlight is scaled by the
+visible fraction of the solar disc at the observation point.
+
+**Display presets** (each has one purpose; individual toggles remain):
+
+| Preset | Purpose | Layers |
+|---|---|---|
+| Scientific (default) | read measurements | LOLA skyline line, az/el grid, range rings, stars, enhanced visibility; fine texture off |
+| Clean | orientation / presentation | terrain, Sun, Earth, stars; enhanced visibility; no overlays |
+| Realistic | appearance under physical light | physical lighting (Sun + faint Earthshine), illustrative fine texture, stars |
+
+Display aids that are not measurements:
+- *Enhanced visibility*: a hemisphere fill light and ~9× brighter Earthshine.
+  Real shadowed terrain is much darker.
+- *Fine texture (illustrative)*: a procedural small-crater / regolith normal map
+  (24 m repeat, no low-frequency octaves). It fades out between 60 m and 320 m
+  from the camera so it cannot alias into moiré. LOLA does not resolve anything
+  at this scale, so the texture is **off by default** and on only in the
+  "Realistic" preset.
+- Range rings at 100 m, 250 m, 500 m and 1 km. From a 2 m eye height, farther
+  rings sit within ~0.1° of the horizon. On convex summits even the near rings
+  can fall behind the crest, which is geometrically correct.
 
 ### 3.3 Star field
 
@@ -124,15 +153,19 @@ exaggerated for legibility and labelled as such.
 
 ## 4. Candidate regions and observation points
 
-NASA's Artemis III candidate regions (NASA release 22-089, Aug 2022) are about
-15 × 15 km. NASA does not publish their coordinates, so the app anchors each
+NASA's Artemis III candidate regions are about 15 × 15 km (release 22-089,
+Aug 2022). On **Oct 28, 2024** NASA refined the list to nine regions: Peak near
+Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile
+Rim 1, Nobile Rim 2, de Gerlache Rim 2 and Slater Plain
+([NASA](https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/)).
+All four regions used here are on that list. NASA does not publish coordinates for them, so the app anchors each
 region to an IAU Gazetteer of Planetary Nomenclature feature (retrieved
 2026-11-07) and selects **one representative observation point** with a stated rule:
 
 | Region | IAU reference feature | Centre (lat, lon E) | Rule |
 |---|---|---|---|
 | Malapert Massif | Mons Malapert (ID 16338), 67 km | −85.98, −1.67 | Of 172 points on a 2 km grid within 15 km of the centre, the one with the Sun's centre above the LOLA skyline for the largest fraction of 2027 hours |
-| Mons Mouton (listed in 2022 as "Leibnitz Beta Plateau") | Mons Mouton (ID 16070), 130 km | −84.60, 31.00 | Same as above |
+| Mons Mouton (Oct 2024 list; distinct from "Mons Mouton Plateau") | Mons Mouton (ID 16070), 130 km | −84.60, 31.00 | Same as above |
 | Nobile Rim 1 | Nobile crater (ID 4321), 79.3 km | −85.28, 53.27 | Of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii on radial profiles every 5°), the most sunlit in 2027. NASA does not distinguish Rim 1 from Rim 2 by coordinates, so this is a representative rim point. |
 | Haworth | Haworth crater (ID 14502), 51.4 km | −87.45, −5.17 | Same rim-crest rule |
 
@@ -159,22 +192,39 @@ boundary are reported as "≥". Metrics: % of samples with the Sun / Earth / bot
 "Observations" are direct arithmetic comparisons of these metrics. No
 suitability ranking or score is computed.
 
-## 6. Global Moon rendering
+## 6. Global Moon rendering (multi-resolution)
 
-- Colour: LROC WAC mosaic with polar fill (NASA SVS CGI Moon Kit), sRGB. The
-  globe is built from 8 × 4 patches. Each starts with its slice of the 4K map;
-  when the camera is within 2.9 Moon radii, visible patches stream their 2048²
-  tile of the **16K** mosaic (16384 × 8192, ≈0.33 km/px at the equator).
-- Relief: normal map from LOLA `ldem_16` at true vertical scale. Poleward of
-  ~80.6°S it is replaced by object-space normals from `LDEM_80S_80M`, resampled
-  to 4096² (~146 m/px), blended over 0.6°.
-- Rendering at full device pixel ratio (≤ 2×), no adaptive down-scaling, with
-  maximum anisotropic filtering.
+| Level | When | Imagery | Relief |
+|---|---|---|---|
+| Global | always | LROC WAC mosaic, 4K base map (≈2.7 km/px at the equator) | LOLA `ldem_16` normal map, 1.9 km |
+| Regional | visible patches when on-screen ground resolution < 2 km/px | 16K mosaic tiles (16384 × 8192; **≈0.67 km/px at the equator**, 0.022° per pixel in latitude) | as above |
+| South polar cap (poleward of 80.6°S) | pole in view | **LROC WAC South Pole Summer Mosaic**, 643 nm, 100 m native, as a 4096² texture (146 m/px; 2048² on small screens) | LOLA `LDEM_80S_80M` object-space normals, 2048² (293 m) at start, 4096² (146 m) when zoomed |
+| Selected site | the selected region | the same mosaic at its **native 100 m**, 2048² window (204.8 km) | LOLA normals on the same 100 m grid |
+
+- The polar mosaic (Speyerer et al. 2020) combines images from 2010-09-21 to
+  2010-10-23, chosen for minimal shadows and map-projected onto LOLA. Its
+  georeferencing was verified with permanently shadowed crater floors
+  (Shackleton, Haworth, Faustini, Shoemaker, Cabeus), which are dark only in
+  the correct orientation. Its brightness is matched to the global map on lit
+  pixels at 80.5–83°S (gain 1.54).
+- Baked shadows from 2010 remain in the mosaic. Pixels in shadow carry no
+  albedo information, so the shader replaces them with the regional mean
+  albedo, and the **current** lighting decides what is dark. Shape always comes
+  from LOLA.
+- Relief normals are computed from the DEM **after** a box low-pass matched to
+  the output grid. Point-sampling the 80 m grid at 146/293 m had produced a
+  ~1 km moiré (fixed in this release).
+- Zoom limits follow the data. The site view stops at ~104 km range near the
+  pole (≈80 m per screen pixel at 1440 × 900) and at ~570 km elsewhere. The
+  on-screen scale bar names the imagery and relief resolution and flags
+  "beyond imagery resolution" when the screen is finer than the source.
+- 16K tiles are held in an LRU set: at most 10 resident on the high tier,
+  4 on the standard tier (~22 MB GPU each with mipmaps).
 - Lighting: the real Sun direction at the selected epoch. Photometry blends
-  Lambert with Lommel–Seeliger (lunar-Lambert approximation) to avoid unrealistic
-  limb darkening. No cast shadows on the globe; the Surface View has them.
-- The globe imagery itself contains illumination baked in from the source mosaic.
-  Use the Surface View and the readings, not the globe shading, for quantitative judgements.
+  Lambert with Lommel–Seeliger (lunar-Lambert approximation). There are no
+  cast shadows on the globe; the Surface View has them.
+- The polar blend weight is `1 − smoothstep(−81.2°, −80.6°, lat)`. The earlier
+  release passed reversed edges to `smoothstep`, which GLSL leaves undefined.
 
 ## 7. Known limitations
 

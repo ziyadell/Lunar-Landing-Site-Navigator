@@ -6,7 +6,7 @@ import { useConditions } from '../data/useConditions';
 import { useApp, useLook } from '../state/store';
 import { azElToLocal, DEG } from '../science/geometry';
 import type { LandingRegion } from '../data/types';
-import { Terrain } from './surface/Terrain';
+import { RadialTerrain, type TerrainTiles } from './surface/RadialTerrain';
 import { GroundRings, SkyGrid, SkyLabelProjector, Stars } from './surface/SkyObjects';
 
 /**
@@ -14,79 +14,52 @@ import { GroundRings, SkyGrid, SkyLabelProjector, Stars } from './surface/SkyObj
  * the lunar north pole). The observer stands at the origin, eye at observerHeightM.
  */
 
-const BODY_DIST = 200_000; // m — beyond the 90 km skyline ring
-const RING_R = 90_000; // beyond the far tile's corners (60 km × √2)
+const BODY_DIST = 300_000; // m — beyond the 150 km terrain
 
 function useTerrain(region: LandingRegion) {
-  const [data, setData] = useState<{ id: string; h: Float32Array; far: Float32Array | null } | null>(null);
+  const [data, setData] = useState<{ id: string; tiles: TerrainTiles } | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
     setError(null);
-    const far = region.terrain.far ? loadTerrain(region.terrain.far.file).catch(() => null) : Promise.resolve(null);
-    Promise.all([loadTerrain(region.terrain.file), far])
-      .then(([h, f]) => alive && setData({ id: region.id, h, far: f }))
+    const opt = (f?: { file: string }) => (f ? loadTerrain(f.file).catch(() => null) : Promise.resolve(null));
+    Promise.all([loadTerrain(region.terrain.file), opt(region.terrain.far), opt(region.terrain.regional)])
+      .then(([near, far, regional]) => alive && setData({ id: region.id, tiles: { near, far, regional } }))
       .catch((e: Error) => alive && setError(e.message));
     return () => {
       alive = false;
     };
   }, [region]);
-  const ok = data?.id === region.id;
-  return { heights: ok ? data.h : null, far: ok ? data.far : null, error };
+  return { tiles: data?.id === region.id ? data.tiles : null, error };
 }
 
 /**
- * Distant skyline beyond 60 km, from the LOLA horizon profile, drawn as a wall on a
- * 90 km ring. Its normals face the observer, so the parts of the skyline opposite
- * the Sun receive light (as sunlit distant slopes would) and the rest stays in shade.
+ * The ray-traced LOLA skyline (150 km), drawn as a thin annotation line on a far
+ * sphere. The terrain mesh itself reaches the same 150 km, so the rendered
+ * horizon and this line coincide; the line makes the computed values visible.
  */
-function HorizonRing({ region, showLine }: { region: LandingRegion; showLine: boolean }) {
+function SkylineLine({ region }: { region: LandingRegion }) {
   const eye = region.observationPoint.observerHeightM;
-  const { wall, line } = useMemo(() => {
+  const line = useMemo(() => {
     const prof = region.horizon.elevationDeg;
     const k = prof.length;
-    const pos: number[] = [];
-    const nor: number[] = [];
-    const idx: number[] = [];
+    const R = 200_000;
     const pts: THREE.Vector3[] = [];
     for (let i = 0; i <= k; i++) {
       const az = (i % k) * region.horizon.azStepDeg * DEG;
       const el = prof[i % k] * DEG;
-      const x = Math.sin(az) * RING_R;
-      const z = -Math.cos(az) * RING_R;
-      const y = eye + Math.tan(el) * RING_R;
-      pos.push(x, y, z, x, -20_000, z);
-      const nx = -Math.sin(az), nz = Math.cos(az);
-      nor.push(nx, 0.25, nz, nx, 0.25, nz);
-      pts.push(new THREE.Vector3(x, y, z));
-      if (i < k) {
-        const a = i * 2;
-        idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-      }
+      pts.push(new THREE.Vector3(Math.sin(az) * Math.cos(el) * R, eye + Math.sin(el) * R, -Math.cos(az) * Math.cos(el) * R));
     }
-    const wall = new THREE.BufferGeometry();
-    wall.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    wall.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
-    wall.setIndex(idx);
-    const line = new THREE.Line(
+    return new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({ color: '#4DDCF4', transparent: true, opacity: 0.8 }),
+      new THREE.LineBasicMaterial({ color: '#4DDCF4', transparent: true, opacity: 0.75, depthTest: false }),
     );
-    return { wall, line };
   }, [region, eye]);
   useEffect(() => () => {
-    wall.dispose();
     line.geometry.dispose();
     (line.material as THREE.Material).dispose();
-  }, [wall, line]);
-  return (
-    <group>
-      <mesh geometry={wall}>
-        <meshStandardMaterial color="#6d6a65" roughness={1} side={THREE.DoubleSide} />
-      </mesh>
-      {showLine && <primitive object={line} />}
-    </group>
-  );
+  }, [line]);
+  return <primitive object={line} />;
 }
 
 const earthMaterial = () =>
@@ -166,12 +139,12 @@ function SunLight({ mapSize }: { mapSize: number }) {
     const l = light.current;
     if (!l) return;
     scene.add(l.target);
-    // Covers both terrain tiles (±60 km): ~30 m per shadow texel at 4096².
+    // Cast shadows within ±80 km (~39 m per texel at 4096²); beyond that terrain is shaded but casts no shadows.
     const cam = l.shadow.camera as THREE.OrthographicCamera;
-    cam.left = cam.bottom = -62_000;
-    cam.right = cam.top = 62_000;
+    cam.left = cam.bottom = -80_000;
+    cam.right = cam.top = 80_000;
     cam.near = 1_000;
-    cam.far = 300_000;
+    cam.far = 400_000;
     cam.updateProjectionMatrix();
     l.shadow.bias = -0.0004;
     l.shadow.normalBias = 40;
@@ -188,7 +161,7 @@ function SunLight({ mapSize }: { mapSize: number }) {
   return (
     <directionalLight
       ref={light}
-      position={[s[0] * 150_000, Math.max(s[1], -0.2) * 150_000, s[2] * 150_000]}
+      position={[s[0] * 200_000, Math.max(s[1], -0.2) * 200_000, s[2] * 200_000]}
       intensity={3.4 * k}
       color="#fff8ec"
       castShadow
@@ -234,7 +207,7 @@ function LookCamera({ eye }: { eye: number }) {
     const c = camera as THREE.PerspectiveCamera;
     c.position.set(0, eye, 0);
     c.near = 0.5;
-    c.far = 900_000;
+    c.far = 1_000_000;
     c.fov = look.fov;
     c.rotation.order = 'YXZ';
     c.rotation.y = -look.yaw * DEG;
@@ -252,7 +225,11 @@ function LookCamera({ eye }: { eye: number }) {
     let pinch0 = 0;
     let fov0 = 0;
     const down = (e: PointerEvent) => {
-      el.setPointerCapture(e.pointerId);
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* best-effort */
+      }
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 2) {
         const [a, b] = [...pointers.values()];
@@ -332,7 +309,8 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
   const { conditions } = useConditions();
   const r = region(regionId);
   const p = r.observationPoint;
-  const { heights, far, error } = useTerrain(r);
+  const { tiles, error } = useTerrain(r);
+  const segments = useMemo(() => (Math.min(window.innerWidth, window.innerHeight) < 700 ? 240 : 360), []);
   useEffect(() => onError(error), [error, onError]);
   useEffect(() => {
     if (error) useApp.getState().setTransitioning(false);
@@ -343,14 +321,9 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
       <SunLight mapSize={shadowMapSize} />
       <FillLights enhanced={layers.enhancedLight} />
       <LookCamera eye={p.observerHeightM} />
-      {heights && (
-        <Terrain heights={heights} n={r.terrain.n} spacingM={r.terrain.spacingM} detail={layers.regolith} detailRepeatM={24} />
-      )}
-      {far && r.terrain.far && (
-        <Terrain heights={far} n={r.terrain.far.n} spacingM={r.terrain.far.spacingM} detail={false} detailRepeatM={900} />
-      )}
-      {heights && layers.rings && <GroundRings region={r} heights={heights} />}
-      <HorizonRing region={r} showLine={layers.horizonLine} />
+      {tiles && <RadialTerrain region={r} tiles={tiles} detail={layers.regolith} segments={segments} />}
+      {tiles && layers.rings && <GroundRings region={r} heights={tiles.near} />}
+      {layers.horizonLine && <SkylineLine region={r} />}
       {layers.stars && <Stars timeMs={timeMs} latDeg={p.latDeg} lonDeg={p.lonDeg} />}
       {layers.skyGrid && <SkyGrid />}
       <SkyBodies />
@@ -360,7 +333,7 @@ export function SurfaceScene({ shadowMapSize, onError }: { shadowMapSize: number
           earth={[conditions.earth.azDeg, conditions.earth.elDeg]}
         />
       )}
-      {heights && <ReadySignal />}
+      {tiles && <ReadySignal />}
     </>
   );
 }

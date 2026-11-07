@@ -142,7 +142,10 @@ export function SkyGrid() {
   );
 }
 
-/** Ground range rings (1, 2, 5, 10 km) draped on the near LOLA tile. */
+/**
+ * Ground range rings (100 m, 250 m, 500 m, 1 km) draped on the near LOLA tile. From a 2 m
+ * eye height, rings beyond ~1 km collapse to within 0.1° of the horizon, so none are drawn there.
+ */
 export function GroundRings({ region, heights }: { region: LandingRegion; heights: Float32Array }) {
   const { n, spacingM } = region.terrain;
   const geometry = useMemo(() => {
@@ -158,14 +161,16 @@ export function GroundRings({ region, heights }: { region: LandingRegion; height
       return a * (1 - fy) + b * fy;
     };
     const pts: number[] = [];
-    for (const r of [1000, 2000, 5000, 10000]) {
+    for (const r of [100, 250, 500, 1000]) {
       const steps = 360;
       for (let i = 0; i < steps; i++) {
         const a0 = (i / steps) * Math.PI * 2;
         const a1 = ((i + 1) / steps) * Math.PI * 2;
         const x0 = Math.sin(a0) * r, z0 = -Math.cos(a0) * r;
         const x1 = Math.sin(a1) * r, z1 = -Math.cos(a1) * r;
-        pts.push(x0, hAt(x0, z0) + 4, z0, x1, hAt(x1, z1) + 4, z1);
+        // Small lift only: the eye is 2 m up, so a larger lift would raise the rings to eye level.
+        const lift = 0.25 + r * 0.0005;
+        pts.push(x0, hAt(x0, z0) + lift, z0, x1, hAt(x1, z1) + lift, z1);
       }
     }
     const g = new THREE.BufferGeometry();
@@ -175,7 +180,7 @@ export function GroundRings({ region, heights }: { region: LandingRegion; height
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <lineSegments geometry={geometry}>
-      <lineBasicMaterial color="#4DDCF4" transparent opacity={0.4} depthWrite={false} />
+      <lineBasicMaterial color="#4DDCF4" transparent opacity={0.7} depthWrite={false} />
     </lineSegments>
   );
 }

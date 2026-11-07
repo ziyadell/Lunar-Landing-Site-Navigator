@@ -3,7 +3,8 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OrbitalScene } from '../three/OrbitalScene';
 import { SurfaceScene } from '../three/SurfaceScene';
-import { pickTextureTier } from '../three/MoonGlobe';
+import { probeTextureTier } from '../three/MoonGlobe';
+import { ScaleBar } from './ScaleBar';
 import { useApp, useLook } from '../state/store';
 import { useConditions } from '../data/useConditions';
 import { webglAvailable } from '../utils/motion';
@@ -60,8 +61,8 @@ function SurfaceTools() {
   const look = useLook();
   const setMode = useApp((s) => s.setMode);
   const focus = useApp((s) => s.focusRegion);
-  // Put the body in the upper third of the frame so the skyline stays in view.
-  const aim = (az: number, el: number) => look.set({ yaw: az, pitch: el - look.fov * 0.18 });
+  // Body slightly above frame centre: skyline and sky both in view.
+  const aim = (az: number, el: number) => look.set({ yaw: az, pitch: el - look.fov * 0.08 });
 
   // On entering (or switching region): face the Sun if it is up, otherwise Earth.
   const regionId = useApp((s) => s.regionId);
@@ -122,7 +123,8 @@ export function Viewport() {
   const mode = useApp((s) => s.mode);
   const transitioning = useApp((s) => s.transitioning);
   const hasGL = useMemo(webglAvailable, []);
-  const [tier, setTier] = useState<'high' | 'standard'>('standard');
+  // Decided before the GL context exists so only one set of base textures loads.
+  const tier = useMemo(probeTextureTier, []);
   const [shadowSize, setShadowSize] = useState(4096);
   const [terrainError, setTerrainError] = useState<string | null>(null);
   const onTerrainError = useCallback((m: string | null) => {
@@ -152,9 +154,9 @@ export function Viewport() {
             camera={{ fov: 32, near: 0.01, far: 100, position: [0, -1, 3] }}
             gl={{ antialias: true, powerPreference: 'high-performance' }}
             onCreated={({ gl }) => {
+              if (import.meta.env.DEV) (window as unknown as { __gl: unknown }).__gl = gl;
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.05;
-              setTier(pickTextureTier(gl.capabilities.maxTextureSize));
             }}
           >
             <OrbitalScene tier={tier} />
@@ -168,6 +170,7 @@ export function Viewport() {
             camera={{ fov: 55, near: 0.5, far: 600_000, position: [0, 2, 0] }}
             gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }}
             onCreated={({ gl }) => {
+              if (import.meta.env.DEV) (window as unknown as { __gl: unknown }).__gl = gl;
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.0;
               const small = Math.min(window.innerWidth, window.innerHeight) < 700;
@@ -189,11 +192,7 @@ export function Viewport() {
           <SurfacePanorama />
         </>
       )}
-      {mode === 'orbital' && (
-        <div className="vp-credit">
-          Imagery: NASA LRO LROC WAC · Relief: LRO LOLA · Lighting: Sun direction at the selected epoch
-        </div>
-      )}
+      {mode === 'orbital' && <ScaleBar />}
       <div className={`vp-fade${transitioning ? ' is-on' : ''}`} aria-hidden="true" />
     </section>
   );

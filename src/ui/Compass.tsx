@@ -20,14 +20,19 @@ export function Compass() {
   const ticks: number[] = [];
   for (let a = Math.ceil((yaw - half) / step) * step; a <= yaw + half; a += step) ticks.push(wrap360(a));
 
+  const inView = (az: number) => Math.abs(rel(az)) <= half;
   const marker = (az: number, cls: string, label: string) =>
-    Math.abs(rel(az)) <= half ? (
+    inView(az) ? (
       <span className={`compass__body ${cls}`} style={{ left: `${pos(az)}%` }} aria-hidden="true">
         {label}
       </span>
-    ) : (
-      <span className={`compass__off ${cls} ${rel(az) < 0 ? 'is-left' : 'is-right'}`} aria-hidden="true">
-        {label} {Math.round(wrap360(az))}°
+    ) : null;
+  // Off-screen bodies are listed beside the tape (outside its fade mask) so they never clip.
+  const off = (az: number, cls: string, label: string) =>
+    inView(az) ? null : (
+      <span className={`compass__off ${cls}`} aria-hidden="true">
+        {rel(az) < 0 ? '◂ ' : ''}
+        {label} {Math.round(wrap360(az))}°{rel(az) >= 0 ? ' ▸' : ''}
       </span>
     );
 
@@ -46,6 +51,18 @@ export function Compass() {
         {conditions && marker(conditions.earth.azDeg, 'is-earth', 'EARTH')}
         <span className="compass__caret" aria-hidden="true" />
       </div>
+      {conditions && (
+        <div className="compass__offs">
+          <div className="compass__offs-l">
+            {rel(conditions.sun.azDeg) < 0 && off(conditions.sun.azDeg, 'is-sun', 'SUN')}
+            {rel(conditions.earth.azDeg) < 0 && off(conditions.earth.azDeg, 'is-earth', 'EARTH')}
+          </div>
+          <div className="compass__offs-r">
+            {rel(conditions.sun.azDeg) >= 0 && off(conditions.sun.azDeg, 'is-sun', 'SUN')}
+            {rel(conditions.earth.azDeg) >= 0 && off(conditions.earth.azDeg, 'is-earth', 'EARTH')}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

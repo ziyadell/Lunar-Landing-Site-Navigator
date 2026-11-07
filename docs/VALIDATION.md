@@ -87,3 +87,15 @@ mobile images are 375 × 812.
    the GitHub repository for automatic deploys.
 8. **Challenge page:** the official challenge page could not be read from the
    development environment (TLS certificate error).
+
+## 7. Quality pass (branch `quality-pass`, Nov 2026)
+
+The improvements, root causes, performance measurements and the rerun of all
+validation checks for this branch are documented in
+[QUALITY-PASS.md](QUALITY-PASS.md). Summary of the new results:
+
+- Ephemeris and Moon-orientation validation reproduced (≤ 0.007° / 0.008°).
+- Independent Python recomputation of a Mission Analysis scenario matches the app exactly.
+- Polar mosaic georeferencing verified against five permanently shadowed craters.
+- Edge (headless, software WebGL) and Firefox 159 (local GPU) pass all three modes with no console errors.
+- WebKit/Safari, real touch devices, screen readers and GPU frame-rate profiling remain untested.
