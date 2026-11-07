@@ -58,7 +58,7 @@ export function MarkerProjector() {
     const hb = host?.getBoundingClientRect();
     const obstacles: Rect[] = [];
     if (hb)
-      for (const el of document.querySelectorAll<HTMLElement>('.viewport .vp-tools, .viewport .scalebar')) {
+      for (const el of document.querySelectorAll<HTMLElement>('[data-obstacle]')) {
         const b = el.getBoundingClientRect();
         obstacles.push({ x: b.left - hb.left - 4, y: b.top - hb.top - 4, w: b.width + 8, h: b.height + 8 });
       }

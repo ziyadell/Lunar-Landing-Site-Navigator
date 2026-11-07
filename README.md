@@ -24,6 +24,7 @@ it has a direct line of sight to Earth. Built for the NASA Space Apps Challenge
 Region, time and mode stay synchronised across views and live in the URL, e.g.
 [`?mode=surface&site=haworth&t=2027-01-12T06:00Z`](https://lunar-landing-site-navigator-six.vercel.app/?mode=surface&site=haworth&t=2027-01-12T06:00Z).
 
+Layout redesign (full-window scene, floating controls, study-style analysis): [docs/REDESIGN.md](docs/REDESIGN.md).
 Before/after evidence and root causes: [docs/QUALITY-PASS.md](docs/QUALITY-PASS.md)
 (rendering, camera, markers, terrain) and [docs/EXPERIENCE-PASS.md](docs/EXPERIENCE-PASS.md)
 (interface, interaction, regions, references).
@@ -118,7 +119,8 @@ src/
   state/         app store (zustand), URL sync
   three/         globe material + LOD tiles, orbital scene & camera, surface scene
   three/surface/ terrain, stars, sky grid, range rings, illustrative regolith texture
-  ui/            top bar, panels, time controls, mobile sheet, compass, surface overlays
+  ui/            stage/ (masthead, region deck + atlas, conditions, time pill, drawers),
+                 compass, surface overlays, analysis study page
   ui/analysis/   comparison workspace, timelines, horizon panorama
   styles/        design tokens + global styles
 preprocess/      reproducible Python data pipeline

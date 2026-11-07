@@ -169,7 +169,7 @@ export function GlobeCamera() {
     const portrait = aspect() < 1 ? 1 / Math.max(0.5, aspect()) : 1;
     if (!cur.current) {
       const f = frame('global', new THREE.Vector3());
-      cur.current = { mode: 'global', target: new THREE.Vector3(), heading: sunBearing(f), tilt: 2.62, logRange: Math.log(3.7 * portrait) };
+      cur.current = { mode: 'global', target: new THREE.Vector3(), heading: sunBearing(f), tilt: 2.62, logRange: Math.log(4.05 * portrait) };
       goal.current = { ...cur.current, target: new THREE.Vector3() };
       const { pos, up: u } = poseCamera(cur.current);
       camera.position.copy(pos);
@@ -192,7 +192,7 @@ export function GlobeCamera() {
     if (cmd.kind === 'global') {
       rebase('global', new THREE.Vector3());
       const f = frame('global', new THREE.Vector3());
-      setGoal({ mode: 'global', target: new THREE.Vector3(), heading: sunBearing(f), tilt: 2.62, logRange: Math.log(3.7 * portrait) });
+      setGoal({ mode: 'global', target: new THREE.Vector3(), heading: sunBearing(f), tilt: 2.62, logRange: Math.log(4.05 * portrait) });
       return;
     }
     if (cmd.kind === 'point' && cmd.latDeg !== undefined && cmd.lonDeg !== undefined) {

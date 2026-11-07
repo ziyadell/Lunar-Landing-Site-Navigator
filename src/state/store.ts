@@ -66,7 +66,15 @@ const readPanels = (): { left: boolean; right: boolean } => {
   return { left: !narrow, right: true };
 };
 
+/** Secondary surfaces: one contextual drawer at a time. */
+export type Drawer = null | 'atlas' | 'details' | 'about';
+
 interface AppState {
+  drawer: Drawer;
+  openDrawer: (d: Drawer) => void;
+  /** Expanded time sheet (scrubber + visibility strip). */
+  timeOpen: boolean;
+  setTimeOpen: (v: boolean) => void;
   /** Side panels expanded (true) or collapsed to rails (false). */
   panels: { left: boolean; right: boolean };
   togglePanel: (side: 'left' | 'right') => void;
@@ -102,6 +110,10 @@ const DAY = 86_400_000;
 const nowHour = () => Math.floor(Date.now() / 3_600_000) * 3_600_000;
 
 export const useApp = create<AppState>((set) => ({
+  drawer: null,
+  openDrawer: (drawer) => set((s) => ({ drawer: s.drawer === drawer ? null : drawer })),
+  timeOpen: false,
+  setTimeOpen: (timeOpen) => set({ timeOpen }),
   panels: readPanels(),
   togglePanel: (side) =>
     set((s) => {
@@ -135,7 +147,7 @@ export const useApp = create<AppState>((set) => ({
     { regionId: 'nobile-rim-1', startMs: Date.UTC(2027, 0, 1), durationDays: 30 },
   ],
   // Choosing a mode explicitly cancels any running Orbital → Surface dive.
-  setMode: (mode) => set({ mode, transitioning: false }),
+  setMode: (mode) => set({ mode, transitioning: false, timeOpen: false }),
   selectRegion: (regionId) =>
     set((s) => ({ regionId, cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 } })),
   setTime: (timeMs) => set({ timeMs }),

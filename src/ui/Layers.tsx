@@ -1,5 +1,4 @@
 import { useApp, type Layers } from '../state/store';
-import { TimeInputs, VisibilityStrip } from './TimeControls';
 
 const LAYER_LABELS: { k: keyof Layers; label: string; modes: ('orbital' | 'surface')[] }[] = [
   { k: 'labels', label: 'Region labels', modes: ['orbital'] },
@@ -29,27 +28,5 @@ export function LayerToggles() {
         </label>
       ))}
     </fieldset>
-  );
-}
-
-export function TimeDock() {
-  return (
-    <section className="dock" aria-label="Observation time">
-      <div className="dock__time">
-        <div className="dock__head">
-          <span className="dock__label">Observation Epoch</span>
-        </div>
-        <TimeInputs />
-      </div>
-      <div className="dock__strip">
-        <div className="dock__head">
-          <span className="dock__label">Visibility · 30 days · terrain-corrected</span>
-        </div>
-        <VisibilityStrip />
-      </div>
-      <div className="dock__layers">
-        <LayerToggles />
-      </div>
-    </section>
   );
 }

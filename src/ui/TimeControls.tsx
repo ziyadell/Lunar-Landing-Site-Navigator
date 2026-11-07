@@ -8,7 +8,7 @@ const H = 3_600_000;
 const D = 24 * H;
 
 /** Date + time inputs (UTC), step buttons, playback. */
-export function TimeInputs({ compact = false }: { compact?: boolean }) {
+export function TimeInputs({ compact = false, steps = true }: { compact?: boolean; steps?: boolean }) {
   const { ephemeris } = useData();
   const timeMs = useApp((s) => s.timeMs);
   const setTime = useApp((s) => s.setTime);
@@ -78,7 +78,7 @@ export function TimeInputs({ compact = false }: { compact?: boolean }) {
         />
         <span id="obs-time-hint" className="sr-only">24-hour UTC, for example 14:30</span>
       </div>
-      <div className="stepper" role="group" aria-label="Step observation time">
+      {steps && <div className="stepper" role="group" aria-label="Step observation time">
         <button type="button" onClick={() => step(-D)} aria-label="Back one day">−1d</button>
         <button type="button" onClick={() => step(-H)} aria-label="Back one hour">−1h</button>
         <button
@@ -96,7 +96,7 @@ export function TimeInputs({ compact = false }: { compact?: boolean }) {
         </button>
         <button type="button" onClick={() => step(H)} aria-label="Forward one hour">+1h</button>
         <button type="button" onClick={() => step(D)} aria-label="Forward one day">+1d</button>
-      </div>
+      </div>}
       <button
         type="button"
         className="btn-text"

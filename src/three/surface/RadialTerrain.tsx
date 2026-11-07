@@ -32,6 +32,9 @@ function sampler(h: Float32Array, n: number, spacing: number) {
     const x0 = Math.floor(gx), y0 = Math.floor(gy);
     if (x0 < 0 || y0 < 0 || x0 >= n - 1 || y0 >= n - 1) return null;
     const fx = gx - x0, fy = gy - y0;
+    const c00 = h[y0 * n + x0], c01 = h[y0 * n + x0 + 1], c10 = h[(y0 + 1) * n + x0], c11 = h[(y0 + 1) * n + x0 + 1];
+    // No-data (NaN or the -20 km sentinel) anywhere in the cell: no measurement here.
+    if (!(c00 > -19_000 && c01 > -19_000 && c10 > -19_000 && c11 > -19_000)) return null;
     const a = h[y0 * n + x0] * (1 - fx) + h[y0 * n + x0 + 1] * fx;
     const b = h[(y0 + 1) * n + x0] * (1 - fx) + h[(y0 + 1) * n + x0 + 1] * fx;
     return a * (1 - fy) + b * fy;
@@ -81,9 +84,9 @@ export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, 
     }
     if (reg && r > 50_000) {
       const g = reg(x, z);
-      if (g !== null && g > -19_000) h = h === null ? g : h + (g - h) * smooth(50_000, 55_000, r);
+      if (g !== null) h = h === null ? g : h + (g - h) * smooth(50_000, 55_000, r);
     }
-    return h ?? -20_000;
+    return h;
   };
 
   const dTheta = (2 * Math.PI) / azSegments;
@@ -106,6 +109,11 @@ export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, 
   stereo[0] = s0[0];
   stereo[1] = s0[1];
   pos[1] = 0;
+  // Beyond LOLA coverage (outside 80°S) there is no measured relief: the mesh continues
+  // from the last measured height as a smooth sphere (curvature drop only), never invented terrain.
+  const lastH = new Float64Array(azSegments);
+  const lastR = new Float64Array(azSegments);
+  const R_M = R_KM * 1000;
   let k = 1;
   for (let i = 1; i < rings; i++) {
     const rr = radii[i];
@@ -113,8 +121,14 @@ export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, 
       const a = j * dTheta;
       const x = Math.sin(a) * rr;
       const z = -Math.cos(a) * rr;
+      let hv = heightAt(x, z, rr);
+      if (hv === null) hv = lastH[j] - (rr * rr - lastR[j] * lastR[j]) / (2 * R_M);
+      else {
+        lastH[j] = hv;
+        lastR[j] = rr;
+      }
       pos[k * 3] = x;
-      pos[k * 3 + 1] = heightAt(x, z, rr);
+      pos[k * 3 + 1] = hv;
       pos[k * 3 + 2] = z;
       uv[k * 2] = x;
       uv[k * 2 + 1] = z;
@@ -153,7 +167,7 @@ export function buildRadialGeometry(region: LandingRegion, tiles: TerrainTiles, 
     for (let q = 0; q < 6; q++) {
       const a = (q / 6) * Math.PI * 2;
       const xx = x + Math.cos(a) * s, zz = z + Math.sin(a) * s;
-      m += heightAt(xx, zz, Math.hypot(xx, zz));
+      m += heightAt(xx, zz, Math.hypot(xx, zz)) ?? y;
     }
     m /= 6;
     const c = (m - y) / s;

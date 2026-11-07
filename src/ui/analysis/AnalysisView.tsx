@@ -4,7 +4,7 @@ import { useData } from '../../data/DataContext';
 import { computeSeries, scenarioMetrics, type SeriesPoint } from '../../science/visibility';
 import type { LandingRegion, ScenarioMetrics } from '../../data/types';
 import { fmtDate, fmtDeg, fmtHours, fmtLat, fmtLon } from '../../utils/format';
-import { SectionHead } from '../primitives';
+import { thumbUrl } from '../stage/Regions';
 import { ScenarioTimeline } from './ScenarioTimeline';
 import { useMedia } from '../../utils/useMedia';
 import { HorizonPanorama } from './HorizonPanorama';
@@ -48,55 +48,165 @@ function useScenario(i: 0 | 1): ScenarioResult {
   }, [s, ephemeris, region, i]);
 }
 
-function ScenarioConfig({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
+const PERIODS = [7, 30, 90, 365];
+
+function Vantage({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
   const { sites, ephemeris } = useData();
   const set = useApp((st) => st.setScenario);
   const id = `scn-${res.key}`;
+  const p = res.region.observationPoint;
+  const periods = [...new Set([...PERIODS, res.scenario.durationDays])].sort((x, y) => x - y);
   return (
-    <div className={`scn-config scn-config--${res.key}`}>
-      <div className="scn-config__badge">Scenario {res.key}</div>
-      <div className="field">
-        <label htmlFor={`${id}-site`}>Region</label>
-        <select id={`${id}-site`} value={res.scenario.regionId} onChange={(e) => set(i, { regionId: e.target.value })}>
-          {sites.regions.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+    <section className={`vantage vantage--${res.key}`} aria-labelledby={`${id}-title`}>
+      <div className="vantage__head">
+        <img className="vantage__img" src={thumbUrl(res.region.id)} alt={`LROC WAC 100 m image, 24 km square, centred on the ${res.region.name} observation point`} width={120} height={120} />
+        <div className="vantage__title">
+          <span className="vantage__key">Scenario {res.key}</span>
+          <h3 id={`${id}-title`} className="vantage__name">{res.region.name}</h3>
+          <span className="vantage__coord num">
+            {fmtLat(p.latDeg, 2)} {fmtLon(p.lonDeg, 2)} · {p.elevationM.toFixed(0)} m
+          </span>
+        </div>
       </div>
-      <div className="field">
-        <label htmlFor={`${id}-start`}>Start (UTC, 00:00)</label>
-        <input
-          id={`${id}-start`}
-          type="date"
-          value={fmtDate(res.scenario.startMs)}
-          min={fmtDate(ephemeris.startMs)}
-          max={fmtDate(ephemeris.endMs - DAY)}
-          onChange={(e) => {
-            const v = Date.parse(`${e.target.value}T00:00:00Z`);
-            if (!Number.isNaN(v)) set(i, { startMs: v });
-          }}
-        />
+      <div className="vantage__pick" role="radiogroup" aria-label={`Region for scenario ${res.key}`}>
+        {sites.regions.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            role="radio"
+            aria-checked={r.id === res.region.id}
+            className={`vantage__chip${r.id === res.region.id ? ' is-on' : ''}`}
+            title={r.name}
+            aria-label={r.name}
+            onClick={() => set(i, { regionId: r.id })}
+          >
+            <img src={thumbUrl(r.id)} alt="" width={40} height={40} loading="lazy" />
+          </button>
+        ))}
       </div>
-      <div className="field">
-        <label htmlFor={`${id}-dur`}>Period</label>
-        <select id={`${id}-dur`} value={res.scenario.durationDays} onChange={(e) => set(i, { durationDays: +e.target.value })}>
-          {DURATIONS.map((d) => (
-            <option key={d} value={d}>
-              {d} days
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="scn-config__point num">
-        {fmtLat(res.region.observationPoint.latDeg)} {fmtLon(res.region.observationPoint.lonDeg)}
+      <div className="vantage__when">
+        <div className="field">
+          <label htmlFor={`${id}-start`}>Starting (UTC)</label>
+          <input
+            id={`${id}-start`}
+            type="date"
+            value={fmtDate(res.scenario.startMs)}
+            min={fmtDate(ephemeris.startMs)}
+            max={fmtDate(ephemeris.endMs - DAY)}
+            onChange={(e) => {
+              const v = Date.parse(`${e.target.value}T00:00:00Z`);
+              if (!Number.isNaN(v)) set(i, { startMs: v });
+            }}
+          />
+        </div>
+        <div className="field field--grow">
+          <span className="field__label" id={`${id}-dur`}>For</span>
+          <div className="seg seg--period" role="radiogroup" aria-labelledby={`${id}-dur`}>
+            {periods.map((d) => (
+              <button
+                key={d}
+                type="button"
+                role="radio"
+                aria-checked={res.scenario.durationDays === d}
+                className={`seg__btn${res.scenario.durationDays === d ? ' is-active' : ''}`}
+                onClick={() => set(i, { durationDays: d })}
+              >
+                {d === 365 ? '1 yr' : `${d} d`}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="field">
+          <label htmlFor={`${id}-dur-all`}>Other</label>
+          <select id={`${id}-dur-all`} value={res.scenario.durationDays} onChange={(e) => set(i, { durationDays: +e.target.value })}>
+            {DURATIONS.map((d) => (
+              <option key={d} value={d}>
+                {d} days
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       {res.clipped && (
         <div className="notice notice--warn">
           Period clipped to ephemeris coverage ({fmtDate(ephemeris.startMs)} – {fmtDate(ephemeris.endMs)}).
         </div>
       )}
+    </section>
+  );
+}
+
+/** Headline comparison: one row per question, two bars, one plain difference. */
+type Headline = {
+  key: string;
+  q: string;
+  note: string;
+  tone: 'sun' | 'earth' | 'both' | 'dark';
+  get: (m: ScenarioMetrics) => number;
+  pct: boolean;
+  better: 'higher' | 'lower';
+  trunc?: (m: ScenarioMetrics) => boolean;
+};
+const HEADLINES: Headline[] = [
+  { key: 'sun', q: 'Sun above the skyline', note: 'share of the period', tone: 'sun', get: (m) => m.sunVisiblePct, pct: true, better: 'higher' },
+  { key: 'earth', q: 'Earth above the skyline', note: 'share of the period', tone: 'earth', get: (m) => m.earthVisiblePct, pct: true, better: 'higher' },
+  { key: 'both', q: 'Sun and Earth together', note: 'share of the period', tone: 'both', get: (m) => m.bothVisiblePct, pct: true, better: 'higher' },
+  { key: 'dark', q: 'Longest stretch without Sun', note: 'shorter is easier on power', tone: 'dark', get: (m) => m.longestNoSunHours, pct: false, better: 'lower', trunc: (m) => m.noSunTruncated },
+];
+
+function Headlines({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
+  if (!a.metrics || !b.metrics) return null;
+  const A = a.metrics;
+  const B = b.metrics;
+  return (
+    <div className="glance">
+      {HEADLINES.map((h) => {
+        const va = h.get(A);
+        const vb = h.get(B);
+        const max = h.pct ? 100 : Math.max(va, vb, 1);
+        const d = vb - va;
+        const fmt = (v: number, m: ScenarioMetrics) => (h.pct ? `${v.toFixed(1)}%` : `${h.trunc?.(m) ? '≥ ' : ''}${fmtHours(v)}`);
+        const even = Math.abs(d) < 0.05;
+        const winner = even ? null : d > 0 === (h.better === 'higher') ? 'B' : 'A';
+        const rows = [
+          { k: 'A', v: va, m: A, r: a },
+          { k: 'B', v: vb, m: B, r: b },
+        ];
+        return (
+          <div key={h.key} className={`glance__row glance__row--${h.tone}`}>
+            <div className="glance__q">
+              {h.q}
+              <span className="glance__unit">{h.note}</span>
+            </div>
+            <div className="glance__bars">
+              {rows.map((x) => (
+                <div key={x.k} className={`glance__bar glance__bar--${x.k}`}>
+                  <span className="glance__k" aria-hidden="true">{x.k}</span>
+                  <span className="glance__track" aria-hidden="true">
+                    <span style={{ width: `${Math.max(0.6, (x.v / max) * 100)}%` }} />
+                  </span>
+                  <span className="glance__v num">
+                    <span className="sr-only">
+                      {x.k}, {x.r.region.name}:{' '}
+                    </span>
+                    {fmt(x.v, x.m)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className={`glance__verdict${winner ? '' : ' is-even'}`}>
+              {winner ? (
+                <>
+                  <strong>{winner}</strong> {h.better === 'higher' ? 'higher' : 'shorter'} by{' '}
+                  <span className="num">{h.pct ? `${Math.abs(d).toFixed(1)} pp` : fmtHours(Math.abs(d))}</span>
+                </>
+              ) : (
+                'No difference'
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -273,61 +383,94 @@ function downloadCsv(res: ScenarioResult) {
 export default function AnalysisView() {
   const a = useScenario(0);
   const b = useScenario(1);
+  const step = a.stepMin === b.stepMin ? `${a.stepMin}` : `${a.stepMin}/${b.stepMin}`;
   return (
-    <main className="analysis" aria-label="Mission analysis">
-      <div className="analysis__intro">
-        <h2 className="analysis__title">Mission Analysis</h2>
-        <p>
-          Compare terrain-corrected Sun and Earth visibility for two site-and-period scenarios. Each sample checks whether
-          the body's centre is above the LOLA skyline at the observation point (2 m above the surface).
+    <main className="study" aria-label="Mission analysis">
+      <header className="study__hero">
+        <span className="study__eyebrow">Mission analysis</span>
+        <h2 className="study__title">How much sunlight and Earth contact does each site get?</h2>
+        <p className="study__lede">
+          Choose two observation points and periods. Every {step} minutes the Sun and Earth are checked against the measured LOLA
+          skyline, from 2 m above the surface.
         </p>
-      </div>
+      </header>
 
-      <div className="analysis__configs">
-        <ScenarioConfig i={0} res={a} />
-        <ScenarioConfig i={1} res={b} />
-      </div>
-
-      <section className="analysis__block">
-        <SectionHead aside={`Samples every ${a.stepMin === b.stepMin ? a.stepMin : `${a.stepMin}/${b.stepMin}`} min · durations ± one sample`}>
-          Comparison
-        </SectionHead>
-        <MetricsTable a={a} b={b} />
-        <Observations a={a} b={b} />
+      <section className="matchup" aria-label="Scenarios">
+        <Vantage i={0} res={a} />
+        <span className="matchup__vs" aria-hidden="true">
+          vs
+        </span>
+        <Vantage i={1} res={b} />
       </section>
 
-      <section className="analysis__block">
-        <SectionHead aside="Bars = above terrain horizon">Visibility Timeline</SectionHead>
-        <ScenarioTimeline res={a} />
-        <ScenarioTimeline res={b} />
-      </section>
-
-      <section className="analysis__block analysis__panos">
-        <div>
-          <SectionHead aside={<button type="button" className="btn-text" onClick={() => downloadCsv(a)}>Export CSV</button>}>
-            Horizon · A · {a.region.name}
-          </SectionHead>
-          <HorizonPanorama res={a} />
+      <section className="study__block">
+        <div className="study__head">
+          <h3>At a glance</h3>
+          <p>Bars take the colour of what they measure. A is solid, B is lighter.</p>
         </div>
-        <div>
-          <SectionHead aside={<button type="button" className="btn-text" onClick={() => downloadCsv(b)}>Export CSV</button>}>
-            Horizon · B · {b.region.name}
-          </SectionHead>
-          <HorizonPanorama res={b} />
+        <div className="glance-wrap">
+          <Headlines a={a} b={b} />
+          <aside className="glance-notes">
+            <h4>What this means</h4>
+            <Observations a={a} b={b} />
+          </aside>
         </div>
       </section>
 
-      <section className="analysis__block analysis__limits">
-        <SectionHead>Method &amp; Limitations</SectionHead>
+      <section className="study__block">
+        <div className="study__head">
+          <h3>Through time</h3>
+          <p>Bars mark when each body clears the skyline. Hover for exact values; click to pin a moment and open it in 3D.</p>
+        </div>
+        <div className="study__card">
+          <ScenarioTimeline res={a} />
+          <ScenarioTimeline res={b} />
+        </div>
+      </section>
+
+      <section className="study__block">
+        <div className="study__head">
+          <h3>From the ground</h3>
+          <p>The measured skyline all the way around each point, with the Sun and Earth paths over the period. Hollow dots are hidden by terrain.</p>
+        </div>
+        <div className="study__panos">
+          {[a, b].map((r) => (
+            <figure key={r.key} className="study__card pano-card">
+              <figcaption className="pano-card__cap">
+                <span>
+                  <span className={`pano-card__key pano-card__key--${r.key}`}>{r.key}</span> {r.region.name}
+                </span>
+                <button type="button" className="text-btn" onClick={() => downloadCsv(r)}>
+                  Export CSV
+                </button>
+              </figcaption>
+              <HorizonPanorama res={r} />
+            </figure>
+          ))}
+        </div>
+      </section>
+
+      <section className="study__block">
+        <details className="study__all">
+          <summary>
+            <span className="study__all-title">Every metric</span>
+            <span className="study__all-hint">Ten measures side by side, with the difference</span>
+          </summary>
+          <MetricsTable a={a} b={b} />
+        </details>
+      </section>
+
+      <footer className="study__method">
+        <h3>Method and limits</h3>
         <ul>
-          <li>Sun/Earth directions: NASA/JPL Horizons hourly sub-solar and sub-Earth points, interpolated; validated against Horizons topocentric Az/El to better than 0.01°.</li>
-          <li>Skyline: LOLA LDEM_80S_80M (80 m/px) ray-traced to 150 km on a 1737.4 km sphere; features smaller than ~2 DEM pixels and terrain beyond 150 km or outside 80°S are not represented.</li>
-          <li>"Visible" means the disc centre is above the skyline. Partial-disc illumination is reported in the readings panel, not in these percentages.</li>
+          <li>Sun and Earth directions: NASA/JPL Horizons hourly sub-solar and sub-Earth points, interpolated; validated against Horizons topocentric Az/El to better than 0.01°.</li>
+          <li>Skyline: LOLA LDEM_80S_80M (80 m/px) ray-traced to 150 km on a 1737.4 km sphere. Features smaller than about two DEM pixels, and terrain beyond 150 km or outside 80°S, are not represented.</li>
+          <li>“Visible” means the disc centre is above the skyline. Partial-disc illumination is reported under Measurements, not in these percentages.</li>
           <li>Observation points follow a documented selection rule and are not NASA-designated landing sites. Results apply to that point only, at 2 m height.</li>
-          <li>Earth visibility is geometric line of sight; it does not model antennas, link budgets, or ground-station availability.</li>
-          <li>No suitability score is computed. Landing-site decisions also depend on slope, hazards, thermal and operational constraints not modelled here.</li>
+          <li>Earth visibility is geometric line of sight; it does not model antennas, link budgets or ground-station availability.</li>
+          <li>No suitability score is computed. Landing decisions also depend on slope, hazards, thermal and operational constraints not modelled here.</li>
         </ul>
-      </section>
+      </footer>
     </main>
   );
 }

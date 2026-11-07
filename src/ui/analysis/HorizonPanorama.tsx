@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ScenarioResult } from './AnalysisView';
 
-const W = 720;
+const W = 600;
 const H = 220;
 const PAD = { l: 34, r: 8, t: 10, b: 22 };
 
