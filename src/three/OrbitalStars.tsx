@@ -11,8 +11,8 @@ import { useApp } from '../state/store';
  * Surface View, rotated from J2000 into the Moon-fixed frame with the IAU model at the
  * selected time, so the constellations behind the Moon are the real ones.
  *
- * Deliberately quiet: drawn at infinity (no parallax), small, and dimmed so the
- * brightest star stays far below the sunlit Moon's luminance.
+ * Restrained: drawn at infinity (no parallax), small points, and no brighter than the
+ * sunlit Moon. Brightness is a display mapping for legibility on screens.
  */
 export function OrbitalStars() {
   const [file, setFile] = useState<StarsFile | null>(null);
@@ -49,10 +49,11 @@ export function OrbitalStars() {
       ];
       pos.set(meToThree(me), i * 3);
       const [r, gg, b] = bvColor(bv);
-      // Compressed Pogson falloff (display mapping): V=0 → 0.9, V=3 → 0.47, V=5.5 → 0.27.
-      const k = THREE.MathUtils.clamp(0.9 * Math.pow(10, -0.095 * v), 0.25, 0.9);
+      // Compressed Pogson falloff (a display mapping, not a naked-eye claim):
+      // V=0 → 1.0, V=3 → 0.63, V=5.5 → 0.40. Catalogue order and positions are unchanged.
+      const k = THREE.MathUtils.clamp(1.1 * Math.pow(10, -0.08 * v), 0.4, 1.0);
       col.set([r * k, gg * k, b * k], i * 3);
-      size[i] = THREE.MathUtils.clamp(3.0 - v * 0.3, 1.5, 3.2);
+      size[i] = THREE.MathUtils.clamp(3.4 - v * 0.3, 1.9, 3.6);
     });
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
@@ -69,6 +70,7 @@ export function OrbitalStars() {
       new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
+        blending: THREE.AdditiveBlending, // light adds to the black sky; no double alpha falloff
         vertexColors: true,
         toneMapped: false,
         uniforms: { dpr: { value: Math.min(window.devicePixelRatio || 1, 2) } },
@@ -85,13 +87,20 @@ export function OrbitalStars() {
           varying vec3 vColor;
           void main() {
             float d = length(gl_PointCoord - 0.5);
-            float a = 1.0 - smoothstep(0.22, 0.5, d);
-            gl_FragColor = vec4(vColor * a, a);
+            // Small, crisp disc with a soft edge (no halo, no bloom, no twinkle).
+            float a = 1.0 - smoothstep(0.2, 0.5, d);
+            gl_FragColor = vec4(vColor * a, 1.0);
           }`,
       }),
     [],
   );
   useEffect(() => () => material.dispose(), [material]);
+  // Point sizes follow the canvas's actual pixel ratio (it is capped by the quality setting).
+  const { gl } = useThree();
+  useEffect(() => {
+    material.uniforms.dpr.value = gl.getPixelRatio();
+    invalidate();
+  }, [gl, material, invalidate]);
   // A unit sphere of directions that travels with the camera (no parallax), scaled to just
   // inside the far plane, which the globe camera keeps behind the Moon.
   const grp = useRef<THREE.Group>(null);

@@ -309,6 +309,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
   const m = useMemo(() => new THREE.Matrix4(), []);
   useFrame(() => {
     markOnce('moon-first-frame');
+    if (useApp.getState().sceneReady !== 'orbital' && useApp.getState().mode === 'orbital') useApp.getState().setSceneReady('orbital');
     const now = performance.now();
     m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     frustum.setFromProjectionMatrix(m);

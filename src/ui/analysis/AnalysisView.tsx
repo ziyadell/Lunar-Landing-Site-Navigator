@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Listen } from '../../audio/ui';
+import { Listen, MissionGuide } from '../../audio/ui';
 import { useApp, type Scenario } from '../../state/store';
 import { useData } from '../../data/DataContext';
 import { computeSeries, scenarioMetrics, type SeriesPoint } from '../../science/visibility';
@@ -9,6 +9,7 @@ import { thumbUrl } from '../stage/Regions';
 import { ScenarioTimeline } from './ScenarioTimeline';
 import { useMedia } from '../../utils/useMedia';
 import { HorizonPanorama } from './HorizonPanorama';
+import { Select } from '../Select';
 
 const DURATIONS = [7, 14, 30, 60, 90, 180, 365];
 const DAY = 86_400_000;
@@ -50,61 +51,68 @@ function useScenario(i: 0 | 1): ScenarioResult {
 }
 
 const PERIODS = [7, 30, 90, 365];
+const durLabel = (d: number) => (d === 365 ? '1 year' : `${d} days`);
 
 function Vantage({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
   const { sites, ephemeris } = useData();
   const set = useApp((st) => st.setScenario);
   const id = `scn-${res.key}`;
   const p = res.region.observationPoint;
-  const periods = [...new Set([...PERIODS, res.scenario.durationDays])].sort((x, y) => x - y);
+  const dur = res.scenario.durationDays;
+  const minDate = fmtDate(ephemeris.startMs);
+  const maxDate = fmtDate(ephemeris.endMs - DAY);
   return (
     <section className={`vantage vantage--${res.key}`} aria-labelledby={`${id}-title`}>
       <div className="vantage__head">
         <img className="vantage__img" src={thumbUrl(res.region.id)} alt={`LROC WAC 100 m image of NASA's ${res.region.name} region outline`} width={72} height={72} />
         <div className="vantage__title">
-          <label className="vantage__key" htmlFor={`${id}-region`}>
+          <span className="vantage__key" id={`${id}-key`}>
             Scenario {res.key}
-          </label>
-          <div className="vantage__select">
-            <select id={`${id}-region`} className="vantage__name" value={res.region.id} onChange={(e) => set(i, { regionId: e.target.value })}>
-              {sites.regions.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
-          </div>
+          </span>
+          <Select
+            id={`${id}-region`}
+            className="sel--region"
+            labelledBy={`${id}-key`}
+            value={res.region.id}
+            options={sites.regions.map((r) => ({ value: r.id, label: r.name }))}
+            onChange={(v) => set(i, { regionId: v })}
+          />
           <span className="vantage__coord num" id={`${id}-title`}>
             {fmtLat(p.latDeg, 2)} {fmtLon(p.lonDeg, 2)} · {p.elevationM.toFixed(0)} m
           </span>
         </div>
       </div>
       <div className="vantage__when">
-        <div className="field">
-          <label htmlFor={`${id}-start`}>Starting (UTC)</label>
+        <div className="field field--date">
+          <label htmlFor={`${id}-start`}>Start date (UTC)</label>
           <input
             id={`${id}-start`}
             type="date"
             value={fmtDate(res.scenario.startMs)}
-            min={fmtDate(ephemeris.startMs)}
-            max={fmtDate(ephemeris.endMs - DAY)}
+            min={minDate}
+            max={maxDate}
             onChange={(e) => {
+              // Dates are UTC days: parse as midnight UTC, whatever the visitor's time zone.
               const v = Date.parse(`${e.target.value}T00:00:00Z`);
-              if (!Number.isNaN(v)) set(i, { startMs: v });
+              if (Number.isNaN(v)) return;
+              const lo = Date.parse(`${minDate}T00:00:00Z`);
+              const hi = Date.parse(`${maxDate}T00:00:00Z`);
+              set(i, { startMs: Math.min(hi, Math.max(lo, v)) });
             }}
           />
         </div>
-        <div className="field field--grow">
-          <span className="field__label" id={`${id}-dur`}>For</span>
+        <div className="field field--dur">
+          <span className="field__label" id={`${id}-dur`}>
+            Duration
+          </span>
           <div className="seg seg--period" role="radiogroup" aria-labelledby={`${id}-dur`}>
-            {periods.map((d) => (
+            {PERIODS.map((d) => (
               <button
                 key={d}
                 type="button"
                 role="radio"
-                aria-checked={res.scenario.durationDays === d}
-                className={`seg__btn${res.scenario.durationDays === d ? ' is-active' : ''}`}
+                aria-checked={dur === d}
+                className={`seg__btn${dur === d ? ' is-active' : ''}`}
                 onClick={() => set(i, { durationDays: d })}
               >
                 {d === 365 ? '1 yr' : `${d} d`}
@@ -112,15 +120,18 @@ function Vantage({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
             ))}
           </div>
         </div>
-        <div className="field">
-          <label htmlFor={`${id}-dur-all`}>Other</label>
-          <select id={`${id}-dur-all`} value={res.scenario.durationDays} onChange={(e) => set(i, { durationDays: +e.target.value })}>
-            {DURATIONS.map((d) => (
-              <option key={d} value={d}>
-                {d} days
-              </option>
-            ))}
-          </select>
+        <div className="field field--more">
+          <span className="field__label" id={`${id}-dur-all`}>
+            More durations
+          </span>
+          <Select
+            id={`${id}-dur-sel`}
+            className={`sel--dur${PERIODS.includes(dur) ? '' : ' is-custom'}`}
+            labelledBy={`${id}-dur-all`}
+            value={dur}
+            options={DURATIONS.map((d) => ({ value: d, label: durLabel(d) }))}
+            onChange={(v) => set(i, { durationDays: v })}
+          />
         </div>
       </div>
       {res.clipped && (
@@ -147,7 +158,7 @@ const HEADLINES: Headline[] = [
   { key: 'sun', q: 'Sun above the skyline', note: 'share of the period', tone: 'sun', get: (m) => m.sunVisiblePct, pct: true, better: 'higher' },
   { key: 'earth', q: 'Earth above the skyline', note: 'share of the period', tone: 'earth', get: (m) => m.earthVisiblePct, pct: true, better: 'higher' },
   { key: 'both', q: 'Sun and Earth together', note: 'share of the period', tone: 'both', get: (m) => m.bothVisiblePct, pct: true, better: 'higher' },
-  { key: 'dark', q: 'Longest stretch without Sun', note: 'shorter is easier on power', tone: 'dark', get: (m) => m.longestNoSunHours, pct: false, better: 'lower', trunc: (m) => m.noSunTruncated },
+  { key: 'dark', q: 'Longest stretch without Sun', note: 'shorter is easier on power · ≥ is a lower bound', tone: 'dark', get: (m) => m.longestNoSunHours, pct: false, better: 'lower', trunc: (m) => m.noSunTruncated },
 ];
 
 function Headlines({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
@@ -163,7 +174,9 @@ function Headlines({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
         const d = vb - va;
         const fmt = (v: number, m: ScenarioMetrics) => (h.pct ? `${v.toFixed(1)}%` : `${h.trunc?.(m) ? '≥ ' : ''}${fmtHours(v)}`);
         const even = Math.abs(d) < 0.05;
-        const winner = even ? null : d > 0 === (h.better === 'higher') ? 'B' : 'A';
+        // A lower-bound value (interval touching the period's start or end) cannot rank.
+        const limited = !!(h.trunc?.(A) || h.trunc?.(B));
+        const winner = even || limited ? null : d > 0 === (h.better === 'higher') ? 'B' : 'A';
         const rows = [
           { k: 'A', v: va, m: A, r: a },
           { k: 'B', v: vb, m: B, r: b },
@@ -190,8 +203,10 @@ function Headlines({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
                 </div>
               ))}
             </div>
-            <div className={`glance__verdict${winner ? '' : ' is-even'}`}>
-              {winner ? (
+            <div className={`glance__verdict${winner ? '' : ' is-even'}${limited ? ' is-limited' : ''}`}>
+              {limited ? (
+                <>Not comparable: reaches the edge of the period</>
+              ) : winner ? (
                 <>
                   <strong>{winner}</strong> {h.better === 'higher' ? 'higher' : 'shorter'} by{' '}
                   <span className="num">{h.pct ? `${Math.abs(d).toFixed(1)} pp` : fmtHours(Math.abs(d))}</span>
@@ -219,7 +234,7 @@ type Row = {
 
 const ROWS: Row[] = [
   { group: 'Solar', label: 'Sun above terrain horizon', unit: '% of period', get: (m) => m.sunVisiblePct, fmt: (v) => v.toFixed(1), better: 'higher' },
-  { group: 'Solar', label: 'Longest continuous sunlight', unit: '', get: (m) => m.longestSunHours, fmt: fmtHours, better: 'higher' },
+  { group: 'Solar', label: 'Longest continuous sunlight', unit: '', get: (m) => m.longestSunHours, fmt: fmtHours, better: 'higher', truncated: (m) => m.sunTruncated },
   { group: 'Solar', label: 'Longest period without Sun', unit: '', get: (m) => m.longestNoSunHours, fmt: fmtHours, better: 'lower', truncated: (m) => m.noSunTruncated },
   { group: 'Solar', label: 'Sun elevation range', unit: '', get: (m) => m.sunElevRange[1], fmt: (v) => fmtDeg(v, 2) },
   { group: 'Earth', label: 'Earth above terrain horizon', unit: '% of period', get: (m) => m.earthVisiblePct, fmt: (v) => v.toFixed(1), better: 'higher' },
@@ -227,7 +242,7 @@ const ROWS: Row[] = [
   { group: 'Earth', label: 'Earth elevation range', unit: '', get: (m) => m.earthElevRange[1], fmt: (v) => fmtDeg(v, 2) },
   { group: 'Combined', label: 'Sun and Earth both visible', unit: '% of period', get: (m) => m.bothVisiblePct, fmt: (v) => v.toFixed(1), better: 'higher' },
   { group: 'Combined', label: 'Neither visible', unit: '% of period', get: (m) => m.neitherVisiblePct, fmt: (v) => v.toFixed(1), better: 'lower' },
-  { group: 'Combined', label: 'Longest period with neither', unit: '', get: (m) => m.longestNeitherHours, fmt: fmtHours, better: 'lower' },
+  { group: 'Combined', label: 'Longest period with neither', unit: '', get: (m) => m.longestNeitherHours, fmt: fmtHours, better: 'lower', truncated: (m) => m.neitherTruncated },
 ];
 
 function cell(m: ScenarioMetrics | null, row: Row) {
@@ -240,7 +255,11 @@ function cell(m: ScenarioMetrics | null, row: Row) {
   return row.truncated?.(m) ? `≥ ${v}` : v;
 }
 
+/** A difference involving a lower-bound value is not a measured difference. */
+const limitedRow = (row: Row, a: ScenarioResult, b: ScenarioResult) => !!(a.metrics && b.metrics && (row.truncated?.(a.metrics) || row.truncated?.(b.metrics)));
+
 function deltaText(row: Row, a: ScenarioResult, b: ScenarioResult) {
+  if (limitedRow(row, a, b)) return 'n/a';
   const range = row.label.endsWith('range');
   const d = !range && a.metrics && b.metrics ? row.get(b.metrics) - row.get(a.metrics) : null;
   const isPct = row.unit.startsWith('%');
@@ -279,7 +298,19 @@ function MetricsStack({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
           ))}
         </section>
       ))}
+      <LowerBoundNote a={a} b={b} />
     </div>
+  );
+}
+
+function LowerBoundNote({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
+  const any = [a, b].some((r) => r.metrics && ROWS.some((row) => row.truncated?.(r.metrics!)));
+  if (!any) return null;
+  return (
+    <p className="metrics__note">
+      ≥ marks a lower bound: the longest interval touches the start or end of the period, so its full length is unknown. Differences
+      involving a lower bound are shown as n/a. Choose a longer period to compare complete intervals.
+    </p>
   );
 }
 
@@ -319,14 +350,15 @@ function MetricsTable({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
                 </th>
                 <td className="num">{cell(a.metrics, row)}</td>
                 <td className="num">{cell(b.metrics, row)}</td>
-                <td className="num metrics__delta">
-                  {d === null || Math.abs(d) < 1e-9 ? '—' : `${d > 0 ? '+' : '−'}${isPct ? Math.abs(d).toFixed(1) + ' pp' : fmtHours(Math.abs(d))}`}
+                <td className="num metrics__delta" title={limitedRow(row, a, b) ? 'Not comparable: at least one value is a lower bound' : undefined}>
+                  {limitedRow(row, a, b) ? 'n/a' : d === null || Math.abs(d) < 1e-9 ? '—' : `${d > 0 ? '+' : '−'}${isPct ? Math.abs(d).toFixed(1) + ' pp' : fmtHours(Math.abs(d))}`}
                 </td>
               </tr>,
             ];
           })}
         </tbody>
       </table>
+      <LowerBoundNote a={a} b={b} />
     </div>
   );
 }
@@ -347,7 +379,19 @@ function Observations({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
   };
   out.push(cmp(A.sunVisiblePct, B.sunVisiblePct, 'Sun above terrain horizon', 'pp', 1));
   out.push(cmp(A.earthVisiblePct, B.earthVisiblePct, 'Earth above terrain horizon', 'pp', 1));
-  out.push(cmp(A.longestNoSunHours, B.longestNoSunHours, 'Longest period without Sun', 'h', 1));
+  if (A.noSunTruncated || B.noSunTruncated) {
+    const which = A.noSunTruncated && B.noSunTruncated ? 'both scenarios' : A.noSunTruncated ? nameA : nameB;
+    out.push(
+      `Longest period without Sun: not compared. In ${which} it touches the start or end of the period, so the value is a lower bound. A longer period may be needed to compare complete intervals.`,
+    );
+  } else {
+    const d = B.longestNoSunHours - A.longestNoSunHours;
+    out.push(
+      Math.abs(d) < 1
+        ? `Longest period without Sun: no material difference (${Math.abs(d).toFixed(1)} hours).`
+        : `Longest period without Sun: ${d > 0 ? nameA : nameB} is shorter by ${Math.abs(d).toFixed(1)} hours.`,
+    );
+  }
   if (A.earthVisiblePct === 0 || B.earthVisiblePct === 0)
     out.push('One scenario never has Earth above the terrain horizon during its period — direct-to-Earth line of sight would need a relay or a different point.');
   if (!same && (a.startMs !== b.startMs || a.scenario.durationDays !== b.scenario.durationDays))
@@ -367,7 +411,13 @@ function downloadCsv(res: ScenarioResult) {
     lines.push(
       [new Date(p.t).toISOString(), p.sunAz.toFixed(3), p.sunEl.toFixed(3), p.sunHz.toFixed(3), p.sunVis ? 1 : 0, p.earthAz.toFixed(3), p.earthEl.toFixed(3), p.earthHz.toFixed(3), p.earthVis ? 1 : 0].join(','),
     );
-  const meta = `# ${res.region.name} observation point ${res.region.observationPoint.latDeg},${res.region.observationPoint.lonDeg}; ephemeris JPL Horizons; horizon LOLA LDEM_80S_80M; step ${res.stepMin} min\n`;
+  const m = res.metrics;
+  const lb = (v: number, t: boolean) => `${v.toFixed(2)} h${t ? ' (lower bound: touches the period start or end)' : ''}`;
+  const meta =
+    `# ${res.region.name} observation point ${res.region.observationPoint.latDeg},${res.region.observationPoint.lonDeg}; ephemeris JPL Horizons; horizon LOLA LDEM_80S_80M; step ${res.stepMin} min\n` +
+    (m
+      ? `# longest without Sun: ${lb(m.longestNoSunHours, m.noSunTruncated)}; longest without Earth: ${lb(m.longestNoEarthHours, m.noEarthTruncated)}; longest with neither: ${lb(m.longestNeitherHours, m.neitherTruncated)}; longest continuous sunlight: ${lb(m.longestSunHours, m.sunTruncated)}\n`
+      : '');
   const blob = new Blob([meta + lines.join('\n')], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -390,6 +440,9 @@ export default function AnalysisView() {
         <p className="study__lede">
           Pick two regions and periods; every {step} minutes the Sun and Earth are checked against the measured LOLA skyline.
         </p>
+        <div className="study__guide">
+          <MissionGuide placement="flow" />
+        </div>
       </header>
 
       <section className="matchup" aria-label="Scenarios">

@@ -12,16 +12,17 @@ import { Compass } from './ui/Compass';
 import { SurfacePanorama } from './ui/SurfaceOverlay';
 import { Intro } from './ui/stage/Intro';
 import { LoadingChip } from './ui/stage/LoadingChip';
-import { AudioPlayer, Welcome } from './audio/ui';
+import { MissionGuide, Welcome } from './audio/ui';
 
 const AnalysisView = lazy(() => import('./ui/analysis/AnalysisView'));
 
 function Boot({ state }: { state: { status: 'loading' } | { status: 'error'; message: string } }) {
   return (
     <div className="boot" role="status" aria-live="polite">
-      <svg className="boot__mark" width="44" height="44" viewBox="0 0 26 26" aria-hidden="true">
-        <circle cx="13" cy="13" r="8.5" fill="#F1F5F9" opacity="0.94" />
-        <path d="M13 4.5a8.5 8.5 0 0 0 0 17 10.4 10.4 0 0 1 0-17z" fill="#05080F" opacity="0.6" />
+      <svg className="boot__mark" width="44" height="44" viewBox="0 0 22 22" aria-hidden="true">
+        <circle cx="11" cy="11" r="7.5" fill="#F1F5F9" opacity="0.92" />
+        <path d="M11 3.5a7.5 7.5 0 0 0 0 15 9 9 0 0 1 0-15z" fill="#05080F" opacity="0.55" />
+        <circle cx="11" cy="11" r="10.25" fill="none" stroke="#4DDCF4" strokeWidth="1" strokeDasharray="2 2.6" />
       </svg>
       <div className="boot__title">Lunar Landing Site Navigator</div>
       {state.status === 'loading' ? (
@@ -48,9 +49,10 @@ function Explore() {
   const drawer = useApp((s) => s.drawer);
   const focus = useApp((s) => s.focus);
   const intro = useApp((s) => s.intro);
+  const tourSpot = useApp((s) => s.tourSpot);
   const side = drawer === 'atlas' ? ' has-drawer-left' : drawer ? ' has-drawer-right' : '';
   return (
-    <div className={`app app--${mode}${side}${focus ? ' is-focus' : ''}${intro ? ' is-intro' : ''}`}>
+    <div className={`app app--${mode}${side}${focus ? ' is-focus' : ''}${intro ? ' is-intro' : ''}`} data-tour-spot={tourSpot ?? undefined}>
       <Viewport />
       <div className="scrim" aria-hidden="true" />
       <Masthead />
@@ -77,7 +79,7 @@ function Explore() {
           <Intro />
         </div>
         <div className="hud__audio">
-          <AudioPlayer />
+          <MissionGuide />
         </div>
       </main>
       <Welcome />
@@ -88,16 +90,14 @@ function Explore() {
 
 function Workspace() {
   const mode = useApp((s) => s.mode);
+  const tourSpot = useApp((s) => s.tourSpot);
   if (mode === 'analysis') {
     return (
-      <div className="app app--analysis">
+      <div className="app app--analysis" data-tour-spot={tourSpot ?? undefined}>
         <Masthead />
         <Suspense fallback={<div className="analysis-loading">Preparing analysis…</div>}>
           <AnalysisView />
         </Suspense>
-        <div className="analysis-audio">
-          <AudioPlayer />
-        </div>
         <Drawer />
       </div>
     );

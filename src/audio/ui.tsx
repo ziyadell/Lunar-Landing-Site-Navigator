@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../state/settings';
 import { useApp } from '../state/store';
-import { narrationItem, pause, play, replay, resume, setMuted, setRate, stop, usePlayer, type NarrationItem } from './engine';
-import { exitTour, nextStep, toggleTourPause, TOUR_LENGTH, useTour } from './tour';
+import { narrationItem, narrationItems, pause, play, playChime, replay, resume, setChimeMuted, setMuted, setRate, stop, stopChime, usePlayer, type NarrationItem } from './engine';
+import { exitTour, nextStep, prevStep, replayStep, startTour, toggleTourPause, TOUR_LENGTH, useTour } from './tour';
 
 const Headphones = ({ size = 14 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
@@ -11,10 +11,19 @@ const Headphones = ({ size = 14 }: { size?: number }) => (
     <rect x="11" y="9.5" width="3" height="4.5" rx="1.2" fill="currentColor" />
   </svg>
 );
+const I = {
+  play: <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2v8l6.5-4z" fill="currentColor" /></svg>,
+  pause: <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.5" height="8" rx=".5" fill="currentColor" /><rect x="7" y="2" width="2.5" height="8" rx=".5" fill="currentColor" /></svg>,
+  stop: <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2.5" width="7" height="7" rx="1" fill="currentColor" /></svg>,
+  replay: <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
+  muted: <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5zM11 6l4 4M15 6l-4 4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>,
+  sound: <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5zM11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.6a6 6 0 0 1 0 8.8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>,
+  chev: <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>,
+};
 
 /**
- * Small "listen" button beside a piece of information. Hidden unless the Audio Guide is
- * enabled in Settings, so it adds nothing to the interface by default.
+ * Small "listen" button beside a piece of information. Shown by default; it can be hidden
+ * in Settings. Nothing plays until it is pressed.
  */
 export function Listen({ id, item, className = '' }: { id?: string; item?: NarrationItem; className?: string }) {
   const on = useSettings((s) => s.audioGuide);
@@ -31,6 +40,7 @@ export function Listen({ id, item, className = '' }: { id?: string; item?: Narra
       title={active ? 'Pause' : `Listen: ${it.title}`}
       onClick={(e) => {
         e.stopPropagation();
+        if (useTour.getState().step >= 0) exitTour();
         if (active) pause();
         else void play(it);
       }}
@@ -41,151 +51,283 @@ export function Listen({ id, item, className = '' }: { id?: string; item?: Narra
 }
 
 const RATES = [1, 1.25, 1.5] as const;
+const VIEW_ITEM = { orbital: 'orbit-intro', surface: 'surface-intro', analysis: 'analysis-intro' } as const;
+const SOURCE_LABEL = { recorded: 'Recorded narrator', device: 'Device voice · US English', captions: 'Captions only' } as const;
 
-/** Compact floating player: one narration at a time, with transcript and tour controls. */
-export function AudioPlayer() {
-  const { item, playing, loading, progress, muted, source, error } = usePlayer();
-  const rate = useSettings((s) => s.rate);
-  const transcript = useSettings((s) => s.transcript);
-  const setS = useSettings((s) => s.set);
-  const tour = useTour();
-  const regionId = useApp((s) => s.regionId);
-  // A region narration no longer matches the screen once another region is chosen.
-  const first = useRef(true);
+function topicGroups() {
+  const all = narrationItems();
+  return [
+    { name: 'Views', items: ['orbit-intro', 'surface-intro', 'analysis-intro'].map((id) => narrationItem(id)!).filter(Boolean) },
+    { name: 'Regions', items: all.filter((i) => i.id.startsWith('region-')) },
+    { name: 'Terms', items: all.filter((i) => i.id.startsWith('term-')) },
+  ];
+}
+
+/** Guide menu: explain this view, full tour, browse topics. Escape and outside clicks close it. */
+function GuideMenu({ onClose, anchor }: { onClose: (restore: boolean) => void; anchor: React.RefObject<HTMLButtonElement | null> }) {
+  const mode = useApp((s) => s.mode);
+  const [browse, setBrowse] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (first.current) return void (first.current = false);
-    const it = usePlayer.getState().item;
-    if (it?.id.startsWith('region-') && it.id !== `region-${regionId}` && useTour.getState().step < 0) stop();
-  }, [regionId]);
-  if (!item) return null;
-  const inTour = tour.step >= 0;
-  const close = () => (inTour ? exitTour() : stop());
+    ref.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose(true);
+      }
+    };
+    const down = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!ref.current?.contains(t) && !anchor.current?.contains(t)) onClose(false);
+    };
+    window.addEventListener('keydown', key, true);
+    window.addEventListener('pointerdown', down, true);
+    return () => {
+      window.removeEventListener('keydown', key, true);
+      window.removeEventListener('pointerdown', down, true);
+    };
+  }, [onClose, anchor]);
+  const pick = (it: NarrationItem) => {
+    if (useTour.getState().step >= 0) exitTour();
+    void play(it);
+    onClose(true);
+  };
   return (
-    <section className="aplayer" aria-label="Narration" data-obstacle>
-      <div className="aplayer__head">
-        <span className="aplayer__icon" aria-hidden="true">
-          <Headphones />
-        </span>
-        <div className="aplayer__titles">
-          <span className="aplayer__title">{item.title}</span>
-          <span className="aplayer__src">
-            {item.calculated ? 'Calculated now · ' : ''}
-            {loading ? 'Loading…' : source === 'recorded' ? 'Narrator' : source === 'browser' ? 'Browser voice' : error ? 'No voice here · captions' : 'Captions'}
-          </span>
+    <div className="guide__menu" ref={ref} role="dialog" aria-label="Mission guide">
+      <button type="button" className="guide__item" onClick={() => pick(narrationItem(VIEW_ITEM[mode])!)}>
+        <span className="guide__item-t">Explain this view</span>
+        <span className="guide__item-s">{narrationItem(VIEW_ITEM[mode])!.title}</span>
+      </button>
+      <button
+        type="button"
+        className="guide__item"
+        onClick={() => {
+          onClose(true);
+          startTour();
+        }}
+      >
+        <span className="guide__item-t">Full tour</span>
+        <span className="guide__item-s">{TOUR_LENGTH} steps, about five minutes</span>
+      </button>
+      <button type="button" className="guide__item guide__item--browse" aria-expanded={browse} onClick={() => setBrowse((b) => !b)}>
+        <span className="guide__item-t">Browse topics</span>
+        <span className={`guide__chev${browse ? ' is-open' : ''}`}>{I.chev}</span>
+      </button>
+      {browse && (
+        <div className="guide__topics">
+          {topicGroups().map((g) => (
+            <div key={g.name} className="guide__group" role="group" aria-label={g.name}>
+              <div className="guide__group-h">{g.name}</div>
+              {g.items.map((it) => (
+                <button key={it.id} type="button" className="guide__topic" onClick={() => pick(it)}>
+                  {it.title}
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
-        <button type="button" className="aplayer__x" aria-label="Close narration" onClick={close}>
-          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>
-        </button>
-      </div>
-      <div className="aplayer__bar" role="progressbar" aria-label="Narration progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
-        <span style={{ width: `${progress * 100}%` }} />
-      </div>
-      <div className="aplayer__ctrl">
-        <button type="button" className="aplayer__btn aplayer__btn--main" aria-label={playing ? 'Pause' : 'Play'} onClick={() => (inTour ? toggleTourPause() : playing ? pause() : resume())}>
-          {playing ? (
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.5" height="8" rx=".5" fill="currentColor" /><rect x="7" y="2" width="2.5" height="8" rx=".5" fill="currentColor" /></svg>
-          ) : (
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2v8l6.5-4z" fill="currentColor" /></svg>
-          )}
-        </button>
-        <button type="button" className="aplayer__btn" aria-label="Replay" title="Replay" onClick={replay}>
-          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
-        </button>
-        <button type="button" className="aplayer__btn aplayer__btn--rate num" aria-label={`Playback speed ${rate} times. Change speed.`} onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}>
-          {rate}×
-        </button>
-        <button type="button" className={`aplayer__btn${muted ? ' is-on' : ''}`} aria-pressed={muted} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} onClick={() => setMuted(!muted)}>
-          {muted ? (
-            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5zM11 6l4 4M15 6l-4 4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5zM11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.6a6 6 0 0 1 0 8.8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
-          )}
-        </button>
-        <button type="button" className={`aplayer__btn aplayer__btn--cc${transcript ? ' is-on' : ''}`} aria-pressed={transcript} aria-label="Transcript" title="Transcript" onClick={() => setS({ transcript: !transcript })}>
-          CC
-        </button>
-        {inTour && (
-          <span className="aplayer__tour">
-            <span className="num">
-              {tour.step + 1}/{TOUR_LENGTH}
-            </span>
-            <button type="button" className="aplayer__next" onClick={nextStep}>
-              {tour.step + 1 < TOUR_LENGTH ? 'Next' : 'Finish'}
-            </button>
-          </span>
-        )}
-      </div>
-      {transcript && <p className="aplayer__text">{item.text}</p>}
-    </section>
+      )}
+    </div>
   );
 }
 
 /**
- * Enter mission: an optional, user-started welcome. Nothing plays before a click; the
- * Moon renders underneath from the start. Skip, mute, or any interaction ends it.
+ * Mission guide: a persistent launcher (explain this view, full tour, topics) and a compact
+ * player — one narration at a time, with captions and an honest source label.
+ */
+export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'flow' }) {
+  const { item, playing, loading, progress, muted, source, note } = usePlayer();
+  const rate = useSettings((s) => s.rate);
+  const transcript = useSettings((s) => s.transcript);
+  const welcomeSeen = useSettings((s) => s.welcomeSeen);
+  const setS = useSettings((s) => s.set);
+  const intro = useApp((s) => s.intro);
+  const mode = useApp((s) => s.mode);
+  const tour = useTour();
+  const [open, setOpen] = useState(false);
+  const btn = useRef<HTMLButtonElement>(null);
+  const close = useRef((restore: boolean) => {
+    setOpen(false);
+    if (restore) btn.current?.focus();
+  }).current;
+
+  // A region narration or a calculated reading no longer matches the screen once the region
+  // or the time changes: stop it (the tour manages its own narration).
+  useEffect(
+    () =>
+      useApp.subscribe((s, prev) => {
+        if (s.regionId === prev.regionId && s.timeMs === prev.timeMs) return;
+        const it = usePlayer.getState().item;
+        if (!it || useTour.getState().step >= 0) return;
+        if (it.calculated || (s.regionId !== prev.regionId && it.id.startsWith('region-') && it.id !== `region-${s.regionId}`)) stop();
+      }),
+    [],
+  );
+
+  if (intro || (mode === 'orbital' && !welcomeSeen)) return null;
+  const inTour = tour.step >= 0;
+  const status = loading || tour.waiting ? (tour.waiting ? 'Preparing the view…' : 'Loading…') : item?.calculated ? `Calculated now · ${SOURCE_LABEL[source]}` : SOURCE_LABEL[source];
+  const playPause = () => (inTour ? toggleTourPause() : playing ? pause() : resume());
+  const isPlaying = inTour ? !tour.paused && (playing || tour.waiting) : playing;
+
+  return (
+    <section className={`guide guide--${placement}${inTour ? ' is-tour' : ''}`} aria-label="Mission guide" data-obstacle>
+      {(item || inTour) && (
+        <div className="aplayer">
+          <div className="aplayer__head">
+            <span className="aplayer__icon" aria-hidden="true">
+              <Headphones />
+            </span>
+            <div className="aplayer__titles">
+              <span className="aplayer__title">
+                {inTour && <span className="aplayer__step num">{tour.step + 1}/{TOUR_LENGTH} · </span>}
+                {inTour ? narrationItem(STEP_IDS[tour.step])?.title : item?.title}
+              </span>
+              <span className="aplayer__src" aria-live="polite">
+                {status}
+                {note && !loading ? <span className="aplayer__note"> · {note}</span> : null}
+              </span>
+            </div>
+          </div>
+          <div className="aplayer__bar" role="progressbar" aria-label="Narration progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
+            <span style={{ width: `${progress * 100}%` }} />
+          </div>
+          <div className="aplayer__ctrl">
+            <button type="button" className="aplayer__btn aplayer__btn--main" aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'} onClick={playPause}>
+              {isPlaying ? I.pause : I.play}
+            </button>
+            <button type="button" className="aplayer__btn" aria-label="Replay" title="Replay" onClick={() => (inTour ? replayStep() : replay())}>
+              {I.replay}
+            </button>
+            <button type="button" className="aplayer__btn" aria-label={inTour ? 'Stop the tour' : 'Stop'} title={inTour ? 'Stop the tour' : 'Stop'} onClick={() => (inTour ? exitTour() : stop())}>
+              {I.stop}
+            </button>
+            <button type="button" className="aplayer__btn aplayer__btn--rate num" aria-label={`Playback speed ${rate} times. Change speed.`} title="Playback speed" onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}>
+              {rate}×
+            </button>
+            <button type="button" className={`aplayer__btn${muted ? ' is-on' : ''}`} aria-pressed={muted} aria-label="Mute" title={muted ? 'Unmute' : 'Mute'} onClick={() => setMuted(!muted)}>
+              {muted ? I.muted : I.sound}
+            </button>
+            <button type="button" className={`aplayer__btn aplayer__btn--cc${transcript ? ' is-on' : ''}`} aria-pressed={transcript} aria-label="Captions" title="Captions" onClick={() => setS({ transcript: !transcript })}>
+              CC
+            </button>
+            {inTour && (
+              <span className="aplayer__tour">
+                <button type="button" className="aplayer__next" onClick={prevStep} disabled={tour.step === 0} aria-label="Previous step">
+                  Back
+                </button>
+                <button type="button" className="aplayer__next aplayer__next--primary" onClick={nextStep}>
+                  {tour.step + 1 < TOUR_LENGTH ? 'Next' : 'Finish'}
+                </button>
+              </span>
+            )}
+          </div>
+          {transcript && item && <p className="aplayer__text">{item.text}</p>}
+        </div>
+      )}
+      <div className="guide__launch">
+        <button ref={btn} type="button" className={`guide__btn${open ? ' is-on' : ''}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((o) => !o)}>
+          <Headphones size={14} />
+          Mission guide
+        </button>
+        {open && <GuideMenu onClose={close} anchor={btn} />}
+      </div>
+    </section>
+  );
+}
+const STEP_IDS = narrationItems()
+  .filter((i) => i.id.startsWith('tour-'))
+  .map((i) => i.id);
+
+const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Enter mission: an optional, user-started opening. Nothing plays before a click; the Moon
+ * renders underneath from the start. A short, quiet chime fades out fully, then the welcome
+ * narration plays with captions. Skip, any interaction, or a hard time limit ends it.
  */
 export function Welcome() {
   const seen = useSettings((s) => s.welcomeSeen);
   const setS = useSettings((s) => s.set);
   const mode = useApp((s) => s.mode);
   const intro = useApp((s) => s.intro);
-  const [caption, setCaption] = useState(false);
+  const [phase, setPhase] = useState<'chime' | 'voice'>('chime');
   const muted = usePlayer((s) => s.muted);
+  const item = usePlayer((s) => s.item);
+  const timers = useRef<number[]>([]);
+  const clearAll = () => {
+    timers.current.forEach((t) => window.clearTimeout(t));
+    timers.current = [];
+  };
   const finish = () => {
+    clearAll();
+    stopChime();
+    if (usePlayer.getState().item?.id === 'welcome') stop();
     useApp.getState().setIntro(false);
-    setCaption(false);
     setS({ welcomeSeen: true });
   };
+  const finishRef = useRef(finish);
+  finishRef.current = finish;
+
   useEffect(() => {
     if (!intro) return;
-    const t = window.setTimeout(finish, 7000); // never longer than this
+    // Never longer than this, whatever happens to audio or speech.
+    timers.current.push(window.setTimeout(() => finishRef.current(), 20_000));
     const end = (e: Event) => {
       if ((e.target as Element | null)?.closest?.('.welcome')) return;
-      stop();
-      finish();
+      finishRef.current();
     };
     window.addEventListener('pointerdown', end);
     window.addEventListener('keydown', end);
     return () => {
-      window.clearTimeout(t);
       window.removeEventListener('pointerdown', end);
       window.removeEventListener('keydown', end);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intro]);
+  useEffect(() => () => clearAll(), []);
 
   if (mode !== 'orbital' || (seen && !intro)) return null;
 
   const enter = (sound: boolean) => {
     if (!sound) return setS({ welcomeSeen: true });
     useApp.getState().setIntro(true);
-    useApp.getState().introCamera();
-    setCaption(true);
-    const it = narrationItem('welcome')!;
-    void play(it, { onEnd: () => window.setTimeout(finish, 700) });
+    if (!reducedMotion()) useApp.getState().introCamera();
+    setPhase('chime');
+    playChime(() => {
+      if (!useApp.getState().intro) return;
+      setPhase('voice');
+      void play(narrationItem('welcome')!, {
+        onEnd: () => timers.current.push(window.setTimeout(() => finishRef.current(), 900)),
+      });
+    });
   };
 
-  if (intro)
+  if (intro) {
+    const text = item?.id === 'welcome' ? item.text : null;
     return (
       <div className="welcome welcome--playing">
-        {caption && <p className="welcome__caption">Welcome aboard. Your lunar journey begins now.</p>}
+        <p className={`welcome__caption${phase === 'voice' && text ? ' is-on' : ''}`} aria-live="polite">
+          {phase === 'voice' && text ? text : ' '}
+        </p>
         <div className="welcome__ctrl">
-          <button type="button" className="welcome__link" onClick={() => setMuted(!muted)}>
-            {muted ? 'Unmute' : 'Mute'}
-          </button>
           <button
             type="button"
             className="welcome__link"
+            aria-pressed={muted}
             onClick={() => {
-              stop();
-              finish();
+              setMuted(!muted);
+              setChimeMuted(!muted);
             }}
           >
-            Skip
+            {muted ? 'Unmute' : 'Mute'}
+          </button>
+          <button type="button" className="welcome__link" onClick={() => finishRef.current()}>
+            Skip intro
           </button>
         </div>
       </div>
     );
+  }
 
   return (
     <div className="welcome" role="dialog" aria-label="Welcome">
@@ -202,3 +344,6 @@ export function Welcome() {
     </div>
   );
 }
+
+/** Kept for existing imports: the guide replaces the old floating player. */
+export const AudioPlayer = MissionGuide;

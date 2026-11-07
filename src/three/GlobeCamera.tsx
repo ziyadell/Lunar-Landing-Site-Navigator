@@ -228,7 +228,7 @@ export function GlobeCamera() {
       const id = window.setTimeout(() => {
         dive.current = null;
         const st = useApp.getState();
-        if (st.transitioning && st.mode === 'orbital') useApp.setState({ mode: 'surface' });
+        if (st.transitioning && st.mode === 'orbital') useApp.setState({ mode: 'surface', sceneReady: null });
       }, 2000);
       return () => window.clearTimeout(id);
     }
@@ -441,7 +441,7 @@ export function GlobeCamera() {
     // Dive → Surface hand-over.
     if (dive.current && (c.logRange < Math.log(0.075) || performance.now() > dive.current.until)) {
       dive.current = null;
-      if (useApp.getState().transitioning) useApp.setState({ mode: 'surface' });
+      if (useApp.getState().transitioning) useApp.setState({ mode: 'surface', sceneReady: null });
     }
 
     // Telemetry for the UI (only on meaningful change).

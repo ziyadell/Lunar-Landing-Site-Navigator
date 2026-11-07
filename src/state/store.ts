@@ -110,6 +110,14 @@ interface AppState {
   /** Orbital → dive animation → Surface (instant from other modes). */
   enterSurface: () => void;
   setTransitioning: (v: boolean) => void;
+  /** The view whose scene has drawn its first complete frame (null while loading). */
+  sceneReady: Mode | null;
+  setSceneReady: (m: Mode | null) => void;
+  /** Incremented to retry a failed terrain download. */
+  terrainRetry: number;
+  retryTerrain: () => void;
+  /** Interface element the guided tour is pointing at (static outline, no animation). */
+  tourSpot: string | null;
   toggleLayer: (k: keyof Layers) => void;
   applyPreset: (p: SurfacePreset) => void;
   setScenario: (i: 0 | 1, s: Partial<Scenario>) => void;
@@ -158,7 +166,7 @@ export const useApp = create<AppState>((set) => ({
     { regionId: 'nobile-rim-1', startMs: Date.UTC(2027, 0, 1), durationDays: 30 },
   ],
   // Choosing a mode explicitly cancels any running Orbital → Surface dive.
-  setMode: (mode) => set({ mode, transitioning: false, timeOpen: false }),
+  setMode: (mode) => set((s) => (s.mode === mode ? { transitioning: false, timeOpen: false } : { mode, transitioning: false, timeOpen: false, sceneReady: null })),
   selectRegion: (regionId) =>
     set((s) => {
       regionSwitchStart();
@@ -179,10 +187,17 @@ export const useApp = create<AppState>((set) => ({
     set((s) =>
       s.mode === 'orbital'
         ? { transitioning: true, cameraCommand: { kind: 'dive', seq: s.cameraCommand.seq + 1 } }
-        : { mode: 'surface' },
+        : s.mode === 'surface'
+          ? {}
+          : { mode: 'surface', sceneReady: null },
     );
   },
   setTransitioning: (transitioning) => set({ transitioning }),
+  sceneReady: null,
+  setSceneReady: (sceneReady) => set({ sceneReady }),
+  terrainRetry: 0,
+  retryTerrain: () => set((s) => ({ terrainRetry: s.terrainRetry + 1 })),
+  tourSpot: null,
   toggleLayer: (k) => set((s) => ({ layers: { ...s.layers, [k]: !s.layers[k] } })),
   applyPreset: (p) => set((s) => ({ layers: { ...s.layers, ...SURFACE_PRESETS[p].layers } })),
   setScenario: (i, patch) =>

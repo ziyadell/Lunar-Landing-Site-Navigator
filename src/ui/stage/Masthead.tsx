@@ -47,10 +47,11 @@ const MODES: { id: Mode; label: string; hint: string; icon: ReactNode }[] = [
 export function Brand() {
   return (
     <div className="brand">
-      <svg className="brand__mark" width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
-        <circle cx="13" cy="13" r="8.5" fill="#F1F5F9" opacity="0.94" />
-        <path d="M13 4.5a8.5 8.5 0 0 0 0 17 10.4 10.4 0 0 1 0-17z" fill="#05080F" opacity="0.6" />
-        <circle cx="13" cy="21.5" r="1.5" fill="#4DDCF4" />
+      {/* The project's original logo (first release), unchanged. */}
+      <svg className="brand__mark" width="26" height="26" viewBox="0 0 22 22" aria-hidden="true">
+        <circle cx="11" cy="11" r="7.5" fill="#F1F5F9" opacity="0.92" />
+        <path d="M11 3.5a7.5 7.5 0 0 0 0 15 9 9 0 0 1 0-15z" fill="#05080F" opacity="0.55" />
+        <circle cx="11" cy="11" r="10.25" fill="none" stroke="#4DDCF4" strokeWidth="1" strokeDasharray="2 2.6" />
       </svg>
       <div className="brand__text">
         <h1 className="brand__name">Lunar Landing Site Navigator</h1>

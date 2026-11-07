@@ -3,10 +3,10 @@ import { create } from 'zustand';
 /**
  * User preferences, persisted in localStorage (never required: every read is guarded).
  *  - Display quality: Auto picks from measured device capabilities.
- *  - Audio Guide: off by default; nothing plays without an explicit action.
+ *  - Mission guide: visible by default; nothing plays without an explicit action.
  */
 export type Quality = 'auto' | 'performance' | 'high';
-export type VoicePref = 'recorded' | 'browser';
+export type VoicePref = 'recorded' | 'device' | 'captions';
 
 interface Settings {
   quality: Quality;
@@ -18,13 +18,18 @@ interface Settings {
   set: (p: Partial<Omit<Settings, 'set'>>) => void;
 }
 
-const KEY = 'lsn.settings.v1';
-const defaults = { quality: 'auto' as Quality, audioGuide: false, voice: 'recorded' as VoicePref, rate: 1 as const, transcript: true, welcomeSeen: false };
+const KEY = 'lsn.settings.v2';
+const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, rate: 1 as const, transcript: true, welcomeSeen: false };
 
 function read() {
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null');
-    return v && typeof v === 'object' ? { ...defaults, ...v } : defaults;
+    // v1 stored the listen buttons as off by default; keep the other choices, show the guide.
+    const old = JSON.parse(localStorage.getItem('lsn.settings.v1') ?? 'null');
+    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') ?? (old && typeof old === 'object' ? { ...old, audioGuide: true } : null);
+    const out = v && typeof v === 'object' ? { ...defaults, ...v } : defaults;
+    if (out.voice === 'browser') out.voice = 'device';
+    if (!['recorded', 'device', 'captions'].includes(out.voice)) out.voice = 'recorded';
+    return out;
   } catch {
     return defaults;
   }

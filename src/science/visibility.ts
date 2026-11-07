@@ -115,14 +115,15 @@ export function scenarioMetrics(series: SeriesPoint[], stepMinutes: number): Sce
   const stepMs = stepMinutes * 60_000;
   const n = series.length;
   const pct = (f: (p: SeriesPoint) => boolean) => (100 * series.filter(f).length) / n;
+  // Longest run, and whether that value is only a lower bound: true when the longest
+  // run touches the start or end of the period, including a boundary run that ties the
+  // longest fully observed run (its real length may extend beyond the period).
   const longest = (f: (p: SeriesPoint) => boolean) => {
     const r = runs(series, f, stepMs);
-    let best = { h: 0, truncated: false };
-    for (const x of r) {
-      const h = (x.endMs - x.startMs) / 3_600_000;
-      if (h > best.h) best = { h, truncated: x.atStart || x.atEnd };
-    }
-    return best;
+    let h = 0;
+    for (const x of r) h = Math.max(h, (x.endMs - x.startMs) / 3_600_000);
+    const truncated = h > 0 && r.some((x) => (x.atStart || x.atEnd) && Math.abs((x.endMs - x.startMs) / 3_600_000 - h) < 1e-9);
+    return { h, truncated };
   };
   const noSun = longest((p) => !p.sunVis);
   const noEarth = longest((p) => !p.earthVis);
@@ -148,6 +149,8 @@ export function scenarioMetrics(series: SeriesPoint[], stepMinutes: number): Sce
     earthElevRange: [eMin, eMax],
     noSunTruncated: noSun.truncated,
     noEarthTruncated: noEarth.truncated,
+    neitherTruncated: neither.truncated,
+    sunTruncated: sun.truncated,
   };
 }
 

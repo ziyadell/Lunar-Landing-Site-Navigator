@@ -53,6 +53,7 @@ function useAlbedo(region: LandingRegion, enabled: boolean): TerrainAlbedo | nul
 function useTerrain(region: LandingRegion) {
   const [data, setData] = useState<{ id: string; tiles: TerrainTiles } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const retry = useApp((s) => s.terrainRetry);
   useEffect(() => {
     let alive = true;
     setError(null);
@@ -66,7 +67,7 @@ function useTerrain(region: LandingRegion) {
     return () => {
       alive = false;
     };
-  }, [region]);
+  }, [region, retry]);
   return { tiles: data?.id === region.id ? data.tiles : null, error };
 }
 
@@ -372,7 +373,10 @@ function ReadySignal() {
     done.current = true;
     markOnce('surface-ready');
     surfaceEnterEnd();
-    requestAnimationFrame(() => useApp.getState().setTransitioning(false));
+    requestAnimationFrame(() => {
+      useApp.getState().setTransitioning(false);
+      useApp.getState().setSceneReady('surface');
+    });
   });
   return null;
 }

@@ -163,7 +163,6 @@ export function RegionDeck() {
           <h2 className="deck-card__name" aria-live="polite">
             {r.name}
             <Listen id={`region-${r.id}`} />
-            {!orbital && <Listen id="surface-intro" className="listen--alt" />}
           </h2>
           <div className="deck-card__meta">
             <span className="num">

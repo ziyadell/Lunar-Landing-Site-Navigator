@@ -26,7 +26,7 @@ export function initUrlSync(validSites: string[]) {
   if (Object.keys(patch).length) useApp.setState(patch);
 
   let timer = 0;
-  return useApp.subscribe((s, prev) => {
+  const unsubscribe = useApp.subscribe((s, prev) => {
     if (s.mode === prev.mode && s.regionId === prev.regionId && s.timeMs === prev.timeMs) return;
     window.clearTimeout(timer);
     timer = window.setTimeout(() => {
@@ -37,4 +37,8 @@ export function initUrlSync(validSites: string[]) {
       window.history.replaceState(null, '', `${window.location.pathname}?${p}`);
     }, 250);
   });
+  return () => {
+    unsubscribe();
+    window.clearTimeout(timer);
+  };
 }

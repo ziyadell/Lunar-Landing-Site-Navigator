@@ -200,6 +200,9 @@ export interface ScenarioMetrics {
   sunElevRange: [number, number];
   earthElevRange: [number, number];
   /** True when the longest run touches the period boundary (true duration may be longer). */
+  /** Longest-run values that touch the period's start or end are lower bounds. */
   noSunTruncated: boolean;
   noEarthTruncated: boolean;
+  neitherTruncated: boolean;
+  sunTruncated: boolean;
 }
