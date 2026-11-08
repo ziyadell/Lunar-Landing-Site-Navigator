@@ -113,6 +113,23 @@ function recordedIds(): Promise<Set<string> | null> {
 }
 if (typeof window !== 'undefined') void recordedIds();
 
+/**
+ * Clips needed the moment the interface appears are downloaded when the page opens, so they
+ * are already in memory when Start Mission plays them (the large Moon imagery competes for the
+ * network right after that tap). Others stream on demand.
+ */
+const EARLY_CLIPS = ['welcome'];
+const early = new Map<string, Promise<string | null>>();
+if (typeof window !== 'undefined')
+  for (const id of EARLY_CLIPS)
+    early.set(
+      id,
+      fetch(assetUrl(`audio/narration/${id}.mp3`))
+        .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('audio') ? r.blob() : null))
+        .then((b) => (b ? URL.createObjectURL(b) : null))
+        .catch(() => null),
+    );
+
 // ------------------------------------------------------------------ server voice (live readings)
 /** Must equal VOICE_VERSION in voice-config.mjs (the endpoint rejects other versions). */
 const TTS_VERSION = 'afuq-2';
@@ -250,7 +267,11 @@ export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {
   // network) is not proof of that: try the recording itself, which falls back to captions
   // if it does not load.
   if (ids && !ids.has(item.id)) return toCaptions(item, t, 'Recorded narration not available · captions', true);
-  playAudio(item, t, assetUrl(`audio/narration/${item.id}.mp3`), 'recorded');
+  const pre = early.get(item.id);
+  // Normally already downloaded; if not, wait a little, then stream it instead.
+  const local = pre ? await Promise.race([pre, new Promise<null>((r) => window.setTimeout(() => r(null), 6000))]) : null;
+  if (t !== token) return;
+  playAudio(item, t, local ?? assetUrl(`audio/narration/${item.id}.mp3`), 'recorded');
 }
 
 export function playId(id: string, opts?: { onEnd?: () => void }) {
