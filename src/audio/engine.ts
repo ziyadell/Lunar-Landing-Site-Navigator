@@ -116,10 +116,14 @@ async function serverVoice(text: string): Promise<string | null> {
   if (serverVoiceDown) return null;
   const hit = serverAudio.get(text);
   if (hit) return hit;
+  // Give up if the server has not started answering in 12 s; once it has, allow up to
+  // 40 s for the whole reading (the first request for a new time is synthesised live).
   const ctl = new AbortController();
-  const timer = window.setTimeout(() => ctl.abort(), 9000);
+  let timer = window.setTimeout(() => ctl.abort(), 12_000);
   try {
     const r = await fetch(`${import.meta.env.BASE_URL}api/tts?v=${TTS_VERSION}&text=${encodeURIComponent(text)}`, { signal: ctl.signal });
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => ctl.abort(), 40_000);
     if (!r.ok || !(r.headers.get('content-type') ?? '').includes('audio')) {
       if (r.status === 404 || r.status === 503 || r.ok) serverVoiceDown = true; // not configured here
       return null;

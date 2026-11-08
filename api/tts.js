@@ -38,13 +38,15 @@ export default async function handler(req, res) {
       outputFormat: VOICE.outputFormat,
       voiceSettings: VOICE.voiceSettings,
     });
-    const chunks = [];
-    for await (const c of stream) chunks.push(Buffer.from(c));
-    const buf = Buffer.concat(chunks);
+    // Stream the audio as it is generated, so the first bytes arrive in about a second
+    // instead of after the whole reading has been synthesised.
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=31536000, immutable');
-    return res.status(200).send(buf);
+    res.status(200);
+    for await (const c of stream) res.write(Buffer.from(c));
+    return res.end();
   } catch (e) {
+    if (res.headersSent) return res.end(); // provider failed mid-stream: end what was sent
     res.setHeader('Cache-Control', 'no-store');
     return res.status(502).json({ error: 'provider', status: e?.statusCode ?? null });
   }
