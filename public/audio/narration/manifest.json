@@ -1,0 +1,21 @@
+{
+ "files": {
+  "welcome": {
+   "hash": "579252d72962107a",
+   "bytes": 150926,
+   "chars": 119
+  }
+ },
+ "voice": {
+  "voiceId": "hpp4J3VqNfWAUOO0d1Us",
+  "voiceName": "Bella",
+  "modelId": "eleven_v4",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+   "stability": 0.7,
+   "similarityBoost": 0.6
+  }
+ },
+ "version": "afuq-2",
+ "updatedUtc": "2026-11-08T00:26:04.110Z"
+}

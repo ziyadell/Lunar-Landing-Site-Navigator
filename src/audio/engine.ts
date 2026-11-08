@@ -108,6 +108,8 @@ function recordedIds(): Promise<Set<string>> {
 }
 
 // ------------------------------------------------------------------ server voice (live readings)
+/** Must equal VOICE_VERSION in voice-config.mjs (the endpoint rejects other versions). */
+const TTS_VERSION = 'afuq-2';
 let serverVoiceDown = false;
 const serverAudio = new Map<string, string>(); // text → object URL (this visit)
 async function serverVoice(text: string): Promise<string | null> {
@@ -117,7 +119,7 @@ async function serverVoice(text: string): Promise<string | null> {
   const ctl = new AbortController();
   const timer = window.setTimeout(() => ctl.abort(), 9000);
   try {
-    const r = await fetch(`${import.meta.env.BASE_URL}api/tts?v=1&text=${encodeURIComponent(text)}`, { signal: ctl.signal });
+    const r = await fetch(`${import.meta.env.BASE_URL}api/tts?v=${TTS_VERSION}&text=${encodeURIComponent(text)}`, { signal: ctl.signal });
     if (!r.ok || !(r.headers.get('content-type') ?? '').includes('audio')) {
       if (r.status === 404 || r.status === 503 || r.ok) serverVoiceDown = true; // not configured here
       return null;

@@ -1,18 +1,16 @@
 /**
  * Server-side narrator voice for live calculated readings ("Conditions now").
  *
- * - Same narrator as the recorded clips: fixed voice ID, model and settings (keep in sync
- *   with scripts/generate-narration.mjs). The provider key is read from the server
- *   environment (ELEVENLABS_API_KEY) and never reaches the browser.
+ * - Same narrator as the recorded clips: voice-config.mjs (one voice ID, model and
+ *   settings). The provider key is read from the server environment (ELEVENLABS_API_KEY)
+ *   and never reaches the browser.
  * - Only the app's own reading template is spoken (validated below), so the endpoint cannot
  *   be used to synthesise arbitrary text.
  * - Responses are cached by the CDN per URL, i.e. per text + voice-configuration version (v).
  * - Without a key it answers 503; the app then shows the reading as captions (no device voice).
  */
-const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'; // same default as the clips
-const MODEL = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
-const SETTINGS = { stability: 0.62, similarity_boost: 0.8, style: 0.05, use_speaker_boost: true, speed: 0.95 };
-const CONFIG_VERSION = '1';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import { VOICE, VOICE_VERSION } from '../voice-config.mjs';
 
 const NUM = '\\d{1,3}(?:\\.\\d)?';
 const EL = `${NUM} degrees (?:above|below) the horizontal`;
@@ -25,29 +23,29 @@ const TEMPLATE = new RegExp(
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'method' });
   const text = String(req.query.text ?? '');
-  if (req.query.v !== CONFIG_VERSION) return res.status(400).json({ error: 'version' });
+  if (req.query.v !== VOICE_VERSION) return res.status(400).json({ error: 'version' });
   if (text.length > 420 || !TEMPLATE.test(text)) return res.status(400).json({ error: 'text' });
-  const key = process.env.ELEVENLABS_API_KEY;
-  if (!key) {
+  if (!process.env.ELEVENLABS_API_KEY) {
     res.setHeader('Cache-Control', 'no-store');
     return res.status(503).json({ error: 'tts-unconfigured' });
   }
   try {
-    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(VOICE_ID)}?output_format=mp3_44100_64`, {
-      method: 'POST',
-      headers: { 'xi-api-key': key, 'content-type': 'application/json', accept: 'audio/mpeg' },
-      body: JSON.stringify({ text, model_id: MODEL, voice_settings: SETTINGS }),
+    const client = new ElevenLabsClient();
+    const stream = await client.textToSpeech.convert(VOICE.voiceId, {
+      text,
+      modelId: VOICE.modelId,
+      languageCode: VOICE.languageCode,
+      outputFormat: VOICE.outputFormat,
+      voiceSettings: VOICE.voiceSettings,
     });
-    if (!r.ok) {
-      res.setHeader('Cache-Control', 'no-store');
-      return res.status(502).json({ error: 'provider', status: r.status });
-    }
-    const buf = Buffer.from(await r.arrayBuffer());
+    const chunks = [];
+    for await (const c of stream) chunks.push(Buffer.from(c));
+    const buf = Buffer.concat(chunks);
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=31536000, immutable');
     return res.status(200).send(buf);
-  } catch {
+  } catch (e) {
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(502).json({ error: 'provider' });
+    return res.status(502).json({ error: 'provider', status: e?.statusCode ?? null });
   }
 }
