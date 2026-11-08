@@ -119,7 +119,7 @@ export function Viewport() {
     return (
       <section className="viewport" aria-label="3D viewport">
         <div className="viewport__fallback" role="alert">
-          <strong>WebGL is not available in this browser.</strong> The 3D Moon and Surface View need WebGL. All
+          <strong>WebGL 2 is not available in this browser.</strong> The 3D Moon and Surface View need WebGL 2. All
           readings, time controls and Mission Analysis still work.
         </div>
       </section>

@@ -54,9 +54,9 @@ export function Brand() {
         <circle cx="11" cy="11" r="10.25" fill="none" stroke="#4DDCF4" strokeWidth="1" strokeDasharray="2 2.6" />
       </svg>
       <div className="brand__text">
-        <h1 className="brand__name">Lunar Landing Site Navigator</h1>
+        <h1 className="brand__name">LunaNav</h1>
         <span className="brand__sub">
-          Artemis south-polar regions <Listen id="orbit-intro" />
+          Lunar Landing Site Navigator <Listen id="orbit-intro" />
         </span>
       </div>
     </div>

@@ -1,3 +1,7 @@
+> **Historical record.** Sections 1–8 describe checks made on earlier releases (four and six
+> regions, an earlier deployment URL). For the current nine-region LunaNav release, see
+> `public/data/validation.json`, `npm run test:science` and `npm run test:data` (README).
+
 # Validation record
 
 What was checked, how, and with what result, for the deployed build at

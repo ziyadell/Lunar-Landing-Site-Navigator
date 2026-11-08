@@ -137,6 +137,12 @@ interface AppState {
 }
 
 const DAY = 86_400_000;
+/** Any camera command issued while descending cancels the descent (the user changed course). */
+const cancelDive = (s: { transitioning: boolean; mode: Mode }) => (s.transitioning && s.mode === 'orbital' ? { transitioning: false } : {});
+/** Safety net for the Orbit → Surface descent: if the camera never reports the end of the dive
+ *  (scene rebuilt, graphics reset, hidden tab), switch to Surface anyway after this delay. */
+const DIVE_WATCHDOG_MS = 4000;
+let diveWatchdog = 0;
 const nowHour = () => Math.floor(Date.now() / 3_600_000) * 3_600_000;
 
 export const useApp = create<AppState>((set) => ({
@@ -183,29 +189,35 @@ export const useApp = create<AppState>((set) => ({
   selectRegion: (regionId) =>
     set((s) => {
       regionSwitchStart();
-      return { regionId, cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 } };
+      return { regionId, cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 }, ...cancelDive(s) };
     }),
   setTime: (timeMs) => set({ timeMs }),
-  focusRegion: () => set((s) => ({ cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 } })),
-  resetCamera: () => set((s) => ({ cameraCommand: { kind: 'global', seq: s.cameraCommand.seq + 1 } })),
+  focusRegion: () => set((s) => ({ cameraCommand: { kind: 'focus', seq: s.cameraCommand.seq + 1 }, ...cancelDive(s) })),
+  resetCamera: () => set((s) => ({ cameraCommand: { kind: 'global', seq: s.cameraCommand.seq + 1 }, ...cancelDive(s) })),
   introCamera: () => set((s) => ({ cameraCommand: { kind: 'intro', seq: s.cameraCommand.seq + 1 } })),
   intro: false,
   setIntro: (intro) => set({ intro }),
   outro: false,
   reveal: false,
-  poleCamera: () => set((s) => ({ cameraCommand: { kind: 'pole', seq: s.cameraCommand.seq + 1 } })),
+  poleCamera: () => set((s) => ({ cameraCommand: { kind: 'pole', seq: s.cameraCommand.seq + 1 }, ...cancelDive(s) })),
   zoomCommand: { factor: 1, seq: 0 },
   zoomCamera: (factor) => set((s) => ({ zoomCommand: { factor, seq: s.zoomCommand.seq + 1 } })),
-  pointCamera: (latDeg, lonDeg) => set((s) => ({ cameraCommand: { kind: 'point', seq: s.cameraCommand.seq + 1, latDeg, lonDeg } })),
+  pointCamera: (latDeg, lonDeg) => set((s) => ({ cameraCommand: { kind: 'point', seq: s.cameraCommand.seq + 1, latDeg, lonDeg }, ...cancelDive(s) })),
   enterSurface: () => {
     surfaceEnterStart();
-    set((s) =>
-      s.mode === 'orbital'
-        ? { transitioning: true, cameraCommand: { kind: 'dive', seq: s.cameraCommand.seq + 1 } }
-        : s.mode === 'surface'
-          ? {}
-          : { mode: 'surface', sceneReady: null },
-    );
+    window.clearTimeout(diveWatchdog);
+    set((s) => {
+      if (s.mode === 'surface') return {};
+      // No working 3D scene: there is no camera to animate, so go straight to Surface
+      // (which shows its own fallback) instead of waiting for a dive that never ends.
+      if (s.mode !== 'orbital' || s.sceneUnavailable) return { mode: 'surface', sceneReady: null, transitioning: false };
+      const seq = s.cameraCommand.seq + 1;
+      diveWatchdog = window.setTimeout(() => {
+        const st = useApp.getState();
+        if (st.transitioning && st.mode === 'orbital' && st.cameraCommand.seq === seq) useApp.setState({ mode: 'surface', sceneReady: null });
+      }, DIVE_WATCHDOG_MS);
+      return { transitioning: true, cameraCommand: { kind: 'dive', seq } };
+    });
   },
   setTransitioning: (transitioning) => set({ transitioning }),
   sceneReady: null,

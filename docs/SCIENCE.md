@@ -1,4 +1,6 @@
-# Scientific methods and data provenance
+# LunaNav — scientific methods and data provenance
+
+LunaNav (Lunar Landing Site Navigator) by Team AFUQ.
 
 Every number in the interface comes from one of the sources below, at a stated
 location, time and method. This document is the reference for those claims.
@@ -125,9 +127,9 @@ visible fraction of the solar disc at the observation point.
 
 | Preset | Purpose | Layers |
 |---|---|---|
-| Scientific (default) | read measurements | LOLA skyline line, az/el grid, range rings, stars, enhanced visibility; fine texture off |
-| Clean | orientation / presentation | terrain, Sun, Earth, stars; enhanced visibility; no overlays |
-| Realistic | appearance under physical light | physical lighting (Sun + faint Earthshine), illustrative fine texture, stars |
+| Survey | read measurements | LOLA skyline line, az/el grid, range rings, stars, lifted shadows, illustrative fine texture |
+| Landscape (default) | orientation / presentation | terrain, Sun, Earth, stars, LOLA skyline line, lifted shadows, fine texture; no grid or rings |
+| Physical | appearance under physical light | sunlight and faint Earthshine only, fine texture, stars; no skyline line, no lifted shadows |
 
 Display aids that are not measurements:
 - *Enhanced visibility*: a hemisphere fill light and ~9× brighter Earthshine.
@@ -160,39 +162,32 @@ exaggerated for legibility and labelled as such.
 
 ## 4. Candidate regions and observation points
 
-NASA's Artemis III candidate regions are about 15 × 15 km (release 22-089,
-Aug 2022). On **Oct 28, 2024** NASA refined the list to nine regions: Peak near
-Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile
-Rim 1, Nobile Rim 2, de Gerlache Rim 2 and Slater Plain
+The nine regions are NASA's Artemis III candidates of **28 October 2024**
 ([NASA](https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/)).
-All six regions used here are on that list. Mons Mouton Plateau, Nobile Rim 2 and Slater Plain are not represented: their extents are unpublished, and no defensible public-data rule distinguishes them from the points used here. NASA does not publish coordinates for them, so the app anchors each
-region to an IAU Gazetteer of Planetary Nomenclature feature (retrieved
-2026-11-07) and selects **one representative observation point** with a stated rule:
+NASA published them only as outlines on a map. The outlines were digitised by registering
+NASA's map to the LROC WAC South Pole Summer Mosaic (similarity transform maximising image
+correlation; `preprocess/register_nasa_regions.py`, which uses SciPy); accuracy about 0.5 km.
 
-| Region | IAU reference feature | Centre (lat, lon E) | Rule |
-|---|---|---|---|
-| Malapert Massif | Mons Malapert (ID 16338), 67 km | −85.98, −1.67 | Of 172 points on a 2 km grid within 15 km of the centre, the one with the Sun's centre above the LOLA skyline for the largest fraction of 2027 hours |
-| Mons Mouton (Oct 2024 list; distinct from "Mons Mouton Plateau") | Mons Mouton (ID 16070), 130 km | −84.60, 31.00 | Same as above |
-| Nobile Rim 1 | Nobile crater (ID 4321), 79.3 km | −85.28, 53.27 | Of 72 rim-crest points (highest point between 0.8 and 1.2 crater radii on radial profiles every 5°), the most sunlit in 2027. NASA does not distinguish Rim 1 from Rim 2 by coordinates, so this is a representative rim point. |
-| Haworth | Haworth crater (ID 14502), 51.4 km | −87.45, −5.17 | Same rim-crest rule |
-| Peak near Cabeus B | Cabeus B crater (ID 8058), 59.6 km | −82.26, −54.58 | Highest 3×3-smoothed LOLA point between 0.6 and 1.6 crater radii (provisional; NASA's peak location is unpublished). Northward horizon rays leave the 80°S DEM after ~40 km. |
-| de Gerlache Rim 2 | de Gerlache crater (ID 1439), 32.7 km | −88.48, −88.34 | Same rim-crest rule |
+**Observation point rule** (`preprocess/process_dem.py`): of candidate points on a **1 km grid
+inside the outline** with local slope at most **10°** (LOLA, 240 m baseline), the one where the
+Sun's centre is above the LOLA horizon for the largest fraction of **2027 hours**. The rule
+favours well-lit high ground, so a point represents a well-lit location inside its region, not
+the region as a whole, and is not a NASA-designated landing site.
 
-Resulting points (LOLA elevation; 2027 Sun-visible fraction used for selection):
+| Region | Lat | Lon E | Elevation | 2027 Sun-visible | Outline size |
+|---|---|---|---|---|---|
+| Peak near Cabeus B | -83.5925 | -68.4540 | 4579 m | 57.9 % | 20.9 × 20.0 km |
+| Haworth | -86.3354 | -23.3339 | 2797 m | 55.9 % | 31.1 × 29.3 km |
+| Malapert Massif | -85.9119 | -4.1570 | 4773 m | 63.1 % | 22.1 × 20.8 km |
+| Mons Mouton Plateau | -84.5635 | 37.9959 | 6632 m | 55.4 % | 78.1 × 58.0 km |
+| Mons Mouton | -85.4781 | 31.0203 | 6283 m | 66.8 % | 17.5 × 15.9 km |
+| Nobile Rim 1 | -85.1394 | 36.5272 | 6745 m | 64.2 % | 21.4 × 20.3 km |
+| Nobile Rim 2 | -83.8179 | 59.0760 | 1057 m | 50.6 % | 20.9 × 19.8 km |
+| de Gerlache Rim 2 | -88.6320 | -68.0601 | 1737 m | 58.0 % | 21.4 × 20.0 km |
+| Slater Plain | -87.2638 | 127.5189 | 529 m | 62.4 % | 21.4 × 20.0 km |
 
-| Region | Lat | Lon E | Elevation | 2027 Sun-visible |
-|---|---|---|---|---|
-| Malapert Massif | −85.8746 | −4.8806 | 4430 m | 55.6 % |
-| Mons Mouton | −84.3683 | 32.0082 | 5600 m | 51.0 % |
-| Nobile Rim 1 | −85.5525 | 37.5526 | 6099 m | 70.7 % |
-| Haworth | −87.0201 | −24.4343 | 1721 m | 54.2 % |
-| Peak near Cabeus B | −81.3478 | −57.5836 | 1294 m | 48.6 % |
-| de Gerlache Rim 2 | −89.0037 | −96.5972 | 1552 m | 72.3 % |
-
-The rule deliberately favours well-lit locations because the real candidate
-regions were chosen with illumination as a criterion. The points remain
-**illustrative of their regions**. They are not landing sites, and the results
-do not represent the whole 15 × 15 km region.
+Reference features (names, centres, diameters) come from the IAU Gazetteer of Planetary
+Nomenclature and are used in region descriptions only.
 
 ## 5. Mission Analysis metrics
 
@@ -237,7 +232,19 @@ suitability ranking or score is computed.
 - The polar blend weight is `1 − smoothstep(−81.2°, −80.6°, lat)`. The earlier
   release passed reversed edges to `smoothstep`, which GLSL leaves undefined.
 
-## 7. Known limitations
+## 7. Accuracy terms (kept separate)
+
+- **Direction accuracy** (Sun/Earth azimuth and elevation): compared with JPL Horizons
+  topocentric output, worst 0.0008° in elevation and 0.006° in azimuth (validation.json, nine
+  points, Jan–Feb 2027); re-checked by `npm run test:science` against a stored Horizons fixture.
+  This says nothing about terrain.
+- **Terrain/horizon accuracy**: limited by the 80 m LOLA grid; not independently validated.
+- **Rendering**: the Surface terrain mesh is a display of the same data; the horizon line is the
+  computed profile. Rendered appearance is not a measurement.
+- **Sampling resolution**: Mission Analysis checks visibility every 15 min (≤ 60 days) or 60 min
+  (longer), so durations are accurate to one sample.
+
+## 8. Known limitations
 
 - 80 m DEM: small boulders, crater rims narrower than ~160 m and sub-pixel
   relief are not represented; near-field horizons may be smoothed.
