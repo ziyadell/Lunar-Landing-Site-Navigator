@@ -17,6 +17,7 @@ interface Settings {
   sound: boolean;
   rate: 1 | 1.25 | 1.5;
   transcript: boolean;
+  /** Start Mission welcome done in this visit (not stored: it opens on every visit). */
   welcomeSeen: boolean;
   /** Sun/Earth card folded to a one-line summary. */
   readingsFolded: boolean;
@@ -40,6 +41,8 @@ function read() {
     const out = v && typeof v === 'object' ? { ...defaults, ...v } : defaults;
     if (!['recorded', 'captions'].includes(out.voice)) out.voice = 'recorded'; // old "device"/"browser" choices
     if (typeof out.sound !== 'boolean') out.sound = true;
+    // The Start Mission welcome opens every visit; only the current visit remembers it.
+    out.welcomeSeen = false;
     return out;
   } catch {
     return defaults;
@@ -52,8 +55,9 @@ export const useSettings = create<Settings>((set) => ({
     set((s) => {
       const next = { ...s, ...p };
       try {
-        const { set: _omit, ...data } = next;
+        const { set: _omit, welcomeSeen: _visit, ...data } = next;
         void _omit;
+        void _visit;
         localStorage.setItem(KEY, JSON.stringify(data));
       } catch {
         /* storage unavailable: settings last for this visit */
