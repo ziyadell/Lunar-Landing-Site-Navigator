@@ -5,6 +5,7 @@ import { fmtDeg } from '../utils/format';
 import { wrap360 } from '../science/geometry';
 import { FoldButton } from './Fold';
 import { useSettings } from '../state/settings';
+import { Listen } from '../audio/ui';
 
 /** Sun / Earth labels in the 3D sky (positioned by SkyLabelProjector). */
 export function SkyLabels() {
@@ -59,6 +60,7 @@ export function SurfacePanorama() {
       <div className="pano-strip__head">
         <span>Skyline 360° · LOLA</span>
         <span className="pano-strip__right">
+          <Listen id="view-skyline" />
           {!skyFolded && (
             <span className="num">
               {lo}° … {hi}°

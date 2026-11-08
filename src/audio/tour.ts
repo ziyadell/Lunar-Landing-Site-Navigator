@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useApp } from '../state/store';
-import { narrationItem, play, stop, pause, resume, usePlayer } from './engine';
+import { narrationItem, narrationItems, play, stop, pause, resume, usePlayer } from './engine';
+import { useReadiness } from '../state/loading';
 
 /**
  * Guided tour: twelve steps, each an app action plus its narration. User-started only;
@@ -34,7 +35,7 @@ const scrollTo = (sel: string) => {
 };
 const orbitalReady = () => app().mode === 'orbital' && app().sceneReady === 'orbital' && !app().transitioning;
 
-const STEPS: Step[] = [
+const FULL: Step[] = [
   {
     id: 'tour-moon',
     act: () => {
@@ -123,14 +124,57 @@ const STEPS: Step[] = [
 ];
 const SCROLL: Record<string, string> = { glance: '.glance', csv: '.study__panos' };
 
+/**
+ * Regions tour: an introduction, then each of the nine regions in list order. At each stop
+ * the region is selected (globe, card and readings follow) and the camera moves to it; the
+ * narration waits until the region's own imagery is on screen.
+ */
+const REGIONS: Step[] = [
+  {
+    id: 'tour-regions-intro',
+    act: () => {
+      ensureOrbital();
+      app().openDrawer(null);
+      app().poleCamera();
+    },
+    ready: orbitalReady,
+  },
+  ...narrationItems()
+    .filter((i) => i.id.startsWith('region-'))
+    .map((i) => {
+      const regionId = i.id.slice('region-'.length);
+      return {
+        id: i.id,
+        spot: 'region',
+        act: () => {
+          ensureOrbital();
+          app().openDrawer(null);
+          if (app().regionId !== regionId) app().selectRegion(regionId);
+          else app().focusRegion();
+        },
+        ready: () => orbitalReady() && app().regionId === regionId && useReadiness.getState().region !== 'pending',
+        limit: 10_000,
+      } satisfies Step;
+    }),
+];
+export type TourKind = 'full' | 'regions';
+const LISTS: Record<TourKind, Step[]> = { full: FULL, regions: REGIONS };
+let STEPS: Step[] = FULL;
+
 interface Tour {
   step: number; // -1 = not running
+  kind: TourKind;
+  /** Number of steps in the running tour. */
+  length: number;
+  /** Narration id of each step, in order. */
+  ids: string[];
   paused: boolean;
   /** Waiting for the interface before narrating. */
   waiting: boolean;
 }
-export const useTour = create<Tour>(() => ({ step: -1, paused: false, waiting: false }));
-export const TOUR_LENGTH = STEPS.length;
+export const useTour = create<Tour>(() => ({ step: -1, kind: 'full', length: FULL.length, ids: FULL.map((x) => x.id), paused: false, waiting: false }));
+export const TOUR_LENGTH = FULL.length;
+export const REGIONS_TOUR_LENGTH = REGIONS.length;
 if (import.meta.env.DEV && typeof window !== 'undefined') Object.assign(window, { __tour: useTour, __player: usePlayer });
 
 let run = 0; // incremented by every go / exit: stale callbacks compare against it
@@ -175,7 +219,9 @@ function go(i: number) {
   check();
 }
 
-export function startTour() {
+export function startTour(kind: TourKind = 'full') {
+  STEPS = LISTS[kind];
+  useTour.setState({ kind, length: STEPS.length, ids: STEPS.map((x) => x.id) });
   go(0);
 }
 export function nextStep() {

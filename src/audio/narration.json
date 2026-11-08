@@ -152,6 +152,46 @@
       "text": "The Sun and Earth directions come from NASA JPL Horizons. In a check against Horizons over January and February 2027, they agreed to within six thousandths of a degree. The skyline is traced through LOLA terrain data out to one hundred and fifty kilometers. Visible means the center of the disc is above the skyline. Results apply to one observation point, and slopes, hazards, temperatures, and radio links are not modeled."
     },
     {
+      "id": "view-regions",
+      "title": "Landing Regions",
+      "text": "Landing Regions lists all nine of NASA's candidate regions for Artemis Three. Choose one to select it, and the globe, the region card, and the Sun and Earth readings all switch to that region. Next to each name, two small dots show whether the Sun and the Earth are visible from its observation point at the current time."
+    },
+    {
+      "id": "view-locator",
+      "title": "Region map",
+      "text": "The map in the region card shows the area around the south pole in NASA's lunar imagery. The boxes are NASA's nine region outlines, and the highlighted box is the selected region. Select a box to choose that region."
+    },
+    {
+      "id": "view-skyline",
+      "title": "Skyline strip",
+      "text": "The skyline strip shows the measured horizon all the way around the observation point, from north through east, south, and west. The Sun and the Earth are marked on it, and their markers are hollow when terrain hides them. The highlighted window is the part of the sky you are facing. Select a point on the strip to turn toward it."
+    },
+    {
+      "id": "view-compass",
+      "title": "Heading",
+      "text": "The heading tape shows which way you are facing, in degrees from local north. The Sun and the Earth are marked when they are in front of you. When they are behind you or to the side, labels at the edges point toward them."
+    },
+    {
+      "id": "view-camera",
+      "title": "Camera tools",
+      "text": "The camera tools move your view of the Moon. One returns to the selected region, and one shows the whole Moon. On larger screens, two more buttons zoom in and out. The last buttons open Display options and hide the tools."
+    },
+    {
+      "id": "view-look",
+      "title": "Look tools",
+      "text": "The look tools turn your view on the surface. One resets the view, and the others turn you to face the Sun, the Earth, or north. On larger screens, two more buttons narrow or widen the field of view. The last buttons open Display options and hide the tools."
+    },
+    {
+      "id": "view-settings",
+      "title": "Settings",
+      "text": "Settings let you choose the display quality, and whether narration uses the recorded voice or captions only. You can also set the playback speed, show or hide captions and listen buttons, start a tour, or replay the welcome."
+    },
+    {
+      "id": "tour-regions-intro",
+      "title": "Regions tour",
+      "text": "This tour visits all nine candidate regions in turn. At each one, the globe moves to the region, and you will hear what sets it apart. You can pause, skip ahead, or stop at any time."
+    },
+    {
       "id": "tour-moon",
       "title": "The Moon from orbit",
       "text": "This is the Moon, as NASA's Lunar Reconnaissance Orbiter has mapped it. The imagery and the terrain come from NASA measurements, and the positions of the Sun and the Earth come from JPL ephemerides. Some visual effects, such as lifted shadows and glows, are display aids that make the scene easier to read. They are not measurements.",
