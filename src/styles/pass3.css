@@ -527,3 +527,73 @@
   width: 24px;
   height: 24px;
 }
+
+/* ---------------------------------------------- collapsible sections look collapsible
+   "Method and limits" matches "Every metric": a bordered row with a hint and +/−. */
+.study__method {
+  border-top: 0 !important;
+  padding-top: 0 !important;
+}
+.study__method details {
+  border-radius: 20px;
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid var(--glass-line);
+}
+.study__method details > summary {
+  display: flex !important;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 !important;
+  padding: 18px 24px !important;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 20px;
+}
+.study__method details > summary::-webkit-details-marker {
+  display: none;
+}
+.study__method details > summary::after {
+  content: '+';
+  margin-left: auto;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+.study__method details[open] > summary::after {
+  content: '−';
+}
+.study__method details[open] > ul {
+  padding: 0 24px 20px 44px;
+}
+.study__method-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text);
+}
+/* Shared hover / focus for both collapsible rows. */
+.study__all > summary:hover::after,
+.study__method details > summary:hover::after {
+  color: var(--accent);
+}
+.study__all:hover,
+.study__method details:hover {
+  border-color: rgba(241, 245, 249, 0.18);
+}
+.study__all > summary:focus-visible,
+.study__method details > summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+@media (max-width: 759px) {
+  .study__method details > summary {
+    padding: 16px 18px !important;
+  }
+  .study__method details[open] > ul {
+    padding: 0 18px 18px 36px;
+  }
+}
