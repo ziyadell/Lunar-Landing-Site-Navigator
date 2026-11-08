@@ -121,7 +121,7 @@ function clampPose(p: Pose, aspect: number) {
 
 export function GlobeCamera() {
   const { camera, gl, size, invalidate } = useThree();
-  const { region, ephemeris } = useData();
+  const { region, ephemeris, sites } = useData();
   const cmd = useApp((s) => s.cameraCommand);
   const cur = useRef<Pose | null>(null);
   const goal = useRef<Pose | null>(null);
@@ -144,6 +144,41 @@ export function GlobeCamera() {
     // Look away from the Sun so sunlit slopes face the camera.
     const away = sun.sub(f.U.clone().multiplyScalar(sun.dot(f.U))).negate();
     return away.lengthSq() < 1e-8 ? 0 : Math.atan2(away.dot(f.E), away.dot(f.N));
+  };
+
+  /**
+   * Largest range (Moon radii, starting from `start`) at which the observation points that are
+   * on screen are at least SPREAD_PX apart, so the globe shows each region's name rather than
+   * the merged "Landing Regions" chip (see MarkerProjector, which merges below 24 px).
+   */
+  const spreadRange = (T: THREE.Vector3, heading: number, tilt: number, start: number, latDeg: number) => {
+    const SPREAD_PX = 40;
+    const W = size.width;
+    const H = size.height;
+    const cam = (camera as THREE.PerspectiveCamera).clone();
+    const pts = sites.regions.map((r) => surfacePoint(r.observationPoint.latDeg, r.observationPoint.lonDeg, r.observationPoint.elevationM));
+    const floor = siteMinRange(latDeg) * 1.5;
+    let r = start;
+    for (let i = 0; i < 16 && r > floor; i++) {
+      const { pos, up: u } = poseCamera({ mode: 'site', target: T, heading, tilt, logRange: Math.log(r) });
+      cam.position.copy(pos);
+      cam.up.copy(u);
+      cam.lookAt(T);
+      cam.updateMatrixWorld();
+      const seen: { x: number; y: number }[] = [];
+      for (const v of pts) {
+        const facing = v.clone().normalize().dot(pos.clone().sub(v).normalize());
+        const q = v.clone().project(cam);
+        const x = (q.x * 0.5 + 0.5) * W;
+        const y = (-q.y * 0.5 + 0.5) * H;
+        if (facing > 0.02 && q.z < 1 && x > -40 && x < W + 40 && y > -40 && y < H + 40) seen.push({ x, y });
+      }
+      let minD = Infinity;
+      for (let a = 0; a < seen.length; a++) for (let b = a + 1; b < seen.length; b++) minD = Math.min(minD, Math.hypot(seen[a].x - seen[b].x, seen[a].y - seen[b].y));
+      if (seen.length < 2 || minD >= SPREAD_PX) break;
+      r = Math.max(floor, r * 0.85);
+    }
+    return r;
   };
 
   /** Switch the current pose to a new mode/target without moving the camera. */
@@ -232,9 +267,12 @@ export function GlobeCamera() {
       }, 2000);
       return () => window.clearTimeout(id);
     }
-    // focus (optional range from a deep link)
-    const rr = cmd.rangeKm ? cmd.rangeKm / MOON_KM : 0.26 * portrait;
-    setGoal({ mode: 'site', target: T, heading: sunBearing(f), tilt: 0.6, logRange: Math.log(rr) });
+    // focus (optional range from a deep link). Without a deep-link range, come close enough
+    // that the region names separate on this screen instead of merging into the
+    // "Landing Regions" chip (small portrait screens need a closer view than desktops).
+    const heading = sunBearing(f);
+    const rr = cmd.rangeKm ? cmd.rangeKm / MOON_KM : spreadRange(T, heading, 0.6, 0.26 * portrait, p.latDeg);
+    setGoal({ mode: 'site', target: T, heading, tilt: 0.6, logRange: Math.log(rr) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cmd.seq]);
 
