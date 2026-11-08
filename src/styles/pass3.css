@@ -597,3 +597,12 @@
     padding: 0 18px 18px 36px;
   }
 }
+
+/* The skyline graph rule (.pano-strip svg: full width, 56 px tall) must not stretch the
+   small icons in the strip's header (listen, fold). */
+.pano-strip__head svg {
+  display: block;
+  width: auto;
+  height: auto;
+  cursor: inherit;
+}
