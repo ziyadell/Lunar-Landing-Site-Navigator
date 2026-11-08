@@ -519,7 +519,10 @@ export default function AnalysisView() {
       <footer className="study__method">
         <details>
           <summary>
-            Method and limits <Listen id="analysis-method" />
+            <span className="study__method-title">
+              Method and limits <Listen id="analysis-method" />
+            </span>
+            <span className="study__all-hint">Data sources, validation, and what is not modeled</span>
           </summary>
         <ul>
           <li>Sun and Earth directions: NASA/JPL Horizons hourly sub-solar and sub-Earth points, interpolated; validated against Horizons topocentric Az/El to better than 0.01°.</li>
