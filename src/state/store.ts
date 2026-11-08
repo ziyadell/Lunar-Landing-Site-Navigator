@@ -36,7 +36,9 @@ export const SURFACE_PRESETS: Record<SurfacePreset, { label: string; hint: strin
   scientific: {
     label: 'Survey',
     hint: 'Every annotation: LOLA skyline, azimuth/elevation grid, range rings.',
-    layers: { enhancedLight: true, horizonLine: true, stars: true, skyGrid: true, rings: true, regolith: false, albedo: true },
+    // The illustrative fine texture stays on: without it, ground within a few km shows only the
+    // smooth 80 m relief and reads as a featureless wall rather than as terrain.
+    layers: { enhancedLight: true, horizonLine: true, stars: true, skyGrid: true, rings: true, regolith: true, albedo: true },
   },
   clean: {
     label: 'Landscape',

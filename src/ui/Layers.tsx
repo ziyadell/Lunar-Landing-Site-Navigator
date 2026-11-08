@@ -43,6 +43,11 @@ export function LayerToggles() {
     <>
       {group('data', 'Measured')}
       {group('aid', 'Display aids · not measurements')}
+      {mode === 'surface' && !layers.regolith && (
+        <p className="pop__hint">
+          Fine texture off: ground within a few kilometres shows only the 80 m LOLA relief, so it looks smooth and evenly lit.
+        </p>
+      )}
     </>
   );
 }

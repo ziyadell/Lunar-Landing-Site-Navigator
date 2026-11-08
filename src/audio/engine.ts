@@ -87,25 +87,31 @@ const words = (t: string) => t.split(/\s+/).filter(Boolean).length;
 const readMs = (t: string) => Math.max(1500, (words(t) / 2.6) * 1000) / useSettings.getState().rate;
 
 // ------------------------------------------------------------------ recorded clips
-let manifest: Promise<Set<string>> | null = null;
-function recordedIds(): Promise<Set<string>> {
+let manifest: Promise<Set<string> | null> | null = null;
+/**
+ * Ids of the recorded clips, from the manifest; null when the manifest could not be read
+ * (network busy or offline). Fetched once at start-up, before the large Moon imagery starts
+ * downloading, so it is ready when Start Mission plays the welcome.
+ */
+function recordedIds(): Promise<Set<string> | null> {
   manifest ??= (async () => {
     const ctl = new AbortController();
-    const timer = window.setTimeout(() => ctl.abort(), 4000);
+    const timer = window.setTimeout(() => ctl.abort(), 12_000);
     try {
       const r = await fetch(assetUrl('audio/narration/manifest.json'), { cache: 'no-cache', signal: ctl.signal });
-      if (!r.ok) return new Set<string>();
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const m = (await r.json()) as { files?: Record<string, unknown> };
       return new Set(Object.keys(m.files ?? {}));
     } catch {
-      manifest = null; // network trouble: try again next time
-      return new Set<string>();
+      manifest = null; // try again next time
+      return null;
     } finally {
       window.clearTimeout(timer);
     }
   })();
   return manifest;
 }
+if (typeof window !== 'undefined') void recordedIds();
 
 // ------------------------------------------------------------------ server voice (live readings)
 /** Must equal VOICE_VERSION in voice-config.mjs (the endpoint rejects other versions). */
@@ -240,7 +246,10 @@ export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {
   }
   const ids = await recordedIds();
   if (t !== token) return;
-  if (!ids.has(item.id)) return toCaptions(item, t, 'Recorded narration not available · captions', true);
+  // A known list without this clip means there is no recording. An unreadable list (busy
+  // network) is not proof of that: try the recording itself, which falls back to captions
+  // if it does not load.
+  if (ids && !ids.has(item.id)) return toCaptions(item, t, 'Recorded narration not available · captions', true);
   playAudio(item, t, assetUrl(`audio/narration/${item.id}.mp3`), 'recorded');
 }
 
