@@ -11,6 +11,7 @@
     "test:data": "esbuild tests/data-validation.test.ts --bundle --platform=node --format=esm --log-level=error --outfile=node_modules/.cache/data-validation.test.mjs && node node_modules/.cache/data-validation.test.mjs"
   },
   "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.77.0",
     "@fontsource/ibm-plex-mono": "^5.1.0",
     "@fontsource/ibm-plex-sans": "^5.1.0",
     "@fontsource/space-grotesk": "^5.1.0",

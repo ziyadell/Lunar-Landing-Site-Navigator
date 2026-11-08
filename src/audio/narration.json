@@ -1,5 +1,5 @@
 {
-  "voiceNote": "One female narrator with a neutral American accent for every clip: calm, confident, measured. Generated once with scripts/generate-narration.mjs; see docs/NARRATION.md.",
+  "voiceNote": "One narrator for every clip (configuration in voice-config.mjs). Generated with scripts/generate-narration.mjs; captions are this same text.",
   "items": [
     {
       "id": "welcome",
@@ -9,27 +9,27 @@
     {
       "id": "orbit-intro",
       "title": "The Moon and its south pole",
-      "text": "This is the Moon, shown with imagery from NASA's Lunar Reconnaissance Orbiter. Near the south pole the Sun never climbs far above the horizon, so long shadows shape the landscape. Some crater floors here never receive direct sunlight, and they are cold enough to hold water ice. Nearby rims and peaks, by contrast, can stay sunlit for much of the year. NASA has named nine candidate regions for the Artemis Three landing. This app measures, from real terrain data, when each of them can see the Sun and the Earth."
+      "text": "This is the Moon, shown with imagery from NASA's Lunar Reconnaissance Orbiter. Near the south pole the Sun never climbs far above the horizon, so long shadows shape the landscape. Some rims and peaks can stay sunlit for much of the year. NASA has named nine candidate regions for the Artemis Three landing. This app measures, from real terrain data, when each of them can see the Sun and the Earth."
     },
     {
       "id": "region-peak-near-cabeus-b",
       "title": "Peak near Cabeus B",
-      "text": "Peak near Cabeus B is a candidate region on high ground near the crater Cabeus B, about eighty-four degrees south. Its neighbor, the crater Cabeus, is where NASA's LCROSS mission struck the Moon in 2009 and detected water in the material it threw up. At the observation point this app uses inside NASA's outline, the center of the Sun clears the measured skyline for about fifty-eight percent of 2027."
+      "text": "Peak near Cabeus B is a candidate region on high ground near the crater Cabeus B, about eighty-four degrees south. At the observation point this app uses inside NASA's outline, the center of the Sun clears the measured skyline for about fifty-eight percent of 2027."
     },
     {
       "id": "region-haworth",
       "title": "Haworth",
-      "text": "The Haworth region lies on terrain beside Haworth crater, about fifty-one kilometers across, whose floor is permanently shadowed. At roughly thirty kilometers across, its outline is one of the larger ones NASA has drawn. At the observation point this app uses, the center of the Sun clears the measured skyline for about fifty-six percent of 2027."
+      "text": "The Haworth region lies on terrain beside Haworth crater, about fifty-one kilometers across. At roughly thirty kilometers across, its outline is one of the larger ones NASA has drawn. At the observation point this app uses, the center of the Sun clears the measured skyline for about fifty-six percent of 2027."
     },
     {
       "id": "region-malapert-massif",
       "title": "Malapert Massif",
-      "text": "Malapert Massif is part of Mons Malapert, a broad mountain about sixty-seven kilometers across, named after the seventeenth-century astronomer Charles Malapert. It sits on the Earth-facing side of the south pole, so from its high ground the Earth is often above the horizon. At the observation point this app uses, the center of the Sun clears the measured skyline for about sixty-three percent of 2027."
+      "text": "Malapert Massif is part of Mons Malapert, a broad mountain about sixty-seven kilometers across. It sits on the Earth-facing side of the south pole, so from its high ground the Earth is often above the horizon. At the observation point this app uses, the center of the Sun clears the measured skyline for about sixty-three percent of 2027."
     },
     {
       "id": "region-mons-mouton-plateau",
       "title": "Mons Mouton Plateau",
-      "text": "Mons Mouton Plateau is the largest of the nine outlines, roughly seventy-eight by fifty-eight kilometers, across the high and comparatively flat top of Mons Mouton. The mountain is named after Melba Roy Mouton, a NASA mathematician and programmer. At the observation point this app uses, the center of the Sun clears the measured skyline for about fifty-five percent of 2027."
+      "text": "Mons Mouton Plateau is the largest of the nine outlines, roughly seventy-eight by fifty-eight kilometers, across the high and comparatively flat top of Mons Mouton. At the observation point this app uses, the center of the Sun clears the measured skyline for about fifty-five percent of 2027."
     },
     {
       "id": "region-mons-mouton",
@@ -39,7 +39,7 @@
     {
       "id": "region-nobile-rim-1",
       "title": "Nobile Rim 1",
-      "text": "Nobile Rim One lies on the western rim of Nobile, a crater about seventy-nine kilometers across, named after the Italian polar explorer Umberto Nobile. Crater rims near the pole rise into sunlight while the crater floor stays in shadow. At the observation point this app uses, the center of the Sun clears the measured skyline for about sixty-four percent of 2027."
+      "text": "Nobile Rim One lies on the western rim of Nobile, a crater about seventy-nine kilometers across. At the observation point this app uses, the center of the Sun clears the measured skyline for about sixty-four percent of 2027."
     },
     {
       "id": "region-nobile-rim-2",
@@ -49,17 +49,17 @@
     {
       "id": "region-de-gerlache-rim-2",
       "title": "de Gerlache Rim 2",
-      "text": "de Gerlache Rim Two is on the rim of de Gerlache, a crater about thirty-three kilometers across, named after the Belgian polar explorer Adrien de Gerlache. At about eighty-eight degrees south, it is the closest of the nine regions to the pole. At the observation point this app uses, the center of the Sun clears the measured skyline for about fifty-eight percent of 2027."
+      "text": "de Gerlache Rim Two is on the rim of de Gerlache, a crater about thirty-three kilometers across. At about eighty-eight and a half degrees south, it is the closest of the nine regions to the pole. At the observation point this app uses, the center of the Sun clears the measured skyline for about fifty-eight percent of 2027."
     },
     {
       "id": "region-slater-plain",
       "title": "Slater Plain",
-      "text": "Slater Plain is a comparatively smooth area near Slater crater, about twenty-five kilometers across, named after the planetary scientist David Slater. It lies on the side of the pole facing away from the Earth's usual direction, so the Earth is often close to its horizon. At the observation point this app uses, the center of the Sun clears the measured skyline for about sixty-two percent of 2027."
+      "text": "Slater Plain is a comparatively smooth area near Slater crater, about twenty-five kilometers across. It lies on the side of the pole facing away from the Earth's usual direction, so the Earth is often low in the sky or below the horizon. At the observation point this app uses, the center of the Sun clears the measured skyline for about sixty-two percent of 2027."
     },
     {
       "id": "surface-intro",
       "title": "Standing on the surface",
-      "text": "You are standing at the observation point, two meters above the ground. The terrain all the way to the horizon is built from NASA's Lunar Orbiter Laser Altimeter measurements, so the skyline you see is the measured skyline. The Sun and the Earth are drawn at their true directions and sizes. The fine ground texture, the lifted shadows and the soft glow around the Sun and the Earth are display aids, not measurements. You can switch them off in the layers menu."
+      "text": "You are standing at the observation point, two meters above the ground. The terrain all the way to the horizon is built from NASA's Lunar Orbiter Laser Altimeter measurements, so the skyline you see is the measured skyline. The Sun and the Earth are drawn at their true directions and sizes. The fine ground texture, the lifted shadows, and the soft glow around the Sun and the Earth are display aids, not measurements. You can turn the aids off in Display options."
     },
     {
       "id": "analysis-intro",
@@ -69,7 +69,7 @@
     {
       "id": "term-elevation",
       "title": "Elevation",
-      "text": "Elevation is the angle of an object above the local horizontal plane. Zero degrees is level with the eye, and ninety degrees is straight overhead. Near the south pole the Sun's elevation stays within a few degrees of the horizon all year."
+      "text": "Elevation is the angle of an object above the local horizontal plane. Zero degrees is level with the eye, and ninety degrees is straight overhead. At the nine observation points, the Sun stays within about eight degrees of the horizontal all year."
     },
     {
       "id": "term-azimuth",
@@ -99,7 +99,7 @@
     {
       "id": "view-time",
       "title": "Observation time",
-      "text": "Observation time is in Coordinated Universal Time. The arrows step back or forward by an hour or a day. Open the date to choose any moment inside the period covered by the JPL ephemeris. Play moves time forward at one hour, six hours, or one day per second, and every reading updates as it goes."
+      "text": "Observation time is in Coordinated Universal Time. The arrow buttons step the time backward or forward. Open the date to choose any moment inside the period covered by the JPL ephemeris. Play moves time forward at one hour, six hours, or one day per second, and every reading updates as it goes."
     },
     {
       "id": "view-display",
@@ -134,7 +134,7 @@
     {
       "id": "analysis-timeline",
       "title": "Through time",
-      "text": "The timelines show, for each scenario, when the Sun and the Earth are above the measured skyline. Each bar is an uninterrupted interval of visibility. Hover, or use the arrow keys, to read exact values, and click or press Enter to pin a moment and open it in the 3D views."
+      "text": "The timelines show, for each scenario, when the Sun and the Earth are above the measured skyline. Each bar is an uninterrupted interval of visibility. Point at a bar, or use the arrow keys, to read exact values. Select a moment to pin it and open it in the 3D views."
     },
     {
       "id": "analysis-ground",
@@ -149,42 +149,42 @@
     {
       "id": "analysis-method",
       "title": "Method and limits",
-      "text": "The Sun and Earth directions come from NASA JPL Horizons, and they agree with Horizons to better than a hundredth of a degree. The skyline is traced through LOLA terrain data out to one hundred and fifty kilometers. Visible means the center of the disc is above the skyline. Results apply to one observation point, and slopes, hazards, temperatures, and radio links are not modeled."
+      "text": "The Sun and Earth directions come from NASA JPL Horizons. In a check against Horizons over January and February 2027, they agreed to within six thousandths of a degree. The skyline is traced through LOLA terrain data out to one hundred and fifty kilometers. Visible means the center of the disc is above the skyline. Results apply to one observation point, and slopes, hazards, temperatures, and radio links are not modeled."
     },
     {
       "id": "tour-moon",
       "title": "The Moon from orbit",
-      "text": "This is the Moon, as NASA's Lunar Reconnaissance Orbiter has mapped it. Everything in this app is built from NASA measurements: orbital imagery, laser altimetry of the terrain, and JPL ephemerides for the Sun and the Earth.",
+      "text": "This is the Moon, as NASA's Lunar Reconnaissance Orbiter has mapped it. The imagery and the terrain come from NASA measurements, and the positions of the Sun and the Earth come from JPL ephemerides. Some visual effects, such as lifted shadows and glows, are display aids that make the scene easier to read. They are not measurements.",
       "step": 1
     },
     {
       "id": "tour-nav",
       "title": "Moving around",
-      "text": "Drag to turn the globe, and scroll or pinch to zoom. The buttons on the right zoom in and out, return to the selected region, or show the whole Moon. Double-click a point to fly toward it. Press F at any time to hide the controls and focus on the scene.",
+      "text": "Drag to turn the globe, and scroll or pinch to zoom. The camera tools return the view to the selected region or show the whole Moon. On a computer, double-click a point to fly toward it. Focus hides the controls, so you see only the Moon. Use the Focus button, or the More menu on a smaller screen.",
       "step": 2
     },
     {
       "id": "tour-pole",
       "title": "The lunar south pole",
-      "text": "We are now above the lunar south pole. Here the Sun skims the horizon, so high ground can stay sunlit while deep craters stay dark. The outlines mark NASA's nine candidate regions for Artemis Three.",
+      "text": "We are now above the lunar south pole. Here the Sun skims the horizon, so high ground can stay sunlit for much of the year. The outlines mark NASA's nine candidate regions for Artemis Three.",
       "step": 3
     },
     {
       "id": "tour-region",
       "title": "Choosing a region",
-      "text": "This is Malapert Massif, one of the nine regions. You can choose any region from the panel on the left. The dot marks the observation point this app measures from. It is a representative point chosen by a fixed rule inside NASA's outline, not a NASA landing site.",
+      "text": "This is Malapert Massif, one of the nine regions. You can choose any region from Landing Regions. The dot marks the observation point this app measures from. It is a representative point chosen by a fixed rule inside NASA's outline, not a NASA landing site.",
       "step": 4
     },
     {
       "id": "tour-time",
       "title": "Observation time",
-      "text": "The bar at the bottom sets the observation time, in Coordinated Universal Time. Step by an hour or a day, open the date to choose any moment in the covered period, or press play to watch the light change at one hour, six hours, or one day per second.",
+      "text": "The time controls set the observation time, in Coordinated Universal Time. Step backward or forward, open the date to choose any moment in the covered period, or press play to watch the light change at one hour, six hours, or one day per second.",
       "step": 5
     },
     {
       "id": "tour-measure",
       "title": "Sun and Earth measurements",
-      "text": "The panel on the right reports the Sun and the Earth as seen from the observation point. Elevation is the angle above level ground. A body counts as visible only when its center is above the measured terrain skyline, not just above the horizontal. Sunlight matters for power and warmth. A line of sight to Earth is needed for direct communication.",
+      "text": "The Sun and Earth readings show both bodies as seen from the observation point. Elevation is the angle above level ground. A body counts as visible only when its center is above the measured terrain skyline, not just above the horizontal. Sunlight matters for power and warmth. A line of sight to Earth is needed for direct communication.",
       "step": 6
     },
     {
@@ -196,7 +196,7 @@
     {
       "id": "tour-surface-controls",
       "title": "Surface controls and layers",
-      "text": "Drag to look around. The buttons on the right turn you to face the Sun, the Earth, or north, and change the field of view. The strip at the bottom shows the whole horizon at once. Display options switch aids such as labels, the skyline line, and enhanced lighting on or off.",
+      "text": "Drag to look around. The look tools turn you to face the Sun, the Earth, or north. The skyline strip shows the whole horizon at once. Display options turn display aids on or off, such as lifted shadows, the fine ground texture, the grid, and range rings. The presets set common combinations.",
       "step": 8
     },
     {
