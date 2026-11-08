@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useMedia } from '../utils/useMedia';
 import { create } from 'zustand';
 import { useSettings } from '../state/settings';
 import { useApp } from '../state/store';
@@ -59,7 +60,184 @@ export function Listen({ id, item, className = '' }: { id?: string; item?: Narra
 const RATES = [1, 1.25, 1.5] as const;
 
 /** Player view: full card, or hidden to a slim bar while the narration keeps playing. */
-export const useGuideView = create<{ minimized: boolean; set: (m: boolean) => void }>((set) => ({ minimized: false, set: (minimized) => set({ minimized }) }));
+export const useGuideView = create<{
+  minimized: boolean;
+  set: (m: boolean) => void;
+  /** Where the visitor moved the player, as an offset from its home corner (this visit). */
+  offset: { x: number; y: number };
+  setOffset: (o: { x: number; y: number }) => void;
+}>((set) => ({ minimized: false, set: (minimized) => set({ minimized }), offset: { x: 0, y: 0 }, setOffset: (offset) => set({ offset }) }));
+
+/* ------------------------------------------------ region narration, once per visit
+   Choosing a region plays its narration (with captions) the first time in a visit. After
+   that, or once it has been heard any other way (listen button, regions tour), it plays only
+   from the headphone button. Rapid browsing does not count: a region must stay selected for
+   a moment before its narration starts. */
+const HEARD_KEY = 'lsn.heardRegions';
+const heardRegions = new Set<string>(
+  (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem(HEARD_KEY) ?? '[]') as string[];
+    } catch {
+      return [];
+    }
+  })(),
+);
+function markHeard(id: string) {
+  if (heardRegions.has(id)) return;
+  heardRegions.add(id);
+  try {
+    sessionStorage.setItem(HEARD_KEY, JSON.stringify([...heardRegions]));
+  } catch {
+    /* storage unavailable: remembered until the page is reloaded */
+  }
+}
+usePlayer.subscribe((p, prev) => {
+  if (p.item && p.item !== prev.item && p.item.id.startsWith('region-')) markHeard(p.item.id);
+});
+const SETTLE_MS = 700;
+function useRegionAutoNarration() {
+  useEffect(() => {
+    let timer = 0;
+    const unsub = useApp.subscribe((s, prev) => {
+      if (s.regionId === prev.regionId) return;
+      window.clearTimeout(timer);
+      const id = `region-${s.regionId}`;
+      timer = window.setTimeout(() => {
+        const a = useApp.getState();
+        const st = useSettings.getState();
+        if (a.regionId !== s.regionId || a.mode === 'analysis' || a.intro) return;
+        if (!st.welcomeSeen || !st.audioGuide || useTour.getState().step >= 0) return;
+        if (heardRegions.has(id)) return;
+        const it = narrationItem(id);
+        if (it) void play(it);
+      }, SETTLE_MS);
+    });
+    return () => {
+      unsub();
+      window.clearTimeout(timer);
+    };
+  }, []);
+}
+
+const EDGE = 8; // keep the player this far inside the window
+type GripProps = { onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void; onDoubleClick: () => void };
+
+/**
+ * Lets the visitor move the floating player: drag its header or grip (mouse, pen or
+ * touch), or focus the grip and use the arrow keys (Shift for larger steps); Home or a
+ * double-click on the grip returns it to its corner. It never leaves the window, and is
+ * kept inside after resizes or when the player changes size.
+ */
+function usePlayerDrag(host: React.RefObject<HTMLElement | null>, enabled: boolean) {
+  const offset = useGuideView((s) => s.offset);
+  const setOffset = useGuideView((s) => s.setOffset);
+  const [dragging, setDragging] = useState(false);
+  const start = useRef<{ px: number; py: number; ox: number; oy: number; id: number } | null>(null);
+
+  /** Limit an offset so the whole player stays on screen. */
+  const clamp = useCallback(
+    (x: number, y: number) => {
+      const el = host.current;
+      if (!el) return { x, y };
+      const cur = useGuideView.getState().offset;
+      const b = el.getBoundingClientRect();
+      // Position of the player with no offset applied.
+      const left = b.left - cur.x;
+      const top = b.top - cur.y;
+      const minX = EDGE - left;
+      const maxX = window.innerWidth - EDGE - (left + b.width);
+      const minY = EDGE - top;
+      const maxY = window.innerHeight - EDGE - (top + b.height);
+      return {
+        x: Math.round(Math.min(Math.max(x, minX), Math.max(minX, maxX))),
+        y: Math.round(Math.min(Math.max(y, minY), Math.max(minY, maxY))),
+      };
+    },
+    [host],
+  );
+
+  // Stay inside the window when it is resized or the player grows (captions, tour buttons).
+  useEffect(() => {
+    if (!enabled) return;
+    const el = host.current;
+    const fit = () => {
+      const o = useGuideView.getState().offset;
+      if (!o.x && !o.y) return;
+      const c = clamp(o.x, o.y);
+      if (c.x !== o.x || c.y !== o.y) setOffset(c);
+    };
+    const ro = typeof ResizeObserver !== 'undefined' && el ? new ResizeObserver(fit) : null;
+    if (ro && el) ro.observe(el);
+    window.addEventListener('resize', fit);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', fit);
+    };
+  }, [enabled, host, clamp, setOffset]);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    if (!enabled || e.button !== 0) return;
+    const t = e.target as Element;
+    // Buttons in the header keep working; only the grip and the empty header start a drag.
+    if (t.closest('button') && !t.closest('.aplayer__grip')) return;
+    const o = useGuideView.getState().offset;
+    start.current = { px: e.clientX, py: e.clientY, ox: o.x, oy: o.y, id: e.pointerId };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture unavailable: the drag still follows moves over the header */
+    }
+    setDragging(true);
+    e.preventDefault();
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    const s0 = start.current;
+    if (!s0 || s0.id !== e.pointerId) return;
+    setOffset(clamp(s0.ox + e.clientX - s0.px, s0.oy + e.clientY - s0.py));
+  };
+  const end = (e: React.PointerEvent<HTMLElement>) => {
+    if (!start.current || start.current.id !== e.pointerId) return;
+    start.current = null;
+    setDragging(false);
+  };
+  const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    const k = e.shiftKey ? 48 : 16;
+    const o = useGuideView.getState().offset;
+    if (e.key === 'ArrowLeft') setOffset(clamp(o.x - k, o.y));
+    else if (e.key === 'ArrowRight') setOffset(clamp(o.x + k, o.y));
+    else if (e.key === 'ArrowUp') setOffset(clamp(o.x, o.y - k));
+    else if (e.key === 'ArrowDown') setOffset(clamp(o.x, o.y + k));
+    else if (e.key === 'Home') setOffset({ x: 0, y: 0 });
+    else return;
+    e.preventDefault();
+  };
+  const grip: GripProps | null = enabled ? { onKeyDown, onDoubleClick: () => setOffset({ x: 0, y: 0 }) } : null;
+  const moved = !!(offset.x || offset.y);
+  return {
+    style: enabled && moved ? { translate: `${offset.x}px ${offset.y}px` } : undefined,
+    dragging,
+    moved,
+    handle: enabled ? { onPointerDown, onPointerMove, onPointerUp: end, onPointerCancel: end } : {},
+    grip,
+  };
+}
+
+/** The grip at the top of the movable player. */
+function Grip({ grip, moved }: { grip: GripProps | null; moved: boolean }) {
+  if (!grip) return null;
+  return (
+    <button
+      type="button"
+      className="aplayer__grip"
+      aria-label={`Move the player. Arrow keys move it${moved ? '; Home returns it to its corner' : ''}.`}
+      title={moved ? 'Drag to move · double-click to return' : 'Drag to move'}
+      {...grip}
+    >
+      <span aria-hidden="true" />
+    </button>
+  );
+}
 const VIEW_ITEM = { orbital: 'orbit-intro', surface: 'surface-intro', analysis: 'analysis-intro' } as const;
 const SOURCE_LABEL = { recorded: 'Recorded narrator', server: 'Narrator voice', captions: 'Captions' } as const;
 
@@ -180,6 +358,9 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
   const setMin = useGuideView((s) => s.set);
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
+  const host = useRef<HTMLElement>(null);
+  const wide = useMedia('(min-width: 760px)');
+  useRegionAutoNarration();
   const close = useRef((restore: boolean) => {
     setOpen(false);
     if (restore) btn.current?.focus();
@@ -198,9 +379,11 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
     [],
   );
 
-  if (intro || (mode === 'orbital' && !welcomeSeen)) return null;
   const inTour = tour.step >= 0;
   const active = !!(item || inTour);
+  // Movable wherever the player floats over the page (not on phones, where it sits in the HUD column).
+  const drag = usePlayerDrag(host, wide && active && (placement === 'float' || inTour));
+  if (intro || (mode === 'orbital' && !welcomeSeen)) return null;
   const exit = () => {
     setMin(false); // the next narration opens in full
     if (inTour) exitTour();
@@ -212,9 +395,16 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
   const isPlaying = inTour ? !tour.paused && (playing || tour.waiting) : playing;
 
   return (
-    <section className={`guide guide--${placement}${inTour ? ' is-tour' : ''}${active ? ' is-active' : ''}${active && minimized ? ' is-min' : ''}`} aria-label="Mission guide" data-obstacle>
+    <section
+      ref={host}
+      className={`guide guide--${placement}${inTour ? ' is-tour' : ''}${active ? ' is-active' : ''}${active && minimized ? ' is-min' : ''}${drag.grip ? ' is-movable' : ''}${drag.dragging ? ' is-dragging' : ''}`}
+      style={drag.style}
+      aria-label="Mission guide"
+      data-obstacle
+    >
       {active && minimized && (
-        <div className="aplayer-mini" role="group" aria-label="Narration (hidden player)">
+        <div className="aplayer-mini" role="group" aria-label="Narration (hidden player)" {...drag.handle}>
+          <Grip grip={drag.grip} moved={drag.moved} />
           <button type="button" className="aplayer__btn aplayer__btn--main" aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'} onClick={playPause}>
             {isPlaying ? I.pause : I.play}
           </button>
@@ -237,7 +427,8 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
       )}
       {active && !minimized && (
         <div className="aplayer">
-          <div className="aplayer__head">
+          <Grip grip={drag.grip} moved={drag.moved} />
+          <div className="aplayer__head" {...drag.handle}>
             <span className="aplayer__icon" aria-hidden="true">
               <Headphones />
             </span>

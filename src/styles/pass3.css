@@ -606,3 +606,74 @@
   height: auto;
   cursor: inherit;
 }
+
+/* ---------------------------------------------- movable narration player
+   Grip at the top of the card (a sheet-style handle); the header also drags. Wide screens only. */
+.guide.is-movable .aplayer {
+  position: relative;
+  padding-top: 18px;
+}
+.guide.is-movable .aplayer__head,
+.guide.is-movable .aplayer-mini {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.guide.is-dragging,
+.guide.is-dragging * {
+  cursor: grabbing !important;
+}
+.guide.is-dragging .aplayer,
+.guide.is-dragging .aplayer-mini {
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(77, 220, 244, 0.35);
+}
+.aplayer__grip {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: grab;
+  touch-action: none;
+}
+.aplayer__grip span {
+  display: block;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.55;
+  transition: opacity var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+.aplayer__grip:hover span,
+.guide.is-dragging .aplayer__grip span {
+  opacity: 1;
+  background: var(--accent);
+}
+.aplayer__grip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 6px;
+}
+/* Full player: a short bar centred on the top edge. */
+.aplayer > .aplayer__grip {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 56px;
+  height: 14px;
+  translate: -50% 0;
+}
+.aplayer > .aplayer__grip span {
+  width: 36px;
+  height: 4px;
+}
+/* Hidden (mini) player: a slim vertical handle at its leading edge. */
+.aplayer-mini > .aplayer__grip {
+  flex: none;
+  width: 14px;
+  height: 28px;
+}
+.aplayer-mini > .aplayer__grip span {
+  width: 4px;
+  height: 16px;
+}
