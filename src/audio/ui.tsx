@@ -4,7 +4,7 @@ import { useSettings } from '../state/settings';
 import { useApp } from '../state/store';
 import { narrationItem, narrationItems, pause, play, playCue, replay, resume, retryVoice, setMuted, setRate, stop, unlockAudio, usePlayer, type NarrationItem } from './engine';
 import { useReadiness } from '../state/loading';
-import { exitTour, nextStep, prevStep, replayStep, startTour, toggleTourPause, TOUR_LENGTH, useTour } from './tour';
+import { exitTour, nextStep, prevStep, REGIONS_TOUR_LENGTH, replayStep, startTour, toggleTourPause, TOUR_LENGTH, useTour } from './tour';
 
 const Headphones = ({ size = 14 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
@@ -66,7 +66,7 @@ const SOURCE_LABEL = { recorded: 'Recorded narrator', server: 'Narrator voice', 
 function topicGroups() {
   const all = narrationItems();
   return [
-    { name: 'Views', items: ['orbit-intro', 'surface-intro', 'view-time', 'view-display', 'view-measurements', 'view-atlas', 'view-sources'].map((id) => narrationItem(id)!).filter(Boolean) },
+    { name: 'Views', items: ['orbit-intro', 'surface-intro', 'view-regions', 'view-locator', 'view-camera', 'view-look', 'view-compass', 'view-skyline', 'view-time', 'view-display', 'view-measurements', 'view-atlas', 'view-sources', 'view-settings'].map((id) => narrationItem(id)!).filter(Boolean) },
     { name: 'Mission Analysis', items: all.filter((i) => i.id.startsWith('analysis-')) },
     { name: 'Regions', items: all.filter((i) => i.id.startsWith('region-')) },
     { name: 'Terms', items: all.filter((i) => i.id.startsWith('term-')) },
@@ -126,6 +126,17 @@ function GuideMenu({ onClose, anchor }: { onClose: (restore: boolean) => void; a
       >
         <span className="guide__item-t">Full tour</span>
         <span className="guide__item-s">{TOUR_LENGTH} steps, about five minutes</span>
+      </button>
+      <button
+        type="button"
+        className="guide__item"
+        onClick={() => {
+          onClose(true);
+          startTour('regions');
+        }}
+      >
+        <span className="guide__item-t">Regions tour</span>
+        <span className="guide__item-s">All {REGIONS_TOUR_LENGTH - 1} landing regions, about four minutes</span>
       </button>
       <button type="button" className="guide__item guide__item--browse" aria-expanded={browse} onClick={() => setBrowse((b) => !b)}>
         <span className="guide__item-t">Browse topics</span>
@@ -195,7 +206,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
     if (inTour) exitTour();
     else stop();
   };
-  const title = inTour ? narrationItem(STEP_IDS[tour.step])?.title : item?.title;
+  const title = inTour ? narrationItem(tour.ids[tour.step])?.title : item?.title;
   const status = loading || tour.waiting ? (tour.waiting ? 'Preparing the view…' : 'Loading…') : item?.calculated ? `Calculated now · ${SOURCE_LABEL[source]}` : SOURCE_LABEL[source];
   const playPause = () => (inTour ? toggleTourPause() : playing ? pause() : resume());
   const isPlaying = inTour ? !tour.paused && (playing || tour.waiting) : playing;
@@ -209,7 +220,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
           </button>
           <button type="button" className="aplayer-mini__title" onClick={() => setMin(false)} aria-label={`Show player: ${title ?? 'narration'}`}>
             <span className="aplayer-mini__name">
-              {inTour && <span className="num">{tour.step + 1}/{TOUR_LENGTH} · </span>}
+              {inTour && <span className="num">{tour.step + 1}/{tour.length} · </span>}
               {title}
             </span>
             <span className="aplayer-mini__bar" aria-hidden="true">
@@ -232,8 +243,8 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
             </span>
             <div className="aplayer__titles">
               <span className="aplayer__title">
-                {inTour && <span className="aplayer__step num">{tour.step + 1}/{TOUR_LENGTH} · </span>}
-                {inTour ? narrationItem(STEP_IDS[tour.step])?.title : item?.title}
+                {inTour && <span className="aplayer__step num">{tour.step + 1}/{tour.length} · </span>}
+                {inTour ? narrationItem(tour.ids[tour.step])?.title : item?.title}
               </span>
               <span className="aplayer__src" aria-live="polite">
                 {status}
@@ -279,7 +290,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
                   Back
                 </button>
                 <button type="button" className="aplayer__next aplayer__next--primary" onClick={nextStep}>
-                  {tour.step + 1 < TOUR_LENGTH ? 'Next' : 'Finish'}
+                  {tour.step + 1 < tour.length ? 'Next' : 'Finish'}
                 </button>
               </span>
             )}
@@ -297,9 +308,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
     </section>
   );
 }
-const STEP_IDS = narrationItems()
-  .filter((i) => i.id.startsWith('tour-'))
-  .map((i) => i.id);
+
 
 
 /**

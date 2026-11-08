@@ -506,3 +506,24 @@
     justify-content: center;
   }
 }
+
+/* Listen buttons on the region map and the heading readout */
+.locator {
+  position: relative;
+}
+.locator .listen--locator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  background: rgba(5, 8, 15, 0.75);
+}
+.heading .listen {
+  margin-left: 6px;
+  vertical-align: middle;
+  pointer-events: auto;
+}
+.pano-strip__right .listen {
+  width: 24px;
+  height: 24px;
+}

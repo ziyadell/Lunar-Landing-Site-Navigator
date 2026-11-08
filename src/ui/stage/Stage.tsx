@@ -14,7 +14,7 @@ import { Listen } from '../../audio/ui';
 import { FoldButton, FoldedTools } from '../Fold';
 import { useSettings } from '../../state/settings';
 
-const DRAWER_ITEM = { atlas: 'view-atlas', details: 'view-measurements', about: 'view-sources', settings: null } as const;
+const DRAWER_ITEM = { atlas: 'view-atlas', details: 'view-measurements', about: 'view-sources', settings: 'view-settings' } as const;
 
 /* ------------------------------------------------------------------ drawers */
 
@@ -231,7 +231,7 @@ export function HeadingReadout() {
   const { yaw, pitch } = useLook();
   return (
     <div className="heading num" aria-live="off">
-      Heading {yaw.toFixed(0).padStart(3, '0')}° · looking {fmtDeg(pitch, 0)}
+      Heading {yaw.toFixed(0).padStart(3, '0')}° · looking {fmtDeg(pitch, 0)} <Listen id="view-compass" />
     </div>
   );
 }

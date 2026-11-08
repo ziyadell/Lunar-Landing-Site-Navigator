@@ -67,6 +67,7 @@ export function Locator() {
   const T = (y: number) => ((y1 - y) / (y1 - y0)) * 100;
   return (
     <div className="locator" role="group" aria-label="NASA candidate regions on the south-polar map">
+      <Listen id="view-locator" className="listen--locator" />
       <img className="locator__img" src={assetUrl(loc.file)} alt="" />
       <span className="locator__pole" style={{ left: `${L(0)}%`, top: `${T(0)}%` }} aria-hidden="true">
         <i />

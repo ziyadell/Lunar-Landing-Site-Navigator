@@ -4,6 +4,7 @@ import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
 import { fmtLat, fmtLon } from '../../utils/format';
 import { useAllConditions } from './Regions';
+import { Listen } from '../../audio/ui';
 
 /**
  * "Landing Regions": the one control for browsing every candidate region. The first
@@ -134,6 +135,7 @@ export function RegionPicker() {
             <div className={`rpick__panel sheet${pos.up ? ' is-up' : ''}`} style={{ left: pos.left, top: pos.top, maxHeight: pos.maxH }} role="dialog" aria-label="Landing Regions">
               <div className="sheet__head">
                 <span className="sheet__title">Landing Regions</span>
+                <Listen id="view-regions" />
                 <span className="rpick__sub">NASA Artemis III candidates · {regions.length}</span>
                 <button type="button" className="sheet__close" aria-label="Close landing regions" onClick={() => close(true)}>
                   <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>

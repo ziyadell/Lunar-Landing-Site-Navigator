@@ -209,6 +209,46 @@
    "hash": "f33c5fc1ab7af9c6",
    "bytes": 364503,
    "chars": 311
+  },
+  "view-regions": {
+   "hash": "ae71702959521604",
+   "bytes": 323543,
+   "chars": 321
+  },
+  "view-locator": {
+   "hash": "5a4bb38cbc3b6700",
+   "bytes": 218635,
+   "chars": 215
+  },
+  "view-skyline": {
+   "hash": "f96c2ea938af3e92",
+   "bytes": 328558,
+   "chars": 331
+  },
+  "view-compass": {
+   "hash": "54440dc7fe0e908c",
+   "bytes": 212366,
+   "chars": 221
+  },
+  "view-camera": {
+   "hash": "713cf2e99f3a898a",
+   "bytes": 241623,
+   "chars": 221
+  },
+  "view-look": {
+   "hash": "e70847acb7883a2f",
+   "bytes": 281329,
+   "chars": 257
+  },
+  "view-settings": {
+   "hash": "747fd58e52dddbac",
+   "bytes": 229084,
+   "chars": 224
+  },
+  "tour-regions-intro": {
+   "hash": "7b765549d598f86c",
+   "bytes": 199409,
+   "chars": 182
   }
  },
  "voice": {
@@ -222,5 +262,5 @@
   }
  },
  "version": "afuq-2",
- "updatedUtc": "2026-11-08T00:36:56.818Z"
+ "updatedUtc": "2026-11-08T00:52:32.861Z"
 }

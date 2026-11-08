@@ -75,7 +75,7 @@ export function SettingsPanel() {
 
       <section className="settings__group">
         <h3 className="settings__h">Guided exploration</h3>
-        <p className="settings__note">A twelve-step narrated tour, from the Moon in orbit to the data sources and limits. Pause, skip ahead or exit at any time.</p>
+        <p className="settings__note">The full tour has twelve narrated steps, from the Moon in orbit to the data sources and limits. The regions tour visits all nine landing regions. Pause, skip ahead or exit at any time.</p>
         <div className="settings__actions">
           <button
             type="button"
@@ -86,6 +86,16 @@ export function SettingsPanel() {
             }}
           >
             Start the tour
+          </button>
+          <button
+            type="button"
+            className="text-btn"
+            onClick={() => {
+              close(null);
+              startTour('regions');
+            }}
+          >
+            Regions tour
           </button>
           <button
             type="button"
