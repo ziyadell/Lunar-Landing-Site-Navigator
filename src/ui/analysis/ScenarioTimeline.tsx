@@ -109,8 +109,14 @@ export function ScenarioTimeline({ res }: { res: ScenarioResult }) {
             onKeyDown={(e) => {
               const cur = active ?? 0;
               const k = e.shiftKey ? Math.round(86_400_000 / step) : 1;
+              const day = Math.round(86_400_000 / step);
               if (e.key === 'ArrowRight') setPinned(Math.min(series.length - 1, cur + k));
               else if (e.key === 'ArrowLeft') setPinned(Math.max(0, cur - k));
+              else if (e.key === 'PageUp') setPinned(Math.min(series.length - 1, cur + day));
+              else if (e.key === 'PageDown') setPinned(Math.max(0, cur - day));
+              else if (e.key === 'Home') setPinned(0);
+              else if (e.key === 'End') setPinned(series.length - 1);
+              else if (e.key === 'Enter' || e.key === ' ') setPinned(active ?? 0);
               else if (e.key === 'Escape') setPinned(null);
               else return;
               e.preventDefault();

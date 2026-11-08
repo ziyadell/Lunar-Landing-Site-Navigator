@@ -53,7 +53,7 @@ export function DataSources({ open = false }: { open?: boolean }) {
         )}
       </dl>
       <p className="fineprint">Earth visibility is a geometric line of sight only, not a guaranteed communication link.</p>
-      <p className="fineprint">Space Apps 2026 project using NASA data. Not an official NASA product or endorsed by NASA.</p>
+      <p className="fineprint">LunaNav, the Lunar Landing Site Navigator, by Team AFUQ. A Space Apps 2026 project using NASA data; not an official NASA product or endorsed by NASA.</p>
     </details>
   );
 }

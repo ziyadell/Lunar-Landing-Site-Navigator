@@ -23,7 +23,7 @@ function UpdateNotice() {
   if (!on) return null;
   return (
     <div className="update-notice" role="alert">
-      Lunar Navigator has been updated.
+      LunaNav has been updated.
       <button type="button" className="vp-note__btn" onClick={() => window.location.reload()}>
         Reload
       </button>
@@ -46,7 +46,7 @@ const PROBLEM: Record<DataProblem, { title: string; text: string; action: string
     action: 'Try again',
   },
   updated: {
-    title: 'Lunar Navigator has been updated.',
+    title: 'LunaNav has been updated.',
     text: 'Reload to continue with the latest version.',
     action: 'Reload',
   },
@@ -60,7 +60,7 @@ function Boot({ state }: { state: BootState }) {
         <path d="M11 3.5a7.5 7.5 0 0 0 0 15 9 9 0 0 1 0-15z" fill="#05080F" opacity="0.55" />
         <circle cx="11" cy="11" r="10.25" fill="none" stroke="#4DDCF4" strokeWidth="1" strokeDasharray="2 2.6" />
       </svg>
-      <div className="boot__title">Lunar Landing Site Navigator</div>
+      <div className="boot__title">LunaNav · Lunar Landing Site Navigator</div>
       {state.status === 'loading' ? (
         <div className="boot__line">Loading JPL ephemeris and LOLA terrain…</div>
       ) : (

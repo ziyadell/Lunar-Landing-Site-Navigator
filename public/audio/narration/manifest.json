@@ -1,9 +1,9 @@
 {
  "files": {
   "welcome": {
-   "hash": "579252d72962107a",
-   "bytes": 150926,
-   "chars": 119
+   "hash": "f4bed9b6e2e305d9",
+   "bytes": 144238,
+   "chars": 111
   },
   "orbit-intro": {
    "hash": "e407160935bc5942",
@@ -262,5 +262,5 @@
   }
  },
  "version": "afuq-2",
- "updatedUtc": "2026-11-08T00:52:32.861Z"
+ "updatedUtc": "2026-11-08T15:55:56.762Z"
 }

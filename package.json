@@ -1,5 +1,5 @@
 {
-  "name": "lunar-landing-site-navigator",
+  "name": "lunanav",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "test:data": "esbuild tests/data-validation.test.ts --bundle --platform=node --format=esm --log-level=error --outfile=node_modules/.cache/data-validation.test.mjs && node node_modules/.cache/data-validation.test.mjs"
+    "test:data": "esbuild tests/data-validation.test.ts --bundle --platform=node --format=esm --log-level=error --outfile=node_modules/.cache/data-validation.test.mjs && node node_modules/.cache/data-validation.test.mjs",
+    "test:science": "esbuild tests/science.test.ts --bundle --platform=node --format=esm --log-level=error --outfile=node_modules/.cache/science.test.mjs && node node_modules/.cache/science.test.mjs",
+    "test": "npm run test:data && npm run test:science"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.77.0",
@@ -28,5 +30,6 @@
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "~5.7.2",
     "vite": "^6.0.7"
-  }
+  },
+  "description": "LunaNav \u2014 Lunar Landing Site Navigator, by Team AFUQ"
 }
