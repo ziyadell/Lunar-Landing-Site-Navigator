@@ -301,21 +301,18 @@ const STEP_IDS = narrationItems()
   .filter((i) => i.id.startsWith('tour-'))
   .map((i) => i.id);
 
-const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * Enter mission: an optional, user-started opening. Nothing plays before a click; the Moon
  * renders underneath from the start. A short, quiet chime fades out fully, then the welcome
  * narration plays with captions. Skip, any interaction, or a hard time limit ends it.
  */
-// Captured before the app rewrites the URL: was a region deep-linked (?site=...)?
-const DEEP_SITE = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('site');
 
 /**
  * Start Mission. One tap (repeat taps ignored): immediate feedback, audio unlocked inside the
  * gesture, the entry cue; then, once the Moon is genuinely ready (full-resolution maps
  * loaded, or failed with the usable fallback in place; at most 12 s), the interface fades in
- * once and the camera eases to the deep-linked region or the south pole. The welcome line
+ * once with the whole Moon in view (no automatic zoom). The welcome line
  * follows the cue (recording, or captions when no recording exists).
  */
 export function Welcome() {
@@ -351,11 +348,10 @@ export function Welcome() {
       useApp.setState({ intro: false, reveal: true });
       setS({ welcomeSeen: true });
       timers.current.push(window.setTimeout(() => useApp.setState({ reveal: false }), 900));
-      const a = useApp.getState();
-      if (!reducedMotion()) {
-        if (DEEP_SITE) a.focusRegion();
-        else a.poleCamera();
-      }
+      // Frame the whole Moon (the standard "Whole Moon" view); zooming in to a region is the
+      // user's choice, never automatic. Issued once the layout has settled: on phones the
+      // scene changes from full screen to its own box here, and the framing depends on its shape.
+      timers.current.push(window.setTimeout(() => useApp.getState().resetCamera(), 350));
       timers.current.push(window.setTimeout(() => void play(narrationItem('welcome')!), 150));
     };
     const check = () => {
