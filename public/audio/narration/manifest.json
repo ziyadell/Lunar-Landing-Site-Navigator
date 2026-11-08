@@ -4,6 +4,211 @@
    "hash": "579252d72962107a",
    "bytes": 150926,
    "chars": 119
+  },
+  "orbit-intro": {
+   "hash": "e407160935bc5942",
+   "bytes": 437646,
+   "chars": 398
+  },
+  "region-peak-near-cabeus-b": {
+   "hash": "b95e57e730216c70",
+   "bytes": 286345,
+   "chars": 265
+  },
+  "region-haworth": {
+   "hash": "cd85060b804a5542",
+   "bytes": 330230,
+   "chars": 310
+  },
+  "region-malapert-massif": {
+   "hash": "8ed04c0b3d66ff24",
+   "bytes": 364503,
+   "chars": 338
+  },
+  "region-mons-mouton-plateau": {
+   "hash": "dc3ddd2bce8751e7",
+   "bytes": 306825,
+   "chars": 292
+  },
+  "region-mons-mouton": {
+   "hash": "714127ebef616432",
+   "bytes": 367011,
+   "chars": 352
+  },
+  "region-nobile-rim-1": {
+   "hash": "1f559c55da2bda0d",
+   "bytes": 263357,
+   "chars": 224
+  },
+  "region-nobile-rim-2": {
+   "hash": "656dc9b4f6701868",
+   "bytes": 295540,
+   "chars": 271
+  },
+  "region-de-gerlache-rim-2": {
+   "hash": "63bb6d4a547f260e",
+   "bytes": 340261,
+   "chars": 324
+  },
+  "region-slater-plain": {
+   "hash": "8e68a7792bd184bc",
+   "bytes": 386237,
+   "chars": 364
+  },
+  "surface-intro": {
+   "hash": "e0af73a5a1a9d56b",
+   "bytes": 465649,
+   "chars": 465
+  },
+  "analysis-intro": {
+   "hash": "d896a61d598fee08",
+   "bytes": 574318,
+   "chars": 538
+  },
+  "term-elevation": {
+   "hash": "50271cf0553f4b83",
+   "bytes": 259595,
+   "chars": 247
+  },
+  "term-azimuth": {
+   "hash": "64693d03ad14ac3b",
+   "bytes": 224905,
+   "chars": 220
+  },
+  "term-skyline": {
+   "hash": "ab2111329b6dfcd3",
+   "bytes": 286345,
+   "chars": 280
+  },
+  "term-clearance": {
+   "hash": "57e2e24318de1c8d",
+   "bytes": 201917,
+   "chars": 192
+  },
+  "term-coordinates": {
+   "hash": "754d15428450d72f",
+   "bytes": 257087,
+   "chars": 252
+  },
+  "term-intervals": {
+   "hash": "5931d87dbb91f096",
+   "bytes": 224905,
+   "chars": 212
+  },
+  "view-time": {
+   "hash": "e2dfc2b373f0fd9d",
+   "bytes": 328558,
+   "chars": 295
+  },
+  "view-display": {
+   "hash": "bdd3db3dabcdc924",
+   "bytes": 445169,
+   "chars": 382
+  },
+  "view-measurements": {
+   "hash": "9efdd3df621020fa",
+   "bytes": 336500,
+   "chars": 342
+  },
+  "view-sources": {
+   "hash": "f91755799b5a9d28",
+   "bytes": 361995,
+   "chars": 311
+  },
+  "view-atlas": {
+   "hash": "587e5dc2904a6306",
+   "bytes": 172660,
+   "chars": 178
+  },
+  "analysis-scenarios": {
+   "hash": "55790f9672394773",
+   "bytes": 331484,
+   "chars": 316
+  },
+  "analysis-glance": {
+   "hash": "4c7ce0a7ab8052bf",
+   "bytes": 384983,
+   "chars": 362
+  },
+  "analysis-timeline": {
+   "hash": "e9ec4e7ad7b22ade",
+   "bytes": 294286,
+   "chars": 266
+  },
+  "analysis-ground": {
+   "hash": "2e6e44233371da81",
+   "bytes": 282583,
+   "chars": 269
+  },
+  "analysis-metrics": {
+   "hash": "5010168f3f5a6210",
+   "bytes": 301809,
+   "chars": 287
+  },
+  "analysis-method": {
+   "hash": "e6c53cc46e717218",
+   "bytes": 466903,
+   "chars": 424
+  },
+  "tour-moon": {
+   "hash": "8a72b66e37a17f0e",
+   "bytes": 346531,
+   "chars": 333
+  },
+  "tour-nav": {
+   "hash": "99d2fd14e92a3c23",
+   "bytes": 323543,
+   "chars": 298
+  },
+  "tour-pole": {
+   "hash": "78c22683a670979b",
+   "bytes": 207350,
+   "chars": 190
+  },
+  "tour-region": {
+   "hash": "db48fb5f31e73ba1",
+   "bytes": 272552,
+   "chars": 257
+  },
+  "tour-time": {
+   "hash": "6bca75dca47f4f05",
+   "bytes": 265865,
+   "chars": 245
+  },
+  "tour-measure": {
+   "hash": "8998a1aa28fe84bd",
+   "bytes": 355726,
+   "chars": 338
+  },
+  "tour-surface": {
+   "hash": "3019ced569267061",
+   "bytes": 257087,
+   "chars": 250
+  },
+  "tour-surface-controls": {
+   "hash": "c9eb0a3b696faa81",
+   "bytes": 345277,
+   "chars": 291
+  },
+  "tour-analysis": {
+   "hash": "85459968191daa02",
+   "bytes": 248310,
+   "chars": 229
+  },
+  "tour-compare": {
+   "hash": "4191c76104bbdba5",
+   "bytes": 299301,
+   "chars": 283
+  },
+  "tour-csv": {
+   "hash": "057790ce9691ec33",
+   "bytes": 245385,
+   "chars": 230
+  },
+  "tour-sources": {
+   "hash": "f33c5fc1ab7af9c6",
+   "bytes": 364503,
+   "chars": 311
   }
  },
  "voice": {
@@ -17,5 +222,5 @@
   }
  },
  "version": "afuq-2",
- "updatedUtc": "2026-11-08T00:26:04.110Z"
+ "updatedUtc": "2026-11-08T00:36:56.818Z"
 }
