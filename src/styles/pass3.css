@@ -677,3 +677,8 @@
   width: 4px;
   height: 16px;
 }
+
+/* Interpretation limits: same heading as "What this means", separated by the existing spacing */
+.glance-notes .glance-notes__limits {
+  margin-top: 14px;
+}
