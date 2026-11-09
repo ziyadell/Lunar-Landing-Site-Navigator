@@ -463,6 +463,13 @@ export default function AnalysisView() {
           <aside className="glance-notes">
             <h4>What this means</h4>
             <Observations a={a} b={b} />
+            <h4 className="glance-notes__limits">
+              Interpretation limits <Listen id="analysis-limits" />
+            </h4>
+            <p className="metrics__note">
+              Results describe Sun and Earth visibility at one observation point per region. They do not assess overall landing
+              safety. Earth visibility indicates geometric line of sight, not guaranteed communications.
+            </p>
           </aside>
         </div>
       </section>

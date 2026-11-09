@@ -152,6 +152,11 @@
       "text": "The Sun and Earth directions come from NASA JPL Horizons. In a check against Horizons over January and February 2027, they agreed to within six thousandths of a degree. The skyline is traced through LOLA terrain data out to one hundred and fifty kilometers. Visible means the center of the disc is above the skyline. Results apply to one observation point, and slopes, hazards, temperatures, and radio links are not modeled."
     },
     {
+      "id": "analysis-limits",
+      "title": "Interpretation limits",
+      "text": "Results describe Sun and Earth visibility at one observation point per region. They do not assess overall landing safety. Earth visibility indicates geometric line of sight, not guaranteed communications."
+    },
+    {
       "id": "view-regions",
       "title": "Landing Regions",
       "text": "Landing Regions lists all nine of NASA's candidate regions for Artemis Three. Choose one to select it, and the globe, the region card, and the Sun and Earth readings all switch to that region. Next to each name, two small dots show whether the Sun and the Earth are visible from its observation point at the current time."
