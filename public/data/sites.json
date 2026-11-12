@@ -51,7 +51,7 @@
   {
    "id": "peak-near-cabeus-b",
    "name": "Peak near Cabeus B",
-   "nasaListing": "Artemis III candidate region in NASA's refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Cabeus B",
     "type": "Crater",
@@ -870,7 +870,7 @@
   {
    "id": "haworth",
    "name": "Haworth",
-   "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Haworth",
     "type": "Crater",
@@ -1689,7 +1689,7 @@
   {
    "id": "malapert-massif",
    "name": "Malapert Massif",
-   "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Mons Malapert",
     "type": "Mons",
@@ -2508,7 +2508,7 @@
   {
    "id": "mons-mouton-plateau",
    "name": "Mons Mouton Plateau",
-   "nasaListing": "Artemis III candidate region in NASA's refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Mons Mouton",
     "type": "Mons",
@@ -3327,7 +3327,7 @@
   {
    "id": "mons-mouton",
    "name": "Mons Mouton",
-   "nasaListing": "Artemis III candidate region in NASA's refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Mons Mouton",
     "type": "Mons",
@@ -4146,7 +4146,7 @@
   {
    "id": "nobile-rim-1",
    "name": "Nobile Rim 1",
-   "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Nobile",
     "type": "Crater",
@@ -4965,7 +4965,7 @@
   {
    "id": "nobile-rim-2",
    "name": "Nobile Rim 2",
-   "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Nobile",
     "type": "Crater",
@@ -5784,7 +5784,7 @@
   {
    "id": "de-gerlache-rim-2",
    "name": "de Gerlache Rim 2",
-   "nasaListing": "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "de Gerlache",
     "type": "Crater",
@@ -6603,7 +6603,7 @@
   {
    "id": "slater-plain",
    "name": "Slater Plain",
-   "nasaListing": "Artemis III candidate region in NASA's refined list of nine (Oct 28, 2024)",
+   "nasaListing": "Candidate landing region in NASA's refined list of nine (Oct 28, 2024)",
    "referenceFeature": {
     "name": "Slater",
     "type": "Crater",

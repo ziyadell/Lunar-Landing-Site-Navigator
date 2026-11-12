@@ -93,11 +93,11 @@ export function CrewPanel() {
         Backup crew member: <strong>Bob Hines</strong>, NASA.
       </p>
       <section className="crew__note" aria-label="How this crew relates to LunaNav">
-        <h3 className="crew__note-head">Artemis III does not land on the Moon</h3>
+        <h3 className="crew__note-head">The Moon landing is planned for Artemis IV</h3>
         <p>
-          The nine regions in LunaNav were announced by NASA in October 2024 as candidates for an Artemis III landing. NASA has
-          since made Artemis III an Earth-orbit test. The first crewed landing near the south pole is now planned for Artemis IV
-          in 2028, and its crew has not been named.
+          NASA announced the nine regions in LunaNav in October 2024 and now lists them as candidate landing regions for its
+          Artemis campaign. Artemis III has become a test flight in Earth orbit. The first crewed landing near the south pole is
+          planned for Artemis IV in early 2028, and NASA has not yet named that crew.
         </p>
       </section>
       <p className="crew__credit">

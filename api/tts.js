@@ -17,7 +17,7 @@ const EL = `${NUM} degrees (?:above|below) the horizontal`;
 const SAY = (who) =>
   `${who} is (?:visible, ${EL}, clearing the skyline by ${NUM} degrees\\.|not visible: it is ${EL}\\.|hidden by terrain: it is ${EL}, ${NUM} degrees below the skyline\\.)`;
 const TEMPLATE = new RegExp(
-  `^Calculated for [A-Za-z0-9 .'-]{3,40}, [A-Z][a-z]{2,8} \\d{1,2}, \\d{4}, \\d{2}:\\d{2} UTC\\. ${SAY('The Sun')} ${SAY('The Earth')} Earth visibility is a geometric line of sight, not a guaranteed communication link\\.$`,
+  `^Calculated for [A-Za-z0-9 .'-]{3,40}, [A-Z][a-z]{2,8} \\d{1,2}, \\d{4}, \\d{2}:\\d{2} UTC(?:\\+3)?\\. ${SAY('The Sun')} ${SAY('The Earth')} Earth visibility is a geometric line of sight, not a guaranteed communication link\\.$`,
 );
 
 /** Only LunaNav's own pages may request live readings (blocks hot-linking of the paid voice). */
