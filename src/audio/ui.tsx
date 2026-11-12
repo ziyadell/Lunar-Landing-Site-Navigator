@@ -596,9 +596,20 @@ export function WelcomeCaption() {
   const item = usePlayer((s) => s.item);
   const started = usePlayer((s) => s.started);
   const note = usePlayer((s) => s.note);
+  // The voice (or, without sound, the timed caption) has reached its end.
+  const ended = usePlayer((s) => s.item?.id === 'welcome' && s.started && !s.playing && !s.loading && s.progress >= 1);
+  // Once it ends, the caption fades and clears itself. Dismiss still closes it at any moment.
+  useEffect(() => {
+    if (!ended) return;
+    const id = window.setTimeout(() => {
+      const st = usePlayer.getState();
+      if (st.item?.id === 'welcome' && !st.playing) stop();
+    }, 1400);
+    return () => window.clearTimeout(id);
+  }, [ended]);
   if (item?.id !== 'welcome' || !started) return null;
   return (
-    <div className="welcome-caption" role="status" aria-live="polite">
+    <div className={`welcome-caption${ended ? ' is-leaving' : ''}`} role="status" aria-live="polite">
       <p className="welcome-caption__text">{item.text}</p>
       <div className="welcome-caption__ctrl">
         {note && <span className="welcome-caption__note">{note}</span>}

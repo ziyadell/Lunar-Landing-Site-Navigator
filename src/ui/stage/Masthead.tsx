@@ -169,7 +169,7 @@ function MoreMenu() {
   };
   return (
     <div className="more">
-      <button ref={btn} type="button" className={`ghost-btn ghost-btn--icon more__btn${open ? ' is-on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="More: focus, settings, data and method" onClick={() => setOpen((o) => !o)}>
+      <button ref={btn} type="button" className={`ghost-btn ghost-btn--icon more__btn${open ? ' is-on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="More: focus, settings, crew, data and method" onClick={() => setOpen((o) => !o)}>
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
           <circle cx="3.5" cy="8" r="1.4" fill="currentColor" />
           <circle cx="8" cy="8" r="1.4" fill="currentColor" />
@@ -185,6 +185,9 @@ function MoreMenu() {
           )}
           <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().openDrawer('settings'))}>
             Settings
+          </button>
+          <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().openDrawer('crew'))}>
+            Artemis III crew
           </button>
           <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().openDrawer('about'))}>
             Data &amp; method
@@ -224,6 +227,22 @@ export function Masthead() {
             <circle cx="10.5" cy="4.5" r="1.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
             <circle cx="5.5" cy="11.5" r="1.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
           </svg>
+        </button>
+        <button
+          type="button"
+          className={`ghost-btn ghost-btn--crew${drawer === 'crew' ? ' is-on' : ''}`}
+          aria-expanded={drawer === 'crew'}
+          onClick={() => openDrawer('crew')}
+          aria-label="Artemis III crew"
+          title="Artemis III crew"
+          data-obstacle
+        >
+          <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="6" cy="5.4" r="2.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M1.8 13.2c.5-2.4 2.1-3.7 4.2-3.7s3.7 1.3 4.2 3.7" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            <path d="M10.6 3.3a2.3 2.3 0 0 1 0 4.3M12.3 9.9c1 .6 1.7 1.7 2 3.3" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+          <span className="ghost-btn__long">Crew</span>
         </button>
         <button
           type="button"
