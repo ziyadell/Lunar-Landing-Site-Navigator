@@ -234,8 +234,10 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
   const capState = useRef<'idle' | 'loading' | 'done'>('idle');
   const capHiState = useRef<'idle' | 'loading' | 'done'>('idle');
   const capHiImg = useRef<'idle' | 'loading' | 'done'>('idle');
+  const wideState = useRef<'idle' | 'loading' | 'done'>('idle');
   useEffect(() => () => {
     if (uniforms.capImgOn.value) uniforms.capImg.value.dispose();
+    if (uniforms.wideImgOn.value) uniforms.wideImg.value.dispose();
   }, [uniforms]);
 
   // --- Site detail window: native 100 m imagery + LOLA normals around the selected point.
@@ -381,6 +383,24 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
       old?.dispose();
       invalidate();
     };
+    // Wide polar mosaic (about 60°S to the cap): the global map is washed out there, so this
+    // loads as soon as any of the southern hemisphere faces the camera.
+    if (wideState.current === 'idle' && camDir.y < 0.35 && canTry('wide')) {
+      wideState.current = 'loading';
+      loadTex(tier === 'high' ? 'textures/polar/wac_wide_4096.jpg' : 'textures/polar/wac_wide_2048.jpg', true, aniso)
+        .then((t) => {
+          uniforms.wideImg.value.dispose();
+          uniforms.wideImg.value = t;
+          uniforms.wideImgOn.value = 1;
+          wideState.current = 'done';
+          succeeded('wide');
+          invalidate();
+        })
+        .catch(() => {
+          wideState.current = 'idle';
+          failed('wide');
+        });
+    }
     if (capState.current === 'idle' && camDir.y < -0.2 && canTry('cap')) {
       capState.current = 'loading';
       const url = sites.polarImagery?.cap.standard;
