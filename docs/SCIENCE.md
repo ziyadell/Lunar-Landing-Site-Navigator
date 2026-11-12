@@ -162,7 +162,7 @@ exaggerated for legibility and labelled as such.
 
 ## 4. Candidate regions and observation points
 
-The nine regions are NASA's Artemis III candidates of **28 October 2024**
+The nine regions are NASA's candidate landing regions of **28 October 2024** (announced for Artemis III; since NASA made Artemis III an Earth-orbit test in 2026 they are listed for the Artemis campaign, with the first landing planned for Artemis IV in 2028)
 ([NASA](https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/)).
 NASA published them only as outlines on a map. The outlines were digitised by registering
 NASA's map to the LROC WAC South Pole Summer Mosaic (similarity transform maximising image

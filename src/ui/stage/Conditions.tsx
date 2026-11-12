@@ -1,7 +1,9 @@
 import { useConditions, useNextCrossings } from '../../data/useConditions';
 import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
-import { compass, fmtDate, fmtDeg, fmtLat, fmtLon, fmtUtc } from '../../utils/format';
+import { compass, fmtDate, fmtDeg, fmtLat, fmtLon, fmtUtc, TZ_LABEL, zoned } from '../../utils/format';
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 import { EarthGlyph, Readout, SunGlyph } from '../primitives';
 import type { TopocentricBody } from '../../data/types';
 import { CROSSING_WINDOW_DAYS, STATE_LABEL, type Crossing } from '../../science/visibility';
@@ -69,8 +71,8 @@ function Body({ which, b, next, timeMs }: { which: 'sun' | 'earth'; b: Topocentr
 
 /** Spoken summary of the current readings (calculated from app state, never invented). */
 function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<typeof useConditions>['conditions']>): NarrationItem {
-  const d = new Date(timeMs);
-  const when = `${d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })} ${d.getUTCDate()}, ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC`;
+  const d = zoned(timeMs);
+  const when = `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC+3`;
   const say = (name: string, b: TopocentricBody) => {
     const el = `${Math.abs(b.elDeg).toFixed(1)} degrees ${b.elDeg >= 0 ? 'above' : 'below'} the horizontal`;
     if (b.state === 'visible') return `${name} is visible, ${el}, clearing the skyline by ${b.marginDeg.toFixed(1)} degrees.`;
@@ -128,7 +130,7 @@ export function ConditionsCard() {
         </div>
       ) : (
         <p className="cond__none">
-          No ephemeris for this time. Coverage {fmtDate(ephemeris.startMs)} – {fmtDate(ephemeris.endMs)} UTC.
+          No ephemeris for this time. Coverage {fmtDate(ephemeris.startMs)} – {fmtDate(ephemeris.endMs)} ({TZ_LABEL}).
         </p>
       )}
       <div className="cond__foot">

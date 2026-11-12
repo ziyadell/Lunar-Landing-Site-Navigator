@@ -1,7 +1,7 @@
 # LunaNav — Lunar Landing Site Navigator
 
 **By Team AFUQ.** LunaNav is a browser application for studying when the Sun and the Earth are visible from
-NASA's nine Artemis III candidate landing regions near the lunar south pole. For one
+NASA's nine candidate landing regions near the lunar south pole (Artemis campaign). For one
 observation point in each region it computes the Sun and Earth directions at any time between
 1 July 2026 and 31 December 2028 (UTC), and compares them with the horizon formed by the
 real terrain, measured by the Lunar Orbiter Laser Altimeter (LOLA) out to 150 km.
@@ -116,7 +116,7 @@ docs/ATTRIBUTION.md     data and asset credits
 | Stars | Yale Bright Star Catalogue (5th ed.), V < 5.5 | Night sky in both 3D views |
 
 Terrain grids around each point (Surface): 301 × 301 samples at 80 m (±12 km), 400 m (±60 km) and 1 km (±150 km); the mesh uses 80 m data to about 11 km, 400 m to 55 km and 1 km to 150 km. Accuracy terms are kept separate: Sun/Earth direction accuracy (≤ 0.006° against Horizons), terrain resolution (80 m, not independently validated) and Analysis sampling (15 or 60 minutes). See `docs/SCIENCE.md`.
-| Regions | NASA's list of nine Artemis III candidate regions (28 October 2024) and its published map | Region names and outlines (digitised from the map, about 0.5 km accuracy) |
+| Regions | NASA's list of nine candidate landing regions (28 October 2024; published for Artemis III, now listed for the Artemis campaign) and its published map | Region names and outlines (digitised from the map, about 0.5 km accuracy) |
 
 A body counts as visible when the centre of its disc is above the LOLA skyline in its
 direction. Each region uses one observation point chosen by a fixed rule (on a 1 km grid

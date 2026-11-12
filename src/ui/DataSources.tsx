@@ -12,7 +12,7 @@ export function DataSources({ open = false }: { open?: boolean }) {
         <div>
           <dt>Regions</dt>
           <dd>
-            NASA&rsquo;s nine Artemis III candidate regions (28 Oct 2024). Outlines digitised from{' '}
+            NASA&rsquo;s nine candidate landing regions for the Artemis campaign (announced 28 Oct 2024). Outlines digitised from{' '}
             {sites.nasaRegionMap ? (
               <a href={sites.nasaRegionMap.url} target="_blank" rel="noreferrer">
                 NASA&rsquo;s official map

@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/store';
 import { useData } from '../data/DataContext';
 import { computeSeries, runs } from '../science/visibility';
-import { fmtDate, fmtTime, fmtUtc, parseUtc } from '../utils/format';
+import { fmtDate, fmtTime, fmtUtc, parseUtc, TZ_LABEL } from '../utils/format';
 import { DateField } from './DateField';
 
 const H = 3_600_000;
 const D = 24 * H;
 
-/** Date + time inputs (UTC), step buttons, playback. */
+/** Date + time inputs (UTC+3), step buttons, playback. */
 export function TimeInputs({ compact = false, steps = true }: { compact?: boolean; steps?: boolean }) {
   const { ephemeris } = useData();
   const timeMs = useApp((s) => s.timeMs);
@@ -47,7 +47,7 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
   return (
     <div className={`time-inputs${compact ? ' time-inputs--compact' : ''}`}>
       <div className="field">
-        <label htmlFor="obs-date">Date (UTC)</label>
+        <label htmlFor="obs-date">Date ({TZ_LABEL})</label>
         <DateField
           id="obs-date"
           label="Observation date"
@@ -61,7 +61,7 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
         />
       </div>
       <div className="field field--time">
-        <label htmlFor="obs-time">Time (UTC)</label>
+        <label htmlFor="obs-time">Time ({TZ_LABEL})</label>
         <input
           id="obs-time"
           type="text"
@@ -77,7 +77,7 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
           }}
           onBlur={() => setTimeStr(fmtTime(timeMs))}
         />
-        <span id="obs-time-hint" className="sr-only">24-hour UTC, for example 14:30</span>
+        <span id="obs-time-hint" className="sr-only">24-hour clock in UTC+3, for example 14:30</span>
       </div>
       {steps && <div className="stepper" role="group" aria-label="Step observation time">
         <button type="button" onClick={() => step(-D)} aria-label="Back one day">−1d</button>
