@@ -1,10 +1,10 @@
-import { useConditions } from '../../data/useConditions';
+import { useConditions, useNextCrossings } from '../../data/useConditions';
 import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
-import { compass, fmtDate, fmtDeg, fmtLat, fmtLon } from '../../utils/format';
+import { compass, fmtDate, fmtDeg, fmtLat, fmtLon, fmtUtc } from '../../utils/format';
 import { EarthGlyph, Readout, SunGlyph } from '../primitives';
 import type { TopocentricBody } from '../../data/types';
-import { STATE_LABEL } from '../../science/visibility';
+import { CROSSING_WINDOW_DAYS, STATE_LABEL, type Crossing } from '../../science/visibility';
 import { Listen } from '../../audio/ui';
 import { useSettings } from '../../state/settings';
 import type { NarrationItem } from '../../audio/engine';
@@ -21,7 +21,31 @@ function plain(b: TopocentricBody) {
   return `Hidden by terrain · ${Math.abs(b.marginDeg).toFixed(1)}° short`;
 }
 
-function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
+/** "3 d 4 h", "9 h 20 min", "42 min": time remaining, coarser the further away it is. */
+export function fmtRemaining(ms: number): string {
+  const min = Math.max(0, Math.round(ms / 60_000));
+  if (min < 1) return 'under 1 min';
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 48) return min % 60 ? `${h} h ${min % 60} min` : `${h} h`;
+  const hr = Math.round(min / 60);
+  return hr % 24 ? `${Math.floor(hr / 24)} d ${hr % 24} h` : `${hr / 24} d`;
+}
+
+/** Sunset, Sunrise, Earthset or Earthrise: the next skyline crossing of that body. */
+function eventName(which: 'sun' | 'earth', c: Crossing) {
+  return `${which === 'sun' ? 'Sun' : 'Earth'}${c.kind}`;
+}
+
+function remaining(which: 'sun' | 'earth', c: Crossing, timeMs: number) {
+  const name = eventName(which, c);
+  if (c.timeMs !== null) return { label: `${name} in`, value: fmtRemaining(c.timeMs - timeMs), title: `${name} at ${fmtUtc(c.timeMs)}, when the centre of the disc crosses the measured skyline` };
+  if (c.none === 'coverage') return { label: `No ${name.toLowerCase()}`, value: 'before the data ends', title: 'The ephemeris ends before the next crossing' };
+  return { label: `No ${name.toLowerCase()} for`, value: `${CROSSING_WINDOW_DAYS}+ d`, title: `No crossing in the next ${CROSSING_WINDOW_DAYS} days` };
+}
+
+function Body({ which, b, next, timeMs }: { which: 'sun' | 'earth'; b: TopocentricBody; next: Crossing | null; timeMs: number }) {
+  const r = next ? remaining(which, next, timeMs) : null;
   const up = b.state === 'visible';
   return (
     <div className={`cond__body cond__body--${which}${up ? ' is-up' : ' is-down'}`}>
@@ -34,6 +58,11 @@ function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
         {fmtDeg(b.elDeg, 2)}
       </div>
       <div className="cond__plain">{plain(b)}</div>
+      {r && (
+        <div className="cond__next" title={r.title}>
+          <span className="cond__next-label">{r.label}</span> <span className="cond__next-value num">{r.value}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -64,6 +93,7 @@ export function ConditionsCard() {
   const openDrawer = useApp((s) => s.openDrawer);
   const folded = useSettings((s) => s.readingsFolded);
   const setS = useSettings((s) => s.set);
+  const next = useNextCrossings();
   if (folded)
     return (
       <section className="cond cond--folded" aria-label="Conditions at the observation point" data-obstacle>
@@ -93,8 +123,8 @@ export function ConditionsCard() {
     <section className="cond" aria-label="Conditions at the observation point" aria-live="polite" data-obstacle>
       {conditions ? (
         <div className="cond__pair">
-          <Body which="sun" b={conditions.sun} />
-          <Body which="earth" b={conditions.earth} />
+          <Body which="sun" b={conditions.sun} next={next.sun} timeMs={timeMs} />
+          <Body which="earth" b={conditions.earth} next={next.earth} timeMs={timeMs} />
         </div>
       ) : (
         <p className="cond__none">
@@ -115,7 +145,8 @@ export function ConditionsCard() {
   );
 }
 
-function BodyTable({ which, b, range }: { which: 'sun' | 'earth'; b: TopocentricBody; range?: number }) {
+function BodyTable({ which, b, range, next, timeMs }: { which: 'sun' | 'earth'; b: TopocentricBody; range?: number; next: Crossing | null; timeMs: number }) {
+  const r = next ? remaining(which, next, timeMs) : null;
   return (
     <section className={`mtable mtable--${which}`}>
       <h3 className="mtable__head">
@@ -130,6 +161,15 @@ function BodyTable({ which, b, range }: { which: 'sun' | 'earth'; b: Topocentric
         <Readout label="Clearance" value={fmtDeg(b.marginDeg)} hint="Elevation minus skyline" />
         <Readout label="Disc above skyline" value={(b.discFraction * 100).toFixed(0)} unit="%" hint="Flat-skyline approximation" />
         {range !== undefined && <Readout label="Range" value={Math.round(range).toLocaleString('en-US')} unit="km" />}
+        {next && r && (
+          <Readout
+            label={next.timeMs !== null ? `Time to ${eventName(which, next).toLowerCase()}` : `Next ${eventName(which, next).toLowerCase()}`}
+            value={next.timeMs !== null ? r.value : next.none === 'coverage' ? 'After the data ends' : `More than ${CROSSING_WINDOW_DAYS} d away`}
+            hint={r.title}
+            emphasis
+          />
+        )}
+        {next && next.timeMs !== null && <Readout label={`${eventName(which, next)} at`} value={fmtUtc(next.timeMs)} hint="Centre of the disc crosses the measured skyline; found in 10-minute steps, refined to about a minute" />}
       </dl>
     </section>
   );
@@ -137,7 +177,8 @@ function BodyTable({ which, b, range }: { which: 'sun' | 'earth'; b: Topocentric
 
 /** Drawer: the full measurement set and how the point was chosen. */
 export function DetailsDrawer() {
-  const { region, conditions, sample } = useConditions();
+  const { region, conditions, sample, timeMs } = useConditions();
+  const next = useNextCrossings();
   const p = region.observationPoint;
   const f = region.referenceFeature;
   return (
@@ -148,8 +189,8 @@ export function DetailsDrawer() {
       </p>
       {conditions && sample && (
         <div className="details__bodies">
-          <BodyTable which="sun" b={conditions.sun} />
-          <BodyTable which="earth" b={conditions.earth} range={sample.earth.distanceKm} />
+          <BodyTable which="sun" b={conditions.sun} next={next.sun} timeMs={timeMs} />
+          <BodyTable which="earth" b={conditions.earth} range={sample.earth.distanceKm} next={next.earth} timeMs={timeMs} />
         </div>
       )}
       <p className="details__terms">

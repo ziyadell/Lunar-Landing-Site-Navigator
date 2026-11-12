@@ -21,6 +21,7 @@ import './styles/panels.css';
 import './styles/start.css';
 import './styles/refine2.css';
 import './styles/pass3.css';
+import './styles/crew.css';
 import { App } from './App';
 
 createRoot(document.getElementById('root')!).render(

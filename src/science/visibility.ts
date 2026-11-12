@@ -49,6 +49,63 @@ export function siteConditions(region: LandingRegion, eph: Ephemeris, timeMs: nu
   };
 }
 
+/** The next time a body's centre crosses the measured skyline (sets or rises). */
+export interface Crossing {
+  /** 'set' = visible now, goes behind the skyline; 'rise' = hidden now, clears it. */
+  kind: 'set' | 'rise';
+  /** Crossing time, refined to about one minute. null when none was found. */
+  timeMs: number | null;
+  /** Why there is no time: nothing within the search window, or the ephemeris ends first. */
+  none?: 'window' | 'coverage';
+  /** The search covered [fromMs, scannedToMs]. */
+  fromMs: number;
+  scannedToMs: number;
+}
+
+export const CROSSING_STEP_MS = 10 * 60_000;
+export const CROSSING_WINDOW_DAYS = 90;
+
+/**
+ * Time of the next sunset/sunrise or Earthset/Earthrise at the observation point: the first
+ * change of sign of (elevation − skyline) after timeMs, found by stepping forward every
+ * 10 minutes and refining by bisection to under a minute. Events shorter than one step can be
+ * missed. The search stops after `windowDays` or at the end of the ephemeris, whichever is first.
+ * `resume` continues an earlier search that found nothing (same region and body).
+ */
+export function nextCrossing(
+  region: LandingRegion,
+  eph: Ephemeris,
+  timeMs: number,
+  body: 'sun' | 'earth',
+  windowDays = CROSSING_WINDOW_DAYS,
+  resume?: Crossing,
+): Crossing | null {
+  const now = siteConditions(region, eph, timeMs);
+  if (!now) return null;
+  const up = now[body].marginDeg > 0;
+  const kind = up ? 'set' : 'rise';
+  const isUp = (t: number) => siteConditions(region, eph, t)![body].marginDeg > 0;
+  const limit = Math.min(timeMs + windowDays * 86_400_000, eph.endMs);
+  const canResume = resume && resume.timeMs === null && resume.kind === kind && timeMs >= resume.fromMs && timeMs <= resume.scannedToMs;
+  const fromMs = canResume ? resume.fromMs : timeMs;
+  let prev = canResume ? Math.min(resume.scannedToMs, limit) : timeMs;
+  while (prev < limit) {
+    const t = Math.min(prev + CROSSING_STEP_MS, limit);
+    if (isUp(t) !== up) {
+      let lo = prev;
+      let hi = t;
+      while (hi - lo > 30_000) {
+        const mid = (lo + hi) / 2;
+        if (isUp(mid) === up) lo = mid;
+        else hi = mid;
+      }
+      return { kind, timeMs: Math.round(hi / 60_000) * 60_000, fromMs, scannedToMs: hi };
+    }
+    prev = t;
+  }
+  return { kind, timeMs: null, none: limit >= eph.endMs ? 'coverage' : 'window', fromMs, scannedToMs: Math.max(prev, limit) };
+}
+
 export interface SeriesPoint {
   t: number;
   sunEl: number;

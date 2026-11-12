@@ -70,7 +70,7 @@ const readPanels = (): { left: boolean; right: boolean } => {
 };
 
 /** Secondary surfaces: one contextual drawer at a time. */
-export type Drawer = null | 'atlas' | 'details' | 'about' | 'settings';
+export type Drawer = null | 'atlas' | 'details' | 'about' | 'settings' | 'crew';
 
 interface AppState {
   /** Focus mode: only the scene, the time and a way back. */

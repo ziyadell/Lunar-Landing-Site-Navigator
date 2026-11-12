@@ -14,7 +14,7 @@
  */
 import { readFileSync, statSync } from 'node:fs';
 import { Ephemeris } from '../src/science/ephemeris';
-import { computeSeries, horizonAt, runs, scenarioMetrics, siteConditions, type SeriesPoint } from '../src/science/visibility';
+import { computeSeries, horizonAt, nextCrossing, runs, scenarioMetrics, siteConditions, type SeriesPoint } from '../src/science/visibility';
 import { lonLatToVec } from '../src/science/geometry';
 
 let failed = 0;
@@ -147,6 +147,47 @@ section('interval boundaries and lower bounds');
   ok(s15.length === 96 && s15.every((p, i) => p.t === Date.UTC(2027, 0, 1) + i * 15 * 60_000), '15-minute series: 96 samples per day at exact steps');
   const clipped = computeSeries(regions[2], eph, Date.UTC(2028, 11, 31, 20), Date.UTC(2029, 0, 2), 60);
   ok(clipped.length === 4 && clipped[3].t === eph.endMs, 'series is clipped at the end of the ephemeris');
+}
+
+section('time remaining before sunset / Earthset (next skyline crossing)');
+{
+  const M = 60_000;
+  let found = 0;
+  let agree = 0;
+  for (const r of regions) {
+    for (const body of ['sun', 'earth'] as const) {
+      const t0 = Date.UTC(2027, 2, 3, 7, 20);
+      const c = nextCrossing(r, eph, t0, body)!;
+      const up0 = siteConditions(r, eph, t0)![body].marginDeg > 0;
+      ok(c.kind === (up0 ? 'set' : 'rise'), `${r.id} ${body}: a visible body sets, a hidden one rises`);
+      if (c.timeMs === null) continue;
+      found++;
+      const before = siteConditions(r, eph, c.timeMs - 2 * M)![body].marginDeg > 0;
+      const after = siteConditions(r, eph, c.timeMs + 2 * M)![body].marginDeg > 0;
+      ok(before === up0 && after !== up0, `${r.id} ${body}: state flips within 2 min either side of the reported crossing`);
+      ok(Math.abs(siteConditions(r, eph, c.timeMs)![body].marginDeg) < 0.02, `${r.id} ${body}: clearance is about 0 deg at the crossing`);
+      // independent check: the first change in a 10-minute series is the same event
+      const s = computeSeries(r, eph, t0, c.timeMs + 60 * M, 10);
+      const k = s.findIndex((p) => (body === 'sun' ? p.sunVis : p.earthVis) !== up0);
+      if (k > 0 && c.timeMs > s[k - 1].t - M && c.timeMs <= s[k].t + M) agree++;
+      // asking again part-way gives the same crossing
+      const again = nextCrossing(r, eph, t0 + Math.floor((c.timeMs - t0) / 2), body)!;
+      ok(again.timeMs !== null && Math.abs(again.timeMs - c.timeMs) <= M, `${r.id} ${body}: same crossing when asked from half-way`);
+    }
+  }
+  ok(found >= 12 && agree === found, `${found} crossings found, all match the first change in a 10-minute series (${agree})`);
+  const r0 = regions[0];
+  const late = nextCrossing(r0, eph, eph.endMs - 30 * M, 'sun')!;
+  ok(late.timeMs !== null || late.none === 'coverage', 'near the end of the ephemeris the search stops at the data, not beyond it');
+  ok(nextCrossing(r0, eph, eph.endMs + H, 'sun') === null, 'no answer outside ephemeris coverage');
+  const t1 = Date.UTC(2027, 2, 3);
+  const fresh = nextCrossing(r0, eph, t1, 'earth', 90)!;
+  const short = nextCrossing(r0, eph, t1, 'earth', 0.02)!;
+  if (fresh.timeMs === null || fresh.timeMs - t1 > 0.02 * 86_400_000) {
+    ok(short.timeMs === null && short.none === 'window', 'a search window with no crossing reports "window", not a time');
+    const resumed = nextCrossing(r0, eph, t1, 'earth', 90, short)!;
+    ok(resumed.timeMs === fresh.timeMs, 'resuming an empty search gives the same answer as a fresh one');
+  } else ok(short.timeMs === fresh.timeMs, 'a crossing inside a short window is found');
 }
 
 section('recorded validation summary');
