@@ -60,8 +60,8 @@ export function CrewPanel() {
   return (
     <div className="crew">
       <p className="drawer__lede">
-        NASA named this crew on 9 June 2026. In 2027 they will fly Orion to low Earth orbit for about two weeks and practise
-        meeting and docking with test versions of the Blue Moon and Starship landers.
+        NASA named this crew on 9 June 2026. Artemis III is a crewed demonstration in low Earth orbit, planned for 2027: the
+        crew will practise meeting and docking Orion with one or both lunar landers. It does not go to the Moon.
       </p>
       <ul className="crew__list">
         {CREW.map((m) => (
@@ -92,12 +92,22 @@ export function CrewPanel() {
       <p className="crew__backup">
         Backup crew member: <strong>Bob Hines</strong>, NASA.
       </p>
-      <section className="crew__note" aria-label="How this crew relates to LunaNav">
+      <section className="crew__note" aria-label="Artemis III and Artemis IV">
+        <p className="crew__note-tag">NASA confirmed mission architecture · Nov 2026</p>
         <h3 className="crew__note-head">The Moon landing is planned for Artemis IV</h3>
+        <dl className="crew__missions">
+          <div>
+            <dt>Artemis III · 2027</dt>
+            <dd>Crewed demonstration in low Earth orbit. No landing.</dd>
+          </div>
+          <div>
+            <dt>Artemis IV · early 2028</dt>
+            <dd>Planned crewed landing near the lunar south pole. NASA has not yet announced the Artemis IV crew.</dd>
+          </div>
+        </dl>
         <p>
-          NASA announced the nine regions in LunaNav in October 2024 and now lists them as candidate landing regions for its
-          Artemis campaign. Artemis III has become a test flight in Earth orbit. The first crewed landing near the south pole is
-          planned for Artemis IV in early 2028, and NASA has not yet named that crew.
+          The nine south pole regions in LunaNav are candidate landing regions that NASA announced in October 2024. They are
+          not confirmed landing locations.
         </p>
       </section>
       <p className="crew__credit">
@@ -105,7 +115,16 @@ export function CrewPanel() {
         <a href={SOURCE} target="_blank" rel="noreferrer">
           NASA news release of 9 June 2026
         </a>
-        . LunaNav is an independent student project. NASA and ESA do not endorse it.
+        ; mission plans from NASA&rsquo;s{' '}
+        <a href="https://www.nasa.gov/mission/artemis-iii/" target="_blank" rel="noreferrer">
+          Artemis III
+        </a>{' '}
+        and{' '}
+        <a href="https://www.nasa.gov/mission/artemis-iv/" target="_blank" rel="noreferrer">
+          Artemis IV
+        </a>{' '}
+        pages, checked 12 November 2026. Plans and dates can change. LunaNav is an independent student project. NASA and ESA do
+        not endorse it.
       </p>
     </div>
   );

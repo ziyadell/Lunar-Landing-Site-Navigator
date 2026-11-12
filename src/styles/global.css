@@ -834,6 +834,7 @@ a:hover {
   position: absolute;
   transform: translateX(-50%);
   top: 2px;
+  white-space: nowrap;
 }
 .timeline__range {
   position: absolute;
