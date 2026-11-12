@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApp, type Mode } from '../../state/store';
 import { Listen } from '../../audio/ui';
 import { useData } from '../../data/DataContext';
+import { preloadCrewPhotos } from './Crew';
 
 /**
  * Floating masthead: identity (left), the three ways of looking at the site
@@ -205,6 +206,11 @@ export function Masthead() {
   const timeMs = useApp((s) => s.timeMs);
   const { ephemeris } = useData();
   const covered = ephemeris.covers(timeMs);
+  // The crew portraits are tiny: fetch them shortly after the app appears so the panel opens complete.
+  useEffect(() => {
+    const id = window.setTimeout(preloadCrewPhotos, 2500);
+    return () => window.clearTimeout(id);
+  }, []);
   return (
     <header className={`masthead masthead--${mode}`}>
       <Brand />

@@ -56,6 +56,20 @@ const CREW: Member[] = [
   },
 ];
 
+const photoUrl = (id: string) => assetUrl(`img/crew/${id}.webp`);
+
+let preloaded = false;
+/** Fetch and decode the four small portraits ahead of time, so the panel opens with them in place. */
+export function preloadCrewPhotos() {
+  if (preloaded) return;
+  preloaded = true;
+  for (const m of CREW) {
+    const im = new Image();
+    im.decoding = 'async';
+    im.src = photoUrl(m.id);
+  }
+}
+
 export function CrewPanel() {
   return (
     <div className="crew">
@@ -68,11 +82,11 @@ export function CrewPanel() {
           <li key={m.id} className="crew-card">
             <img
               className="crew-card__photo"
-              src={assetUrl(`img/crew/${m.id}.webp`)}
+              src={photoUrl(m.id)}
               alt={`${m.name} in an orange Orion crew suit`}
-              width={480}
-              height={480}
-              loading="lazy"
+              width={256}
+              height={256}
+              loading="eager"
               decoding="async"
             />
             <div className="crew-card__text">

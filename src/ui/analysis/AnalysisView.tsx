@@ -156,7 +156,7 @@ const HEADLINES: Headline[] = [
   { key: 'sun', q: 'Sun above the skyline', note: 'share of the period', tone: 'sun', get: (m) => m.sunVisiblePct, pct: true, better: 'higher' },
   { key: 'earth', q: 'Earth above the skyline', note: 'share of the period', tone: 'earth', get: (m) => m.earthVisiblePct, pct: true, better: 'higher' },
   { key: 'both', q: 'Sun and Earth together', note: 'share of the period', tone: 'both', get: (m) => m.bothVisiblePct, pct: true, better: 'higher' },
-  { key: 'dark', q: 'Longest stretch without Sun', note: 'shorter is easier on power · ≥ is a lower bound', tone: 'dark', get: (m) => m.longestNoSunHours, pct: false, better: 'lower', trunc: (m) => m.noSunTruncated },
+  { key: 'dark', q: 'Longest stretch without Sun', note: 'Sun’s centre below the skyline · ≥ is a lower bound', tone: 'dark', get: (m) => m.longestNoSunHours, pct: false, better: 'lower', trunc: (m) => m.noSunTruncated },
 ];
 
 function Headlines({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
