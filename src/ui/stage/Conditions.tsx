@@ -5,6 +5,7 @@ import { compass, fmtDate, fmtDeg, fmtLat, fmtLon, fmtUtc, TZ_LABEL, zoned } fro
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 import { EarthGlyph, Readout, SunGlyph } from '../primitives';
+import { HorizonsCheck } from './HorizonsCheck';
 import type { TopocentricBody } from '../../data/types';
 import { CROSSING_WINDOW_DAYS, STATE_LABEL, type Crossing } from '../../science/visibility';
 import { Listen } from '../../audio/ui';
@@ -195,6 +196,7 @@ export function DetailsDrawer() {
           <BodyTable which="earth" b={conditions.earth} range={sample.earth.distanceKm} next={next.earth} timeMs={timeMs} />
         </div>
       )}
+      {conditions && <HorizonsCheck p={p} timeMs={timeMs} sun={conditions.sun} earth={conditions.earth} />}
       <p className="details__terms">
         <span>Listen:</span>
         <Listen id="term-elevation" /> Elevation <Listen id="term-azimuth" /> Azimuth <Listen id="term-skyline" /> Skyline{' '}

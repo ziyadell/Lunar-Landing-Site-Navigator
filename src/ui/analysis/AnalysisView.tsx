@@ -11,6 +11,7 @@ import { useMedia } from '../../utils/useMedia';
 import { HorizonPanorama } from './HorizonPanorama';
 import { Select } from '../Select';
 import { DateField } from '../DateField';
+import { AssessmentPanel } from './Assessment';
 
 const DURATIONS = [7, 14, 30, 60, 90, 180, 365];
 const DAY = 86_400_000;
@@ -476,6 +477,14 @@ export default function AnalysisView() {
 
       <section className="study__block">
         <div className="study__head">
+          <h3>Power and communication assessment</h3>
+          <p>What the visibility above means for an electrical load and for a direct view of Earth. Change the two inputs to fit your case.</p>
+        </div>
+        <AssessmentPanel a={a} b={b} />
+      </section>
+
+      <section className="study__block">
+        <div className="study__head">
           <h3>
             Through time <Listen id="analysis-timeline" />
           </h3>
@@ -537,6 +546,7 @@ export default function AnalysisView() {
           <li>“Visible” means the disc centre is above the skyline. Partial-disc illumination is reported under Measurements, not in these percentages.</li>
           <li>Region outlines are digitised from NASA&rsquo;s official map. Observation points follow a documented rule inside each outline and are not NASA-designated landing sites. Results apply to that point only, at 2 m height.</li>
           <li>Earth visibility is geometric line of sight; it does not model antennas, link budgets or ground-station availability.</li>
+          <li>Power and communication assessment: stored energy is load × longest time without the Sun, and the link is line of sight with a clearance margin. Both follow from the geometry and the inputs you set; no hardware is modelled.</li>
           <li>No suitability score is computed. Landing decisions also depend on slope, hazards, thermal and operational constraints not modelled here.</li>
         </ul>
         </details>
