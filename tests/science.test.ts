@@ -14,7 +14,9 @@
  */
 import { readFileSync, statSync } from 'node:fs';
 import { Ephemeris } from '../src/science/ephemeris';
-import { computeSeries, horizonAt, nextCrossing, runs, scenarioMetrics, siteConditions, type SeriesPoint } from '../src/science/visibility';
+// @ts-expect-error plain JS server function, no type declarations
+import { parseAzEl } from '../api/horizons.js';
+import { assessScenario, computeSeries, horizonAt, nextCrossing, runs, scenarioMetrics, siteConditions, type SeriesPoint } from '../src/science/visibility';
 import { lonLatToVec } from '../src/science/geometry';
 
 let failed = 0;
@@ -188,6 +190,37 @@ section('time remaining before sunset / Earthset (next skyline crossing)');
     const resumed = nextCrossing(r0, eph, t1, 'earth', 90, short)!;
     ok(resumed.timeMs === fresh.timeMs, 'resuming an empty search gives the same answer as a fresh one');
   } else ok(short.timeMs === fresh.timeMs, 'a crossing inside a short window is found');
+}
+
+section('live Horizons check: reading the answer');
+{
+  const row = (r: string) => ['$$SOE', r, '$$EOE'].join(String.fromCharCode(10));
+  const r = parseAzEl(row(' 2027-Mar-03 07:20  i  260.809057  -1.200653'));
+  ok(r !== null && Math.abs(r.azDeg - 260.809057) < 1e-9 && Math.abs(r.elDeg + 1.200653) < 1e-9, 'azimuth and elevation are read from the first row');
+  ok(parseAzEl(row(' 2027-Mar-03 07:20 *m  24.286030  -0.754141'))?.elDeg === -0.754141, 'row flags do not shift the columns');
+  ok(parseAzEl('No ephemeris for target') === null && parseAzEl(row(' n.a. n.a.')) === null, 'an error page or a row without numbers gives no answer');
+}
+
+section('power and communication assessment');
+{
+  const r = regions.find((x) => x.id === 'nobile-rim-1')!;
+  const t0 = Date.UTC(2027, 0, 1);
+  const s = computeSeries(r, eph, t0, t0 + 30 * 24 * H, 60);
+  const m = scenarioMetrics(s, 60)!;
+  const base = assessScenario(s, 60, 100, 0)!;
+  ok(base.sunPct === m.sunVisiblePct && base.darkHours === m.longestNoSunHours, 'power figures are the scenario\'s own Sun metrics');
+  ok(Math.abs(base.storageKWh - (100 * m.longestNoSunHours) / 1000) < 1e-9, 'stored energy = load x longest time without the Sun');
+  ok(Math.abs(assessScenario(s, 60, 250, 0)!.storageKWh - 2.5 * base.storageKWh) < 1e-9, 'stored energy scales with the load');
+  ok(base.linkPct === m.earthVisiblePct && base.outageHours === m.longestNoEarthHours, 'with no clearance margin the link equals Earth visibility');
+  let prev = base;
+  for (const mask of [1, 2, 5]) {
+    const a = assessScenario(s, 60, 100, mask)!;
+    ok(a.linkPct <= prev.linkPct + 1e-9 && a.outageHours >= prev.outageHours - 1e-9, `a ${mask} deg clearance never increases link time or shortens the longest outage`);
+    const direct = (100 * s.filter((p) => p.earthEl - p.earthHz >= mask).length) / s.length;
+    ok(Math.abs(a.linkPct - direct) < 1e-9, `link share at ${mask} deg matches a direct count`);
+    prev = a;
+  }
+  ok(assessScenario([], 60, 100, 0) === null, 'no series, no assessment');
 }
 
 section('recorded validation summary');

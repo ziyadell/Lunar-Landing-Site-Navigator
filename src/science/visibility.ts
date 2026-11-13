@@ -211,6 +211,45 @@ export function scenarioMetrics(series: SeriesPoint[], stepMinutes: number): Sce
   };
 }
 
+export interface Assessment {
+  /** Share of the period with the Sun's centre above the skyline. */
+  sunPct: number;
+  /** Longest continuous time without the Sun, hours; a lower bound when it touches the period edge. */
+  darkHours: number;
+  darkLowerBound: boolean;
+  /** Energy a load of `loadW` draws over `darkHours`, kWh. */
+  storageKWh: number;
+  /** Share of the period with Earth's centre at least `maskDeg` above the skyline. */
+  linkPct: number;
+  /** Longest continuous time without that view of Earth, hours. */
+  outageHours: number;
+  outageLowerBound: boolean;
+}
+
+/**
+ * Power and communication assessment from the visibility series. Geometry only: the load is
+ * taken to run from storage whenever the Sun's centre is below the skyline, and the link is a
+ * line of sight to Earth's centre with a clearance margin (`maskDeg`, 0 = any clearance).
+ */
+export function assessScenario(series: SeriesPoint[], stepMinutes: number, loadW: number, maskDeg: number): Assessment | null {
+  const m = scenarioMetrics(series, stepMinutes);
+  if (!m) return null;
+  const linked = (p: SeriesPoint) => (maskDeg > 0 ? p.earthEl - p.earthHz >= maskDeg : p.earthVis);
+  const stepMs = stepMinutes * 60_000;
+  const gaps = runs(series, (p) => !linked(p), stepMs);
+  let outageHours = 0;
+  for (const g of gaps) outageHours = Math.max(outageHours, (g.endMs - g.startMs) / 3_600_000);
+  return {
+    sunPct: m.sunVisiblePct,
+    darkHours: m.longestNoSunHours,
+    darkLowerBound: m.noSunTruncated,
+    storageKWh: (loadW * m.longestNoSunHours) / 1000,
+    linkPct: (100 * series.filter(linked).length) / series.length,
+    outageHours,
+    outageLowerBound: outageHours > 0 && gaps.some((g) => (g.atStart || g.atEnd) && Math.abs((g.endMs - g.startMs) / 3_600_000 - outageHours) < 1e-9),
+  };
+}
+
 export const STATE_LABEL = {
   visible: 'Above terrain horizon',
   'terrain-blocked': 'Blocked by terrain',
