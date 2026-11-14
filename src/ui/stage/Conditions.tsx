@@ -91,7 +91,19 @@ function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<t
       if (b.state === 'below-horizontal') return `${name} غير مرئية: فهي على ${el}.`;
       return `${name} محجوبة بالتضاريس: فهي على ${el}، وتحت أفق التضاريس بمقدار ${Math.abs(b.marginDeg).toFixed(1)} درجة.`;
     };
-    return { id: `now-ar-${timeMs}`, title: 'الأحوال الآن', calculated: true, text: `محسوب لمنطقة ${t(regionName)}، ${when}. ${say('الشمس', c.sun)} ${say('الأرض', c.earth)} ورؤية الأرض خط نظر هندسي، وليست ضمانًا للاتصال.` };
+    const sayV = (name: string, b: TopocentricBody) => {
+      const el = `${Math.abs(b.elDeg).toFixed(1)} دَرَجَةٍ ${b.elDeg >= 0 ? 'فَوْقَ' : 'تَحْتَ'} الْمُسْتَوَى الْأُفُقِيِّ`;
+      if (b.state === 'visible') return `${name} مَرْئِيَّةٌ، عَلَى ${el}، وَتَعْلُو أُفُقَ التَّضَارِيسِ بِمِقْدَارِ ${b.marginDeg.toFixed(1)} دَرَجَةٍ.`;
+      if (b.state === 'below-horizontal') return `${name} غَيْرُ مَرْئِيَّةٍ، فَهِيَ عَلَى ${el}.`;
+      return `${name} مَحْجُوبَةٌ بِالتَّضَارِيسِ، فَهِيَ عَلَى ${el}، وَتَحْتَ أُفُقِ التَّضَارِيسِ بِمِقْدَارِ ${Math.abs(b.marginDeg).toFixed(1)} دَرَجَةٍ.`;
+    };
+    return {
+      id: `now-ar-${timeMs}`,
+      title: 'الأحوال الآن',
+      calculated: true,
+      text: `محسوب لمنطقة ${t(regionName)}، ${when}. ${say('الشمس', c.sun)} ${say('الأرض', c.earth)} ورؤية الأرض خط نظر هندسي، وليست ضمانًا للاتصال.`,
+      say: `هَذِهِ قِرَاءَةٌ مَحْسُوبَةٌ لِلْمَوْقِعِ وَالْوَقْتِ الْمُخْتَارَيْنِ. ${sayV('الشَّمْسُ', c.sun)} ${sayV('الْأَرْضُ', c.earth)} وَرُؤْيَةُ الْأَرْضِ خَطُّ نَظَرٍ هَنْدَسِيٌّ، وَلَيْسَتْ ضَمَانًا لِلِاتِّصَالِ.`,
+    };
   }
   const d = zoned(timeMs);
   const when = `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC+3`;

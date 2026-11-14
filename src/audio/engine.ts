@@ -24,6 +24,8 @@ import { assetUrl } from '../data/release';
  */
 
 export interface NarrationItem {
+  /** Fully vowelled copy for the voice (Arabic); captions show `text`. */
+  say?: string;
   id: string;
   title: string;
   text: string;
@@ -285,8 +287,7 @@ export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {
   usePlayer.setState({ item, playing: false, loading: true, progress: 0, note: null, canRetry: false, onEnd: opts.onEnd ?? null, started: false });
   if (useSettings.getState().voice === 'captions') return toCaptions(item, t, null, false);
   if (item.calculated) {
-    // shortcut: the live-reading voice endpoint only accepts the English template; Arabic readings are captions.
-    const url = isAr() ? null : await serverVoice(item.text);
+    const url = await serverVoice(item.say ?? item.text);
     if (t !== token) return; // a newer narration (or a region change) replaced this one
     if (url) return playAudio(item, t, url, 'server');
     return toCaptions(item, t, tr('Voice not available for live readings · captions'), false);
