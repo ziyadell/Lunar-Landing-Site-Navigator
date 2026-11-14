@@ -305,7 +305,7 @@ a:hover {
   font-size: var(--fs-micro);
   color: var(--text-secondary);
   background: rgba(5, 8, 15, 0.72);
-  border-left: 1px solid var(--accent);
+  border-inline-start: 1px solid var(--accent);
   padding: var(--s2) var(--s3);
   line-height: 1.5;
   pointer-events: none;
@@ -747,7 +747,7 @@ a:hover {
 .observations {
   margin: var(--s4) var(--s4) 0;
   padding: var(--s3) var(--s4);
-  border-left: 1px solid var(--accent);
+  border-inline-start: 1px solid var(--accent);
   list-style: none;
   display: grid;
   gap: var(--s1);
@@ -1005,7 +1005,7 @@ a:hover {
   gap: 1px;
   padding: 3px 7px;
   background: rgba(5, 8, 15, 0.7);
-  border-left: 2px solid currentColor;
+  border-inline-start: 2px solid currentColor;
   font-size: var(--fs-micro);
   white-space: nowrap;
   will-change: transform;

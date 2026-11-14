@@ -111,7 +111,7 @@
 }
 .crew__missions > div {
   padding-left: 12px;
-  border-left: 2px solid rgba(255, 202, 104, 0.45);
+  border-inline-start: 2px solid rgba(255, 202, 104, 0.45);
 }
 .crew__missions dt {
   font: 600 13px / 1.35 var(--font-ui);
