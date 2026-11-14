@@ -214,7 +214,7 @@
 }
 /* Numbers, coordinates and times keep their left-to-right order. */
 [dir='rtl'] .num,
-[dir='rtl'] .timepill,
+[dir='rtl'] .timepill__bar,
 [dir='rtl'] .scalebar,
 [dir='rtl'] .compass {
   direction: ltr;

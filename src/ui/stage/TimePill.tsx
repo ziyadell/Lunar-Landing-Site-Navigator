@@ -107,7 +107,7 @@ export function TimePill() {
           <VisibilityStrip />
           <TimeInputs steps={false} />
           <p className="timesheet__range">
-            JPL Horizons ephemeris: {fmtDay(ephemeris.startMs)} – {fmtDay(ephemeris.endMs)}
+            {t('JPL Horizons ephemeris:')} {fmtDay(ephemeris.startMs)} – {fmtDay(ephemeris.endMs)}
           </p>
         </section>
       )}

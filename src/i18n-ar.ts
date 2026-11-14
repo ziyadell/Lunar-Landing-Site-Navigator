@@ -316,6 +316,7 @@ export const AR_MORE: Record<string, string> = {
   'Date (UTC+3)': 'التاريخ (UTC+3)',
   'Time (UTC+3)': 'الوقت (UTC+3)',
   '24-hour clock in UTC+3, for example 14:30': 'بنظام 24 ساعة بتوقيت UTC+3، مثل 14:30',
+  'JPL Horizons ephemeris:': 'بيانات JPL Horizons:',
   Show: 'إظهار',
   Hide: 'إخفاء',
   Home: 'الموضع الأصلي',
