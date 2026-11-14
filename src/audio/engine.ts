@@ -268,25 +268,27 @@ function playAudio(item: NarrationItem, t: number, src: string, kind: 'recorded'
     window.clearTimeout(loadTimer);
     if (t === token) usePlayer.setState({ started: true });
   };
-  loadTimer = window.setTimeout(() => fallback('Recording too slow to load · captions'), 8000);
   usePlayer.setState({ source: kind, note: null, canRetry: false });
-  // Starting play() on a clip that is still arriving lets the output begin mid-word: the first
-  // syllable is lost while the decoder and the sound device catch up. Wait until the browser
-  // reports enough data to play through, then start from the very first sample.
+  // Starting play() on a clip that has no data yet lets the output begin mid-word: the first
+  // syllable is lost while the decoder catches up. Wait for the opening to be buffered, then
+  // play from the first sample. Not "canplaythrough": that waits for the whole clip, which on
+  // a slow line takes longer than the patience below and would drop us to captions in silence.
   const el = audio;
   let begun = false;
   const start = () => {
-    el.removeEventListener('canplaythrough', start);
+    el.removeEventListener('canplay', start);
     if (begun || t !== token || fellBack || audio !== el) return;
     begun = true;
     el.currentTime = 0;
+    // Patience starts when playback does, so waiting for the buffer never counts against it.
+    loadTimer = window.setTimeout(() => fallback('Recording too slow to load · captions'), 8000);
     el.play()
       .then(() => {
         if (t === token && !fellBack) usePlayer.setState({ playing: true, loading: false });
       })
       .catch((e: Error) => fallback(e?.name === 'NotAllowedError' ? 'Sound blocked by the browser · captions' : 'Recording could not play · captions'));
   };
-  el.addEventListener('canplaythrough', start);
+  el.addEventListener('canplay', start);
   el.load();
   // iPhones do not buffer before play() is called, so the event may never come: start anyway.
   window.setTimeout(start, 1500);
