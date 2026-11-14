@@ -58,6 +58,8 @@ export function Drawer() {
             <section className="team">
               <h3 className="team__h">{t('Team')}</h3>
               <p className="team__name">{t('AFUQ · Saudi Arabia')}</p>
+              {/* The members' own spelling, from the team deck; shown unchanged in both languages. */}
+              <p className="team__people" dir="ltr">Thuraya Algashish · Areej Alharthi · Jana Abu Aqeel · Ahmed Alizzi · Farah Tumayhi · Ziyad Jammah</p>
             </section>
             <details className="disclose notearth">
               <summary>Why the Moon’s sky is not like Earth’s</summary>

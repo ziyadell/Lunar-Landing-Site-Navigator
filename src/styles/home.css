@@ -433,3 +433,10 @@
 :root[lang='ar'] {
   --font-mono: 'IBM Plex Mono', 'Segoe UI', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, sans-serif;
 }
+
+.team__people {
+  margin: 6px 0 0;
+  font-size: var(--fs-label);
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
