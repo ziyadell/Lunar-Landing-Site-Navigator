@@ -21,7 +21,7 @@ const TEMPLATE = new RegExp(
 );
 
 // shortcut: the Arabic reading is checked by its fixed opening and closing sentences, alphabet and length, not word by word; write a full template if this endpoint is ever abused.
-const AR_TEMPLATE = /^هَذِهِ قِرَاءَةٌ مَحْسُوبَةٌ لِلْمَوْقِعِ وَالْوَقْتِ الْمُخْتَارَيْنِ\. [\u0621-\u0652\d .،]{60,520} وَرُؤْيَةُ الْأَرْضِ خَطُّ نَظَرٍ هَنْدَسِيٌّ، وَلَيْسَتْ ضَمَانًا لِلِاتِّصَالِ\.$/;
+const AR_TEMPLATE = /^هَذِهِ قِرَاءَةٌ مَحْسُوبَةٌ لِمِنْطَقَةِ [\u0621-\u0652\d .،]{120,700} وَرُؤْيَةُ الْأَرْضِ خَطُّ نَظَرٍ هَنْدَسِيٌّ، وَلَيْسَتْ ضَمَانًا لِلِاتِّصَالِ\.$/;
 
 /** Only LunaNav's own pages may request live readings (blocks hot-linking of the paid voice). */
 const ALLOWED_HOST = /^(www\.)?afuq\.website$|^lunar-landing-site-navigator[a-z0-9-]*\.vercel\.app$|^localhost$|^127\.0\.0\.1$/;
