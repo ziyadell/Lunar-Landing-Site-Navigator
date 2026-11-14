@@ -5,7 +5,7 @@
    ===================================================================== */
 .listen {
   flex: none;
-  margin-left: 0;
+  margin-inline-start: 0;
 }
 /* Headings with a listen button: centred on the text, never raised. */
 .drawer__head,
@@ -28,10 +28,10 @@
 .study__lede .listen,
 .deck-card__name .listen {
   vertical-align: -0.18em;
-  margin-left: 6px;
+  margin-inline-start: 6px;
 }
 .drawer__head {
-  padding-right: 14px;
+  padding-inline-end: 14px;
 }
 .drawer__title {
   margin: 0;
@@ -39,7 +39,7 @@
 }
 .drawer__close,
 .sheet__close {
-  margin-left: auto;
+  margin-inline-start: auto;
   flex: none;
 }
 .sheet__close {
@@ -198,7 +198,7 @@
   border: 0;
   background: none;
   color: var(--text);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .aplayer-mini__name {

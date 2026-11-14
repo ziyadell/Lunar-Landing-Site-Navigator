@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { useEffect, useState } from 'react';
 import { useApp } from '../../state/store';
 import { useSettings } from '../../state/settings';
@@ -39,22 +40,22 @@ export function Intro() {
   }, [open]);
   if (!open || mode !== 'orbital' || focus || !welcomeSeen || intro) return null;
   return (
-    <aside className="intro" aria-label="Getting started" data-obstacle>
+    <aside className="intro" aria-label={t('Getting started')} data-obstacle>
       <ul className="intro__steps">
         <li>
-          <b>Drag</b> to turn · <b>scroll</b> to zoom
+          <b>{t('Drag')}</b> {t('to turn')} · <b>{t('scroll')}</b> {t('to zoom')}
         </li>
         <li>
-          <b>Pick a region</b> on the map
+          <b>{t('Pick a region')}</b> {t('on the map')}
         </li>
         <li>
-          <b>Explore the surface</b> to stand there
+          <b>{t('Explore the surface')}</b> {t('to stand there')}
         </li>
         <li>
-          <b>Analysis</b> compares sites
+          <b>{t('Analysis')}</b> {t('compares sites')}
         </li>
       </ul>
-      <button type="button" className="intro__close" onClick={close} aria-label="Dismiss tips">
+      <button type="button" className="intro__close" onClick={close} aria-label={t('Dismiss tips')}>
         <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.6" /></svg>
       </button>
     </aside>

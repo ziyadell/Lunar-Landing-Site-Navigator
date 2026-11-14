@@ -4,7 +4,9 @@ import { useApp } from './state/store';
 import { Viewport } from './ui/Viewport';
 import { Masthead } from './ui/stage/Masthead';
 import { RegionDeck } from './ui/stage/Regions';
-import { ConditionsCard } from './ui/stage/Conditions';
+import { ConditionsCard, SunDownNote } from './ui/stage/Conditions';
+import { SiteRanking } from './ui/stage/Ranking';
+import { t } from './i18n';
 import { TimePill } from './ui/stage/TimePill';
 import { Drawer, HeadingReadout, LookTools } from './ui/stage/Stage';
 import { CameraStack, ScaleBar } from './ui/ScaleBar';
@@ -60,15 +62,18 @@ function Boot({ state }: { state: BootState }) {
         <path d="M11 3.5a7.5 7.5 0 0 0 0 15 9 9 0 0 1 0-15z" fill="#05080F" opacity="0.55" />
         <circle cx="11" cy="11" r="10.25" fill="none" stroke="#4DDCF4" strokeWidth="1" strokeDasharray="2 2.6" />
       </svg>
-      <div className="boot__title">Lunar Landing Site Navigator</div>
+      <div className="boot__title">{t('Lunar Landing Site Navigator')}</div>
       {state.status === 'loading' ? (
-        <div className="boot__line">Loading JPL ephemeris and LOLA terrain…</div>
+        <>
+          <div className="boot__line boot__about">{t('LunaNav compares nine candidate landing sites near the lunar south pole: when each one sees the Sun and the Earth.')}</div>
+          <div className="boot__line boot__busy"><i className="loadchip__ring" aria-hidden="true" />{t('Loading JPL ephemeris and LOLA terrain…')}</div>
+        </>
       ) : (
         <div className="boot__error" role="alert">
-          <div className="boot__line boot__line--error">{PROBLEM[state.problem].title}</div>
-          <div className="boot__line">{PROBLEM[state.problem].text}</div>
+          <div className="boot__line boot__line--error">{t(PROBLEM[state.problem].title)}</div>
+          <div className="boot__line">{t(PROBLEM[state.problem].text)}</div>
           <button type="button" className="cta boot__retry" onClick={state.retry}>
-            {PROBLEM[state.problem].action}
+            {t(PROBLEM[state.problem].action)}
           </button>
         </div>
       )}
@@ -108,13 +113,17 @@ function Explore() {
           </div>
         )}
         <div className="hud__right">
-          <ConditionsCard />
+          <div className="hud__stack">
+            <ConditionsCard />
+            {mode === 'orbital' && <SiteRanking />}
+          </div>
           {mode === 'orbital' ? <CameraStack /> : <LookTools />}
         </div>
         <div className="hud__left">
           <RegionDeck />
         </div>
         <div className="hud__bottom">
+          {mode === 'surface' && <SunDownNote />}
           {mode === 'surface' && <SurfacePanorama />}
           <LoadingChip />
           <TimePill />
@@ -141,7 +150,7 @@ function Workspace() {
     return (
       <div className="app app--analysis" data-tour-spot={tourSpot ?? undefined}>
         <Masthead />
-        <Suspense fallback={<div className="analysis-loading">Preparing analysis…</div>}>
+        <Suspense fallback={<div className="analysis-loading">{t('Preparing analysis…')}</div>}>
           <AnalysisView />
         </Suspense>
         <Drawer />

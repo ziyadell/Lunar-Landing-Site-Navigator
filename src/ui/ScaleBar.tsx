@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { ViewMenu } from './stage/Stage';
 import { useCameraInfo, useCursorLL } from '../three/GlobeCamera';
 import { useApp } from '../state/store';
@@ -48,20 +49,20 @@ export function CameraStack() {
   const transitioning = useApp((s) => s.transitioning);
   const folded = useSettings((s) => s.toolsFolded);
   if (unavailable) return null;
-  if (folded) return <FoldedTools label="Camera tools" />;
+  if (folded) return <FoldedTools label={t('Camera tools')} />;
   return (
-    <div className="tool-col" role="group" aria-label="Camera" data-obstacle>
-      <button type="button" className="icon-tool" aria-label="Zoom in" title="Zoom in" onClick={() => zoom(0.6)} disabled={transitioning}>
+    <div className="tool-col" role="group" aria-label={t('Camera')} data-obstacle>
+      <button type="button" className="icon-tool" aria-label={t('Zoom in')} title={t('Zoom in')} onClick={() => zoom(0.6)} disabled={transitioning}>
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" /></svg>
       </button>
-      <button type="button" className="icon-tool" aria-label="Zoom out" title="Zoom out" onClick={() => zoom(1.65)} disabled={transitioning}>
+      <button type="button" className="icon-tool" aria-label={t('Zoom out')} title={t('Zoom out')} onClick={() => zoom(1.65)} disabled={transitioning}>
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" strokeWidth="1.5" /></svg>
       </button>
       <span className="tool-col__sep" aria-hidden="true" />
-      <button type="button" className="icon-tool" aria-label="Focus selected region" title="Focus selected region" onClick={focus} disabled={transitioning}>
+      <button type="button" className="icon-tool" aria-label={t('Focus selected region')} title={t('Focus selected region')} onClick={focus} disabled={transitioning}>
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="2.2" fill="currentColor" /><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" strokeWidth="1.2" /></svg>
       </button>
-      <button type="button" className="icon-tool" aria-label="Whole Moon" title="Whole Moon" onClick={reset} disabled={transitioning}>
+      <button type="button" className="icon-tool" aria-label={t('Whole Moon')} title={t('Whole Moon')} onClick={reset} disabled={transitioning}>
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" strokeWidth="1.2" /><path d="M7 1.8a5.2 5.2 0 0 0 0 10.4" fill="currentColor" opacity=".5" /></svg>
       </button>
       <span className="tool-col__sep" aria-hidden="true" />

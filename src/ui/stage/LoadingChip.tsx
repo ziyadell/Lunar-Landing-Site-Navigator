@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { useEffect, useState } from 'react';
 import { useFailures, useLoading } from '../../state/loading';
 
@@ -20,9 +21,9 @@ export function LoadingChip() {
     const f = failures[0];
     return (
       <div className="loadchip loadchip--failed" role="status" aria-live="polite">
-        <span className="loadchip__text">{f.label} did not load</span>
+        <span className="loadchip__text">{f.label} {t('did not load')}</span>
         <button type="button" className="loadchip__retry" onClick={f.retry}>
-          Retry
+          {t('Retry')}
         </button>
       </div>
     );
@@ -32,8 +33,8 @@ export function LoadingChip() {
     <div className="loadchip" role="status" aria-live="polite">
       <i className="loadchip__ring" aria-hidden="true" />
       <span className="loadchip__text">
-        Loading {items[0].label}
-        {items.length > 1 && <span className="loadchip__more"> · {items.length - 1} more</span>}
+        {t('Loading')} {items[0].label}
+        {items.length > 1 && <span className="loadchip__more"> · {items.length - 1} {t('more')}</span>}
       </span>
     </div>
   );

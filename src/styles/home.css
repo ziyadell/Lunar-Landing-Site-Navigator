@@ -1,0 +1,387 @@
+/* Homepage ranking, loading states, language toggle, team, and right-to-left support. */
+
+/* ------------------------------------------------------------ visibility readout */
+.cond__unit {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------ site ranking */
+.rank {
+  margin-top: var(--s2);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--glass-strong, rgba(17, 24, 39, 0.82));
+  border: 1px solid var(--glass-line, var(--hairline-strong));
+  backdrop-filter: blur(14px);
+}
+.rank__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+.rank__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  color: var(--text);
+  font: 600 var(--fs-label) var(--font-ui);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.rank__period {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+.rank__tabs {
+  display: inline-flex;
+  gap: 2px;
+}
+.rank__tab {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-secondary);
+  font: 500 var(--fs-label) var(--font-ui);
+  cursor: pointer;
+}
+.rank__tab.is-on {
+  color: var(--text);
+  border-color: var(--hairline-strong);
+  background: rgba(241, 245, 249, 0.06);
+}
+.rank__list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.rank__row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) 48px max-content;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 22px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-secondary);
+  font: 400 var(--fs-label) var(--font-ui);
+  text-align: start;
+  cursor: pointer;
+}
+.rank__row:hover,
+.rank__row.is-selected {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.06);
+}
+.rank__n {
+  color: var(--text-tertiary);
+}
+.rank__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank__bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--hairline);
+  overflow: hidden;
+}
+.rank__bar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--sun);
+}
+.rank--earth .rank__bar i {
+  background: var(--earth);
+}
+.rank--dark .rank__bar i {
+  background: var(--text-tertiary);
+}
+.rank__val {
+  white-space: nowrap;
+  text-align: end;
+  color: var(--text);
+}
+.rank__note,
+.rank__wait {
+  margin: 6px 0 0;
+  font-size: var(--fs-micro);
+  color: var(--text-tertiary);
+}
+.rank__wait {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 198px; /* the nine rows it becomes: no layout shift */
+}
+.app.is-prewelcome .rank,
+.app.is-focus .rank {
+  display: none;
+}
+
+/* ------------------------------------------------------------ loading */
+.boot__about {
+  max-width: 44ch;
+}
+.boot__busy {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.welcome__loading {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: 40ch;
+  margin: 0 auto var(--s4);
+  text-align: center;
+  font-size: var(--fs-body);
+  color: var(--text-secondary);
+}
+.welcome__loading p {
+  margin: 0;
+}
+.welcome__loading .loadchip__ring {
+  width: 26px;
+  height: 26px;
+  border-width: 2px;
+}
+.welcome__about {
+  color: var(--text-tertiary);
+  font-size: var(--fs-label);
+}
+.sundown {
+  color: var(--sun);
+}
+
+/* ------------------------------------------------------------ team */
+.team {
+  margin-bottom: var(--s5);
+}
+.team__h {
+  margin: 0 0 var(--s2);
+  font: 600 var(--fs-label) var(--font-ui);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.team__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.team__list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-body);
+}
+.team__list b {
+  font-weight: 500;
+}
+.team__list span {
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------ Arabic / right-to-left */
+:root[lang='ar'] {
+  --font-ui: 'Segoe UI', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, system-ui, sans-serif;
+  --font-display: var(--font-ui);
+  --tracking-label: 0;
+}
+[dir='rtl'] * {
+  letter-spacing: 0;
+}
+/* Numbers, coordinates and times keep their left-to-right order. */
+[dir='rtl'] .num,
+[dir='rtl'] .timepill,
+[dir='rtl'] .scalebar,
+[dir='rtl'] .compass {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+/* The 3D scene and its projected labels are positioned in screen pixels. */
+[dir='rtl'] .viewport,
+[dir='rtl'] .locator,
+[dir='rtl'] .modenav {
+  direction: ltr;
+}
+
+/* Conditions card with the ranking directly beneath it. */
+.hud__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  grid-area: cond; /* phones lay the HUD out as a grid */
+  min-width: 0;
+  pointer-events: none;
+}
+.hud__stack > * {
+  pointer-events: auto;
+}
+@media (max-height: 720px) {
+  .rank__note {
+    display: none;
+  }
+  .rank__row {
+    min-height: 19px;
+  }
+}
+/* The HUD corners are placed physically; keep their inner order, flip only the text. */
+[dir='rtl'] .hud__right {
+  direction: ltr;
+}
+[dir='rtl'] .hud__right .cond,
+[dir='rtl'] .rank {
+  direction: rtl;
+}
+/* With the ranking under the readings, the camera tools sit beside the cards at every desktop height. */
+@media (min-width: 760px) {
+  .app--orbital .hud__right {
+    flex-direction: row-reverse;
+    align-items: flex-start;
+  }
+}
+/* Mission guide sits beside the region card, clear of the readings, ranking and time bar. */
+@media (min-width: 760px) {
+  .app:not(.app--analysis) .hud__audio {
+    right: auto;
+    left: calc(var(--gutter) + 374px);
+    bottom: calc(var(--gutter) + 66px);
+  }
+}
+/* "Compare all" lines up with the card edge. */
+.deck-card__foot .text-btn {
+  margin-inline-start: -12px;
+}
+/* Secondary technical detail: state on one line, elevation on the next. */
+.cond__plain > span {
+  display: block;
+}
+
+/* ------------------------------------------------------------ launch delay */
+.delay {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: var(--s4) 0 0;
+  padding: 12px 16px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 10px;
+  background: rgba(241, 245, 249, 0.03);
+}
+.delay__q {
+  font: 600 var(--fs-body-lg) var(--font-ui);
+}
+.delay__field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: var(--fs-body);
+}
+.delay__n {
+  width: 72px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-body-lg);
+}
+.delay__hint {
+  flex-basis: 100%;
+  font-size: var(--fs-label);
+  color: var(--text-tertiary);
+}
+.notearth {
+  margin-bottom: var(--s4);
+}
+
+/* Previous / next arrows point outward in Arabic too (< >), like the reading direction. */
+[dir='rtl'] .round-btn svg,
+[dir='rtl'] .cond__more svg,
+[dir='rtl'] .dp__nav svg,
+[dir='rtl'] .cta svg[data-dir],
+[dir='rtl'] .aplayer__steps svg {
+  transform: scaleX(-1);
+}
+.team__name {
+  margin: 0;
+  font-size: var(--fs-body-lg);
+}
+
+/* Number stepper in the interface's own style (no browser spinner). */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  direction: ltr;
+  overflow: hidden;
+}
+.stepper__btn {
+  width: 32px;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font: 500 16px var(--font-ui);
+  cursor: pointer;
+}
+.stepper__btn:hover:not(:disabled) {
+  color: var(--text);
+  background: rgba(241, 245, 249, 0.06);
+}
+.stepper__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.stepper .delay__n {
+  width: 52px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-inline: 1px solid var(--hairline);
+  border-radius: 0;
+  background: none;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.stepper .delay__n::-webkit-outer-spin-button,
+.stepper .delay__n::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Arabic letters carry marks below the line: give dropdown text room so nothing is cut. */
+:root[lang='ar'] .sel__val,
+:root[lang='ar'] .sel__opt-label {
+  line-height: 1.9;
+  overflow: visible;
+}

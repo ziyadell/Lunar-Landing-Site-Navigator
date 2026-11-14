@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { activePreset, SURFACE_PRESETS, useApp, useLook, type SurfacePreset } from '../../state/store';
@@ -37,11 +38,11 @@ export function Drawer() {
   return (
     <>
     <div className="sheet-backdrop sheet-backdrop--drawer" aria-hidden="true" onClick={() => close(null)} />
-    <aside ref={ref} className={`drawer drawer--${drawer === 'atlas' ? 'left' : 'right'}`} aria-label={TITLES[drawer]} data-obstacle>
+    <aside ref={ref} className={`drawer drawer--${drawer === 'atlas' ? 'left' : 'right'}`} aria-label={t(TITLES[drawer])} data-obstacle>
       <header className="drawer__head">
         <h2 className="drawer__title">{TITLES[drawer]}</h2>
         {DRAWER_ITEM[drawer] && <Listen id={DRAWER_ITEM[drawer]!} />}
-        <button type="button" className="drawer__close" aria-label="Close" onClick={() => close(null)}>
+        <button type="button" className="drawer__close" aria-label={t('Close')} onClick={() => close(null)}>
           <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>
         </button>
       </header>
@@ -52,6 +53,16 @@ export function Drawer() {
         {drawer === 'about' && (
           <>
             {mode === 'surface' && <SurfaceMethod />}
+            <section className="team">
+              <h3 className="team__h">{t('Team')}</h3>
+              <p className="team__name">{t('AFUQ · Saudi Arabia')}</p>
+            </section>
+            <details className="disclose notearth">
+              <summary>Why the Moon’s sky is not like Earth’s</summary>
+              <p className="disclose__text">The Sun hugs the horizon. The Moon’s axis is tilted only about 1.5°, so at the poles the Sun never climbs more than a few degrees and circles the horizon about once a month. A hill a few degrees high can hide it, which is why the measured skyline decides everything here.</p>
+              <p className="disclose__text">The Earth does not rise and set daily. The Moon always keeps the same face toward Earth, so from one place Earth stays in nearly the same part of the sky. Near the poles it sits at the horizon, and the Moon’s slow wobble (libration) lifts it above the skyline or drops it below over about a month.</p>
+              <p className="disclose__text">A day lasts about 29.5 Earth days. Light and darkness come in stretches of days or weeks, not hours, so the longest stretch without Sun matters more than the average.</p>
+            </details>
             <DataSources open />
           </>
         )}
@@ -136,7 +147,7 @@ function Presets() {
   const apply = useApp((s) => s.applyPreset);
   const active = activePreset(layers);
   return (
-    <div className="seg" role="radiogroup" aria-label="Display preset">
+    <div className="seg" role="radiogroup" aria-label={t('Display preset')}>
       {(Object.keys(SURFACE_PRESETS) as SurfacePreset[]).map((k) => (
         <button key={k} type="button" role="radio" aria-checked={active === k} className={`seg__btn${active === k ? ' is-active' : ''}`} title={SURFACE_PRESETS[k].hint} onClick={() => apply(k)}>
           {SURFACE_PRESETS[k].label}
@@ -158,10 +169,10 @@ export function ViewMenu() {
   const layers = useApp((s) => s.layers);
   const active = activePreset(layers);
   return (
-    <Popover label="Display options" icon={LayersIcon} listenId="view-display" className="pop--view">
+    <Popover label={t('Display options')} icon={LayersIcon} listenId="view-display" className="pop--view">
       {mode === 'surface' && (
         <div className="pop__section">
-          <div className="pop__label">Preset</div>
+          <div className="pop__label">{t('Preset')}</div>
           <Presets />
           <p className="pop__hint">{active ? SURFACE_PRESETS[active].hint : 'Custom combination of layers.'}</p>
         </div>
@@ -196,28 +207,28 @@ export function LookTools() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionId, has]);
   if (unavailable) return null;
-  if (toolsFolded) return <FoldedTools label="Look tools" />;
+  if (toolsFolded) return <FoldedTools label={t('Look tools')} />;
   return (
-    <div className="tool-col" role="toolbar" aria-label="Look" data-obstacle>
-      <button type="button" className="icon-tool" aria-label="Reset view" title="Reset view" onClick={home}>
+    <div className="tool-col" role="toolbar" aria-label={t('Look')} data-obstacle>
+      <button type="button" className="icon-tool" aria-label={t('Reset view')} title={t('Reset view')} onClick={home}>
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
       <span className="tool-col__sep" aria-hidden="true" />
-      <button type="button" className="icon-tool icon-tool--sun" aria-label="Face the Sun" title="Face the Sun" disabled={!conditions} onClick={() => conditions && aim(conditions.sun.azDeg, conditions.sun.elDeg)}>
+      <button type="button" className="icon-tool icon-tool--sun" aria-label={t('Face the Sun')} title={t('Face the Sun')} disabled={!conditions} onClick={() => conditions && aim(conditions.sun.azDeg, conditions.sun.elDeg)}>
         <SunGlyph size={16} />
       </button>
-      <button type="button" className="icon-tool icon-tool--earth" aria-label="Face Earth" title="Face Earth" disabled={!conditions} onClick={() => conditions && aim(conditions.earth.azDeg, conditions.earth.elDeg)}>
+      <button type="button" className="icon-tool icon-tool--earth" aria-label={t('Face Earth')} title={t('Face Earth')} disabled={!conditions} onClick={() => conditions && aim(conditions.earth.azDeg, conditions.earth.elDeg)}>
         <EarthGlyph size={16} />
       </button>
-      <button type="button" className="icon-tool" aria-label="Face north" title="Face north" onClick={() => look.set({ yaw: 0, pitch: 4 })}>
+      <button type="button" className="icon-tool" aria-label={t('Face north')} title={t('Face north')} onClick={() => look.set({ yaw: 0, pitch: 4 })}>
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8 11.2 13 8 10.8 4.8 13z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
       </button>
       <span className="tool-col__sep" aria-hidden="true" />
-      <button type="button" className="icon-tool" aria-label="Narrow field of view" title="Zoom in" onClick={() => look.set({ fov: look.fov / 1.4 })}>
+      <button type="button" className="icon-tool" aria-label={t('Narrow field of view')} title={t('Zoom in')} onClick={() => look.set({ fov: look.fov / 1.4 })}>
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" /></svg>
       </button>
       <span className="tool-col__read num" aria-label={`Field of view ${look.fov.toFixed(0)} degrees`}>{look.fov.toFixed(0)}°</span>
-      <button type="button" className="icon-tool" aria-label="Widen field of view" title="Zoom out" onClick={() => look.set({ fov: look.fov * 1.4 })}>
+      <button type="button" className="icon-tool" aria-label={t('Widen field of view')} title={t('Zoom out')} onClick={() => look.set({ fov: look.fov * 1.4 })}>
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10" stroke="currentColor" strokeWidth="1.5" /></svg>
       </button>
       <span className="tool-col__sep" aria-hidden="true" />

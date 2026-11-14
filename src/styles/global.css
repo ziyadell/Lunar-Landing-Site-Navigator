@@ -192,7 +192,7 @@ a:hover {
 .readout__value {
   margin: 0;
   font-size: var(--fs-body);
-  text-align: right;
+  text-align: end;
   white-space: nowrap;
 }
 .readout__value .plain {
@@ -204,7 +204,7 @@ a:hover {
   font-weight: 500;
 }
 .readout__unit {
-  margin-left: 5px;
+  margin-inline-start: 5px;
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
   color: var(--text-tertiary);
@@ -442,7 +442,7 @@ a:hover {
 }
 .field select {
   font-family: var(--font-ui);
-  padding-right: var(--s5);
+  padding-inline-end: var(--s5);
 }
 .field input:hover,
 .field select:hover {
@@ -705,7 +705,7 @@ a:hover {
 }
 .metrics th,
 .metrics td {
-  text-align: right;
+  text-align: end;
   padding: 7px var(--s3);
   border-bottom: 1px solid var(--hairline);
   white-space: nowrap;
@@ -721,8 +721,8 @@ a:hover {
   color: var(--accent);
 }
 .metrics th:first-child {
-  text-align: left;
-  padding-left: 0;
+  text-align: start;
+  padding-inline-start: 0;
 }
 .metrics tbody th {
   font-weight: 400;
@@ -768,7 +768,7 @@ a:hover {
   font-family: var(--font-mono);
   font-weight: 600;
   color: var(--text);
-  margin-right: 4px;
+  margin-inline-end: 4px;
 }
 .timeline--B .timeline__key {
   color: var(--accent);
@@ -1220,7 +1220,7 @@ a:hover {
   flex-direction: column;
   line-height: 1.2;
   padding: 3px 0;
-  text-align: left;
+  text-align: start;
 }
 .gm-cluster__k {
   font-size: var(--fs-micro);
@@ -1317,7 +1317,7 @@ a:hover {
 /* Surface presets & compass off-screen indicators */
 .presets {
   display: inline-flex;
-  margin-right: 6px;
+  margin-inline-end: 6px;
   margin-bottom: 4px;
   background: rgba(5, 8, 15, 0.82);
   border: 1px solid var(--hairline-strong);

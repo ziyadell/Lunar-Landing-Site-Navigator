@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import narration from './narration.json';
+import narrationAr from './narration.ar.json';
+import { t as tr } from '../i18n';
 import { useSettings } from '../state/settings';
 import { assetUrl } from '../data/release';
 
@@ -30,8 +32,17 @@ export interface NarrationItem {
 }
 
 const ITEMS = new Map<string, NarrationItem>((narration.items as NarrationItem[]).map((i) => [i.id, i]));
-export const narrationItem = (id: string) => ITEMS.get(id);
-export const narrationItems = () => [...ITEMS.values()];
+const AR = new Map<string, { title: string; text: string }>((narrationAr.items as { id: string; title: string; text: string }[]).map((i) => [i.id, i]));
+const isAr = () => useSettings.getState().lang === 'ar';
+/** The item in the interface language: Arabic title and text over the same id and tour step. */
+export const narrationItem = (id: string): NarrationItem | undefined => {
+  const it = ITEMS.get(id);
+  const ar = isAr() ? AR.get(id) : undefined;
+  return it && ar ? { ...it, ...ar } : it;
+};
+export const narrationItems = () => [...ITEMS.keys()].map((id) => narrationItem(id)!);
+/** Recordings live beside each other: English in audio/narration, Arabic in audio/narration/ar. */
+const clipDir = () => (isAr() ? 'audio/narration/ar' : 'audio/narration');
 
 export type Source = 'recorded' | 'server' | 'captions';
 interface PlayerState {
@@ -87,29 +98,33 @@ const words = (t: string) => t.split(/\s+/).filter(Boolean).length;
 const readMs = (t: string) => Math.max(1500, (words(t) / 2.6) * 1000) / useSettings.getState().rate;
 
 // ------------------------------------------------------------------ recorded clips
-let manifest: Promise<Set<string> | null> | null = null;
+const manifests = new Map<string, Promise<Set<string> | null>>();
 /**
  * Ids of the recorded clips, from the manifest; null when the manifest could not be read
  * (network busy or offline). Fetched once at start-up, before the large Moon imagery starts
  * downloading, so it is ready when Start Mission plays the welcome.
  */
 function recordedIds(): Promise<Set<string> | null> {
-  manifest ??= (async () => {
+  const dir = clipDir();
+  const known = manifests.get(dir);
+  if (known) return known;
+  const p = (async () => {
     const ctl = new AbortController();
     const timer = window.setTimeout(() => ctl.abort(), 12_000);
     try {
-      const r = await fetch(assetUrl('audio/narration/manifest.json'), { cache: 'no-cache', signal: ctl.signal });
+      const r = await fetch(assetUrl(`${dir}/manifest.json`), { cache: 'no-cache', signal: ctl.signal });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const m = (await r.json()) as { files?: Record<string, unknown> };
       return new Set(Object.keys(m.files ?? {}));
     } catch {
-      manifest = null; // try again next time
+      manifests.delete(dir); // try again next time
       return null;
     } finally {
       window.clearTimeout(timer);
     }
   })();
-  return manifest;
+  manifests.set(dir, p);
+  return p;
 }
 if (typeof window !== 'undefined') void recordedIds();
 
@@ -256,26 +271,27 @@ export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {
   usePlayer.setState({ item, playing: false, loading: true, progress: 0, note: null, canRetry: false, onEnd: opts.onEnd ?? null, started: false });
   if (useSettings.getState().voice === 'captions') return toCaptions(item, t, null, false);
   if (item.calculated) {
-    const url = await serverVoice(item.text);
+    // shortcut: the live-reading voice endpoint only accepts the English template; Arabic readings are captions.
+    const url = isAr() ? null : await serverVoice(item.text);
     if (t !== token) return; // a newer narration (or a region change) replaced this one
     if (url) return playAudio(item, t, url, 'server');
-    return toCaptions(item, t, 'Voice not available for live readings · captions', false);
+    return toCaptions(item, t, tr('Voice not available for live readings · captions'), false);
   }
   const ids = await recordedIds();
   if (t !== token) return;
   // A known list without this clip means there is no recording. An unreadable list (busy
   // network) is not proof of that: try the recording itself, which falls back to captions
   // if it does not load.
-  if (ids && !ids.has(item.id)) return toCaptions(item, t, 'Recorded narration not available · captions', true);
-  const pre = early.get(item.id);
+  if (ids && !ids.has(item.id)) return toCaptions(item, t, tr('Recorded narration not available · captions'), true);
+  const pre = isAr() ? undefined : early.get(item.id);
   // Normally already downloaded; if not, wait a little, then stream it instead.
   const local = pre ? await Promise.race([pre, new Promise<null>((r) => window.setTimeout(() => r(null), 6000))]) : null;
   if (t !== token) return;
-  playAudio(item, t, local ?? assetUrl(`audio/narration/${item.id}.mp3`), 'recorded');
+  playAudio(item, t, local ?? assetUrl(`${clipDir()}/${item.id}.mp3`), 'recorded');
 }
 
 export function playId(id: string, opts?: { onEnd?: () => void }) {
-  const it = ITEMS.get(id);
+  const it = narrationItem(id);
   if (it) return play(it, opts);
 }
 
@@ -283,7 +299,7 @@ export function playId(id: string, opts?: { onEnd?: () => void }) {
 export function retryVoice() {
   const st = usePlayer.getState();
   if (!st.item) return;
-  manifest = null;
+  manifests.delete(clipDir());
   serverVoiceDown = false;
   void play(st.item, { onEnd: st.onEnd ?? undefined });
 }
@@ -429,3 +445,12 @@ export function stopCue() {
 }
 
 if (import.meta.env.DEV && typeof window !== 'undefined') Object.assign(window, { __engine: { splitSentences, play, pause, resume, stop, setMuted, playId, retryVoice } });
+
+// A narration started in one language never keeps playing (or stays captioned) in the other.
+let langWas = useSettings.getState().lang;
+useSettings.subscribe((s) => {
+  if (s.lang !== langWas) {
+    langWas = s.lang;
+    stop();
+  }
+});

@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/store';
 import { useData } from '../data/DataContext';
@@ -47,10 +48,10 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
   return (
     <div className={`time-inputs${compact ? ' time-inputs--compact' : ''}`}>
       <div className="field">
-        <label htmlFor="obs-date">Date (UTC)</label>
+        <label htmlFor="obs-date">{t('Date (UTC)')}</label>
         <DateField
           id="obs-date"
-          label="Observation date"
+          label={t('Observation date')}
           value={date}
           min={min}
           max={max}
@@ -61,7 +62,7 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
         />
       </div>
       <div className="field field--time">
-        <label htmlFor="obs-time">Time (UTC)</label>
+        <label htmlFor="obs-time">{t('Time (UTC)')}</label>
         <input
           id="obs-time"
           type="text"
@@ -79,9 +80,9 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
         />
         <span id="obs-time-hint" className="sr-only">24-hour UTC, for example 14:30</span>
       </div>
-      {steps && <div className="stepper" role="group" aria-label="Step observation time">
-        <button type="button" onClick={() => step(-D)} aria-label="Back one day">−1d</button>
-        <button type="button" onClick={() => step(-H)} aria-label="Back one hour">−1h</button>
+      {steps && <div className="stepper" role="group" aria-label={t('Step observation time')}>
+        <button type="button" onClick={() => step(-D)} aria-label={t('Back one day')}>−1d</button>
+        <button type="button" onClick={() => step(-H)} aria-label={t('Back one hour')}>−1h</button>
         <button
           type="button"
           className={`stepper__play${playing ? ' is-on' : ''}`}
@@ -95,8 +96,8 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l7-4z" fill="currentColor" /></svg>
           )}
         </button>
-        <button type="button" onClick={() => step(H)} aria-label="Forward one hour">+1h</button>
-        <button type="button" onClick={() => step(D)} aria-label="Forward one day">+1d</button>
+        <button type="button" onClick={() => step(H)} aria-label={t('Forward one hour')}>+1h</button>
+        <button type="button" onClick={() => step(D)} aria-label={t('Forward one day')}>+1d</button>
       </div>}
       <button
         type="button"

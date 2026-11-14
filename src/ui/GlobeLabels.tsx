@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/store';
 import { useData } from '../data/DataContext';
@@ -52,7 +53,7 @@ export function GlobeLabels() {
         aria-label={`Landing Regions: choose any of the ${sites.regions.length} regions. Selected: ${sel.name}.`}>
         <i className="gm-cluster__dot" aria-hidden="true" />
         <span className="gm-cluster__chip" aria-hidden="true">
-          <span className="gm-cluster__sel">Landing Regions</span>
+          <span className="gm-cluster__sel">{t('Landing Regions')}</span>
           <svg className="gm-cluster__chev" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.6" /></svg>
         </span>
       </button>

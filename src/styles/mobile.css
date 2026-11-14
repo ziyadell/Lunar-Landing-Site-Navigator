@@ -46,7 +46,7 @@
   flex: none;
   width: 34px;
   height: 32px;
-  margin-right: 3px;
+  margin-inline-end: 3px;
   border: 0;
   border-radius: 8px;
   background: none;
@@ -192,7 +192,7 @@
 .study__all-title .listen,
 .study__method summary .listen {
   vertical-align: middle;
-  margin-left: 4px;
+  margin-inline-start: 4px;
 }
 
 /* ------------------------------------------------------------ recovery states */
@@ -297,7 +297,7 @@
   background: none;
   color: var(--text);
   font: 500 14px/1 var(--font-ui);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .more__item:hover,

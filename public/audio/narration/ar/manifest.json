@@ -1,0 +1,266 @@
+{
+ "files": {
+  "welcome": {
+   "hash": "9c0c768e7f6758a8",
+   "bytes": 172660,
+   "chars": 109
+  },
+  "orbit-intro": {
+   "hash": "a7f8b9440adf18c1",
+   "bytes": 542554,
+   "chars": 350
+  },
+  "region-peak-near-cabeus-b": {
+   "hash": "b986833f10ce0387",
+   "bytes": 349038,
+   "chars": 232
+  },
+  "region-haworth": {
+   "hash": "5efb95b9ea5a86f0",
+   "bytes": 445169,
+   "chars": 289
+  },
+  "region-malapert-massif": {
+   "hash": "e9741d3975336cf9",
+   "bytes": 464395,
+   "chars": 302
+  },
+  "region-mons-mouton-plateau": {
+   "hash": "5036c7b2c7d8f94b",
+   "bytes": 386237,
+   "chars": 258
+  },
+  "region-mons-mouton": {
+   "hash": "c97303fbeb4be223",
+   "bytes": 447677,
+   "chars": 292
+  },
+  "region-nobile-rim-1": {
+   "hash": "7138d99ea350b986",
+   "bytes": 340261,
+   "chars": 223
+  },
+  "region-nobile-rim-2": {
+   "hash": "76ac9d2d2c0a1d17",
+   "bytes": 377460,
+   "chars": 252
+  },
+  "region-de-gerlache-rim-2": {
+   "hash": "057ea7662f0935bb",
+   "bytes": 432630,
+   "chars": 286
+  },
+  "region-slater-plain": {
+   "hash": "c3e6eb3a9e5d3026",
+   "bytes": 497832,
+   "chars": 332
+  },
+  "surface-intro": {
+   "hash": "d4d774deb71267a6",
+   "bytes": 556764,
+   "chars": 357
+  },
+  "analysis-intro": {
+   "hash": "00286a43fb6da0bc",
+   "bytes": 713917,
+   "chars": 425
+  },
+  "term-elevation": {
+   "hash": "19ca1aea554880ad",
+   "bytes": 312258,
+   "chars": 210
+  },
+  "term-azimuth": {
+   "hash": "21047335f9b740a0",
+   "bytes": 303063,
+   "chars": 185
+  },
+  "term-skyline": {
+   "hash": "bd33a738f21a2b3b",
+   "bytes": 415912,
+   "chars": 254
+  },
+  "term-clearance": {
+   "hash": "ec3873f8cff02314",
+   "bytes": 252072,
+   "chars": 157
+  },
+  "term-coordinates": {
+   "hash": "d29a2cb39b1c9f3d",
+   "bytes": 314766,
+   "chars": 211
+  },
+  "term-intervals": {
+   "hash": "b7110860fbd822bb",
+   "bytes": 273806,
+   "chars": 161
+  },
+  "view-time": {
+   "hash": "752281e920890541",
+   "bytes": 381221,
+   "chars": 244
+  },
+  "view-display": {
+   "hash": "69eb9a64889cbbcd",
+   "bytes": 536284,
+   "chars": 321
+  },
+  "view-measurements": {
+   "hash": "72d77ea41f1958ed",
+   "bytes": 395432,
+   "chars": 250
+  },
+  "view-sources": {
+   "hash": "05ecf5460a32d60e",
+   "bytes": 494070,
+   "chars": 294
+  },
+  "view-atlas": {
+   "hash": "89b47bc220d7c0d2",
+   "bytes": 194394,
+   "chars": 131
+  },
+  "analysis-scenarios": {
+   "hash": "01c2965ffa243fec",
+   "bytes": 379967,
+   "chars": 234
+  },
+  "analysis-glance": {
+   "hash": "bfbc787cd698a96b",
+   "bytes": 486129,
+   "chars": 279
+  },
+  "analysis-timeline": {
+   "hash": "a8d744f4e1d3081b",
+   "bytes": 353218,
+   "chars": 212
+  },
+  "analysis-ground": {
+   "hash": "2190e98f098ed95a",
+   "bytes": 364503,
+   "chars": 231
+  },
+  "analysis-metrics": {
+   "hash": "457cf69634cf5912",
+   "bytes": 345277,
+   "chars": 200
+  },
+  "analysis-method": {
+   "hash": "e1de566251153fcd",
+   "bytes": 657910,
+   "chars": 411
+  },
+  "view-regions": {
+   "hash": "e79cb949f1c49a65",
+   "bytes": 382475,
+   "chars": 232
+  },
+  "view-locator": {
+   "hash": "8ad3c8aa2d5be6ac",
+   "bytes": 237861,
+   "chars": 159
+  },
+  "view-skyline": {
+   "hash": "cfb6f02c9730fa0d",
+   "bytes": 414658,
+   "chars": 245
+  },
+  "view-compass": {
+   "hash": "9a1440db8596293e",
+   "bytes": 290524,
+   "chars": 177
+  },
+  "view-camera": {
+   "hash": "fefdc0fbbc45cfa6",
+   "bytes": 309750,
+   "chars": 196
+  },
+  "view-look": {
+   "hash": "6a35841649351fcc",
+   "bytes": 364503,
+   "chars": 219
+  },
+  "view-settings": {
+   "hash": "70f2d1da505b3421",
+   "bytes": 316020,
+   "chars": 208
+  },
+  "tour-regions-intro": {
+   "hash": "25c0ec38969995f6",
+   "bytes": 298047,
+   "chars": 172
+  },
+  "tour-moon": {
+   "hash": "2caa431d5d6b01da",
+   "bytes": 363249,
+   "chars": 227
+  },
+  "tour-nav": {
+   "hash": "a1fdcea6a317feae",
+   "bytes": 438900,
+   "chars": 281
+  },
+  "tour-pole": {
+   "hash": "12a57d94dba7477f",
+   "bytes": 268790,
+   "chars": 177
+  },
+  "tour-region": {
+   "hash": "f20b9a1682da6992",
+   "bytes": 346531,
+   "chars": 227
+  },
+  "tour-time": {
+   "hash": "a0ff23b077865771",
+   "bytes": 323543,
+   "chars": 202
+  },
+  "tour-measure": {
+   "hash": "1435a78796e8d787",
+   "bytes": 450185,
+   "chars": 284
+  },
+  "tour-surface": {
+   "hash": "ceb0625de694acd0",
+   "bytes": 345277,
+   "chars": 219
+  },
+  "tour-surface-controls": {
+   "hash": "961e9e1c393a77e0",
+   "bytes": 413404,
+   "chars": 252
+  },
+  "tour-analysis": {
+   "hash": "fc079679202b97a4",
+   "bytes": 295540,
+   "chars": 177
+  },
+  "tour-compare": {
+   "hash": "b216436c26e405cb",
+   "bytes": 373698,
+   "chars": 209
+  },
+  "tour-csv": {
+   "hash": "7a075f53d4653c81",
+   "bytes": 318527,
+   "chars": 199
+  },
+  "tour-sources": {
+   "hash": "696210dcdbf911f7",
+   "bytes": 483621,
+   "chars": 270
+  }
+ },
+ "voice": {
+  "voiceId": "hpp4J3VqNfWAUOO0d1Us",
+  "voiceName": "Bella",
+  "modelId": "eleven_v4",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+   "stability": 0.7,
+   "similarityBoost": 0.6
+  }
+ },
+ "version": "afuq-2",
+ "updatedUtc": "2026-11-14T03:26:03.778Z"
+}

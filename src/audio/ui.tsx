@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+import { LangToggle } from '../ui/stage/Masthead';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMedia } from '../utils/useMedia';
 import { create } from 'zustand';
@@ -283,9 +285,9 @@ function GuideMenu({ onClose, anchor }: { onClose: (restore: boolean) => void; a
   return (
     <>
     <div className="sheet-backdrop sheet-backdrop--guide" aria-hidden="true" />
-    <div className="guide__menu sheet" ref={ref} role="dialog" aria-label="Mission guide">
+    <div className="guide__menu sheet" ref={ref} role="dialog" aria-label={t('Mission guide')}>
       <div className="sheet__head">
-        <span className="sheet__title">Mission guide</span>
+        <span className="sheet__title">{t('Mission guide')}</span>
         <button type="button" className="sheet__close" aria-label="Close the guide menu" onClick={() => onClose(true)}>
           {I.close}
         </button>
@@ -399,7 +401,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
       ref={host}
       className={`guide guide--${placement}${inTour ? ' is-tour' : ''}${active ? ' is-active' : ''}${active && minimized ? ' is-min' : ''}${drag.grip ? ' is-movable' : ''}${drag.dragging ? ' is-dragging' : ''}`}
       style={drag.style}
-      aria-label="Mission guide"
+      aria-label={t('Mission guide')}
       data-obstacle
     >
       {active && minimized && (
@@ -466,7 +468,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
             <button type="button" className="aplayer__btn" aria-label="Replay" title="Replay" onClick={() => (inTour ? replayStep() : replay())}>
               {I.replay}
             </button>
-            <button type="button" className="aplayer__btn aplayer__btn--rate num" aria-label={`Playback speed ${rate} times. Change speed.`} title="Playback speed" onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}>
+            <button type="button" className="aplayer__btn aplayer__btn--rate num" aria-label={`Playback speed ${rate} times. Change speed.`} title={t('Playback speed')} onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}>
               {rate}×
             </button>
             <button type="button" className={`aplayer__btn${muted ? ' is-on' : ''}`} aria-pressed={muted} aria-label="Mute" title={muted ? 'Unmute' : 'Mute'} onClick={() => setMuted(!muted)}>
@@ -521,6 +523,7 @@ export function Welcome() {
   const mode = useApp((s) => s.mode);
   const intro = useApp((s) => s.intro);
   const muted = usePlayer((s) => s.muted);
+  const globe = useReadiness((s) => s.globe);
   const [phase, setPhase] = useState<'idle' | 'starting' | 'preparing'>('idle');
   const startedRef = useRef(false);
   const timers = useRef<number[]>([]);
@@ -569,6 +572,13 @@ export function Welcome() {
 
   return (
     <div className={`welcome welcome--start${phase !== 'idle' ? ' is-starting' : ''}`} role="region" aria-label="Start">
+      {globe === 'pending' && phase === 'idle' && (
+        <div className="welcome__loading" role="status">
+          <i className="loadchip__ring" aria-hidden="true" />
+          <p>{t('Loading Moon imagery, terrain and Sun/Earth positions…')}</p>
+          <p className="welcome__about">{t('LunaNav compares nine candidate landing sites near the lunar south pole: when each one sees the Sun and the Earth.')}</p>
+        </div>
+      )}
       <button
         type="button"
         className="welcome__enter welcome__enter--start"
@@ -576,15 +586,16 @@ export function Welcome() {
         aria-disabled={phase !== 'idle'}
         aria-describedby={phase === 'preparing' ? 'welcome-status' : undefined}
       >
-        {phase === 'idle' ? 'Start Mission' : phase === 'preparing' ? 'Preparing the Moon…' : 'Starting…'}
+        {t(phase === 'idle' ? 'Start Mission' : phase === 'preparing' ? 'Preparing the Moon…' : 'Starting…')}
       </button>
       <div className="welcome__under">
         <button type="button" className="welcome__sound" aria-pressed={!muted} onClick={() => setMuted(!muted)}>
           {muted ? I.muted : I.sound}
-          <span>{muted ? 'Sound off' : 'Sound on'}</span>
+          <span>{t(muted ? 'Sound off' : 'Sound on')}</span>
         </button>
+        <LangToggle />
         <span id="welcome-status" className="welcome__status" role="status" aria-live="polite">
-          {phase === 'preparing' ? 'Loading full-resolution imagery' : ''}
+          {phase === 'preparing' ? t('Loading full-resolution imagery') : ''}
         </span>
       </div>
     </div>

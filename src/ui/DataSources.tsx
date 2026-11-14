@@ -5,6 +5,12 @@ export function DataSources({ open = false }: { open?: boolean }) {
   const worst = validation
     ? Math.max(...validation.sites.flatMap((s) => [s.sun.maxElevErrDeg, s.earth.maxElevErrDeg, s.sun.maxAzErrDeg, s.earth.maxAzErrDeg]))
     : null;
+  // Libration is not modelled separately: it is the motion of the sub-Earth point itself.
+  const span = (v: number[], wrap: boolean) => {
+    const x = wrap ? v.map((d) => ((d + 540) % 360) - 180) : v;
+    return `${Math.min(...x).toFixed(1)}° to ${Math.max(...x).toFixed(1)}`;
+  };
+  const lib = { lon: span(ephemeris.file.subEarthLonDeg, true), lat: span(ephemeris.file.subEarthLatDeg, false) };
   return (
     <details className="disclose disclose--section sources" open={open}>
       <summary>Data &amp; method</summary>
@@ -43,6 +49,10 @@ export function DataSources({ open = false }: { open?: boolean }) {
           <dt>Visibility</dt>
           <dd>Terrain-corrected: disc centre above the LOLA skyline (rays to 150 km)</dd>
         </div>
+        <div>
+          <dt>Libration</dt>
+          <dd>{`Included. Earth’s direction follows the hourly sub-Earth point, which moves ${lib.lon}° in longitude and ${lib.lat}° in latitude over the covered period.`}</dd>
+        </div>
         {worst !== null && (
           <div>
             <dt>Validated</dt>
@@ -52,6 +62,7 @@ export function DataSources({ open = false }: { open?: boolean }) {
           </div>
         )}
       </dl>
+      <p className="fineprint">Made for landing-site planning: the question behind NASA’s CLPS deliveries and Artemis III alike is when a site sees the Sun and the Earth, and what changes if the date slips.</p>
       <p className="fineprint">Earth visibility is a geometric line of sight only, not a guaranteed communication link.</p>
       <p className="fineprint">Space Apps 2026 project using NASA data. Not an official NASA product or endorsed by NASA.</p>
     </details>

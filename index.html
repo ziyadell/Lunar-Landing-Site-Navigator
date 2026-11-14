@@ -9,7 +9,25 @@
     <title>Lunar Landing Site Navigator</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Shown until the app script has loaded and replaced it. -->
+      <style>
+        body{margin:0;background:#05080f}
+        .pre{position:fixed;inset:0;display:grid;place-content:center;justify-items:center;gap:12px;padding:24px;text-align:center;color:#a3afc2;font:14px/1.5 system-ui,sans-serif}
+        .pre b{color:#f1f5f9;font-size:18px;font-weight:600}
+        .pre i{width:28px;height:28px;border-radius:50%;border:2px solid rgba(77,220,244,.25);border-top-color:#4ddcf4;animation:pre 900ms linear infinite}
+        .pre p{margin:0;max-width:34ch}
+        @keyframes pre{to{transform:rotate(360deg)}}
+      </style>
+      <div class="pre" role="status">
+        <i aria-hidden="true"></i>
+        <b>LunaNav</b>
+        <p id="pre-t">Loading the Moon, its terrain and a year of Sun and Earth positions…</p>
+      </div>
+      <script>
+        try { if (JSON.parse(localStorage.getItem('lsn.settings.v2') || '{}').lang === 'ar') { document.documentElement.lang = 'ar'; document.documentElement.dir = 'rtl'; document.getElementById('pre-t').textContent = 'جارٍ تحميل القمر وتضاريسه ومواقع الشمس والأرض لسنة كاملة…'; } } catch (e) {}
+      </script>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

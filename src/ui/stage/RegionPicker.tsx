@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../state/store';
@@ -119,7 +120,7 @@ export function RegionPicker() {
           }
         }}
       >
-        <span className="rpick__label">Landing Regions</span>
+        <span className="rpick__label">{t('Landing Regions')}</span>
         <span className="rpick__count num" aria-hidden="true">
           {regions.length}
         </span>
@@ -132,12 +133,12 @@ export function RegionPicker() {
         createPortal(
           <>
             <div className="sheet-backdrop" aria-hidden="true" />
-            <div className={`rpick__panel sheet${pos.up ? ' is-up' : ''}`} style={{ left: pos.left, top: pos.top, maxHeight: pos.maxH }} role="dialog" aria-label="Landing Regions">
+            <div className={`rpick__panel sheet${pos.up ? ' is-up' : ''}`} style={{ left: pos.left, top: pos.top, maxHeight: pos.maxH }} role="dialog" aria-label={t('Landing Regions')}>
               <div className="sheet__head">
-                <span className="sheet__title">Landing Regions</span>
+                <span className="sheet__title">{t('Landing Regions')}</span>
                 <Listen id="view-regions" />
                 <span className="rpick__sub">NASA Artemis III candidates · {regions.length}</span>
-                <button type="button" className="sheet__close" aria-label="Close landing regions" onClick={() => close(true)}>
+                <button type="button" className="sheet__close" aria-label={t('Close landing regions')} onClick={() => close(true)}>
                   <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>
                 </button>
               </div>
@@ -147,7 +148,7 @@ export function RegionPicker() {
                 className="rpick__list"
                 role="listbox"
                 tabIndex={-1}
-                aria-label="Landing Regions"
+                aria-label={t('Landing Regions')}
                 aria-activedescendant={`${listId}-${regions[active]?.id}`}
                 onKeyDown={onKey}
               >
