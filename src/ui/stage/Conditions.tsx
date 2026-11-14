@@ -80,6 +80,20 @@ function Body({ which, b, next, timeMs }: { which: 'sun' | 'earth'; b: Topocentr
 /** Spoken summary of the current readings (calculated from app state, never invented). */
 const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
+/** Spoken (fully vowelled) forms for the live reading: month names and region names after "لِمِنْطَقَةِ". */
+const AR_MONTHS_SAY = ['يَنَايِرَ', 'فِبْرَايِرَ', 'مَارِسَ', 'أَبْرِيلَ', 'مَايُو', 'يُونْيُو', 'يُولْيُو', 'أَغُسْطُسَ', 'سِبْتَمْبِرَ', 'أُكْتُوبَرَ', 'نُوفَمْبِرَ', 'دِيسَمْبِرَ'];
+const AR_REGION_SAY: Record<string, string> = {
+  'Peak near Cabeus B': 'الْقِمَّةِ قُرْبَ كَابْيُوسْ بِي',
+  Haworth: 'هَاوُورْثْ',
+  'Malapert Massif': 'كُتْلَةِ مَالَابِيرْتْ',
+  'Mons Mouton Plateau': 'هَضْبَةِ جَبَلِ مُوتُونْ',
+  'Mons Mouton': 'جَبَلِ مُوتُونْ',
+  'Nobile Rim 1': 'حَافَّةِ نُوبِيلِهْ الْأُولَى',
+  'Nobile Rim 2': 'حَافَّةِ نُوبِيلِهْ الثَّانِيَةِ',
+  'de Gerlache Rim 2': 'حَافَّةِ دِي جِيرْلَاشْ الثَّانِيَةِ',
+  'Slater Plain': 'سَهْلِ سْلِيتَرْ',
+};
+
 function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<typeof useConditions>['conditions']>): NarrationItem {
   if (useSettings.getState().lang === 'ar') {
     // Arabic reading (captions): same calculated values, Arabic wording.
@@ -102,7 +116,7 @@ function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<t
       title: 'الأحوال الآن',
       calculated: true,
       text: `محسوب لمنطقة ${t(regionName)}، ${when}. ${say('الشمس', c.sun)} ${say('الأرض', c.earth)} ورؤية الأرض خط نظر هندسي، وليست ضمانًا للاتصال.`,
-      say: `هَذِهِ قِرَاءَةٌ مَحْسُوبَةٌ لِلْمَوْقِعِ وَالْوَقْتِ الْمُخْتَارَيْنِ. ${sayV('الشَّمْسُ', c.sun)} ${sayV('الْأَرْضُ', c.earth)} وَرُؤْيَةُ الْأَرْضِ خَطُّ نَظَرٍ هَنْدَسِيٌّ، وَلَيْسَتْ ضَمَانًا لِلِاتِّصَالِ.`,
+      say: `هَذِهِ قِرَاءَةٌ مَحْسُوبَةٌ لِمِنْطَقَةِ ${AR_REGION_SAY[regionName] ?? t(regionName)}، فِي ${d.getUTCDate()} ${AR_MONTHS_SAY[d.getUTCMonth()]} ${d.getUTCFullYear()}، السَّاعَةَ ${d.getUTCHours()}${d.getUTCMinutes() ? ` وَ ${d.getUTCMinutes()} دَقِيقَةً` : ''} بِالتَّوْقِيتِ الْعَالَمِيِّ زَائِدِ ثَلَاثِ سَاعَاتٍ. ${sayV('الشَّمْسُ', c.sun)} ${sayV('الْأَرْضُ', c.earth)} وَرُؤْيَةُ الْأَرْضِ خَطُّ نَظَرٍ هَنْدَسِيٌّ، وَلَيْسَتْ ضَمَانًا لِلِاتِّصَالِ.`,
     };
   }
   const d = zoned(timeMs);
