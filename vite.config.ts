@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -68,8 +68,28 @@ function release(): Plugin {
 }
 
 // `base: './'` keeps the build portable for static hosts (GitHub Pages, Netlify, S3).
+/** Dev server only: answer /api/tts with the same handler Vercel runs, so live readings have a voice locally. */
+function devTts(): Plugin {
+  return {
+    name: 'dev-tts',
+    apply: 'serve',
+    configureServer(server) {
+      process.env.ELEVENLABS_API_KEY ??= loadEnv('development', process.cwd(), 'ELEVENLABS').ELEVENLABS_API_KEY;
+      server.middlewares.use('/api/tts', async (req, res) => {
+        const { default: handler } = await import(/* @vite-ignore */ new URL('./api/tts.js', import.meta.url).href);
+        // The handler is written for Vercel's request and response helpers.
+        const r = Object.assign(res, {
+          status: (c: number) => ((res.statusCode = c), r),
+          json: (o: unknown) => (res.setHeader('Content-Type', 'application/json'), res.end(JSON.stringify(o))),
+        });
+        handler(Object.assign(req, { query: Object.fromEntries(new URL(req.url ?? '', 'http://x').searchParams) }), r);
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), release()],
+  plugins: [react(), release(), devTts()],
   base: './',
   optimizeDeps: {
     // Pre-bundle everything up front so the dev server never re-optimises mid-session.
