@@ -18,7 +18,7 @@ export function DataSources({ open = false }: { open?: boolean }) {
         <div>
           <dt>Regions</dt>
           <dd>
-            NASA&rsquo;s nine Artemis III candidate regions (28 Oct 2024). Outlines digitised from{' '}
+            NASA&rsquo;s nine candidate landing regions for the Artemis campaign (announced 28 Oct 2024). Outlines digitised from{' '}
             {sites.nasaRegionMap ? (
               <a href={sites.nasaRegionMap.url} target="_blank" rel="noreferrer">
                 NASA&rsquo;s official map
@@ -64,7 +64,7 @@ export function DataSources({ open = false }: { open?: boolean }) {
       </dl>
       <p className="fineprint">Made for landing-site planning: the question behind NASA’s CLPS deliveries and Artemis III alike is when a site sees the Sun and the Earth, and what changes if the date slips.</p>
       <p className="fineprint">Earth visibility is a geometric line of sight only, not a guaranteed communication link.</p>
-      <p className="fineprint">Space Apps 2026 project using NASA data. Not an official NASA product or endorsed by NASA.</p>
+      <p className="fineprint">LunaNav, the Lunar Landing Site Navigator, by Team AFUQ. A Space Apps 2026 project using NASA data; not an official NASA product or endorsed by NASA.</p>
     </details>
   );
 }

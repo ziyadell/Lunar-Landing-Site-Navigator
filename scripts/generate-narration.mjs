@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generate AFUQ's narrator clips (at development time, never from the browser).
+ * Generate LunaNav's narrator clips (at development time, never from the browser).
  *
  *   node --env-file=.env.local scripts/generate-narration.mjs --only welcome
  *   node --env-file=.env.local scripts/generate-narration.mjs            (all changed clips)

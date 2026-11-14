@@ -1,0 +1,174 @@
+{
+ "source": "NASA/JPL Horizons API, observer table, QUANTITIES=4, APPARENT=AIRLESS, CENTER=coord@301",
+ "note": "Observer height = LOLA elevation + 2 m above the 1737.4 km sphere, as in the app.",
+ "rows": [
+  {
+   "site": "malapert-massif",
+   "body": "sun",
+   "utc": "2027-01-04T12:00:00Z",
+   "azDeg": 224.689559,
+   "elDeg": -1.947007
+  },
+  {
+   "site": "malapert-massif",
+   "body": "sun",
+   "utc": "2027-01-19T12:00:00Z",
+   "azDeg": 42.200176,
+   "elDeg": 3.641171
+  },
+  {
+   "site": "malapert-massif",
+   "body": "sun",
+   "utc": "2027-06-15T06:30:00Z",
+   "azDeg": 52.993378,
+   "elDeg": 1.268799
+  },
+  {
+   "site": "malapert-massif",
+   "body": "sun",
+   "utc": "2028-03-01T18:15:00Z",
+   "azDeg": 118.207611,
+   "elDeg": -2.929027
+  },
+  {
+   "site": "malapert-massif",
+   "body": "earth",
+   "utc": "2027-01-04T12:00:00Z",
+   "azDeg": 8.205681,
+   "elDeg": -2.676796
+  },
+  {
+   "site": "malapert-massif",
+   "body": "earth",
+   "utc": "2027-01-19T12:00:00Z",
+   "azDeg": 359.771064,
+   "elDeg": 9.92088
+  },
+  {
+   "site": "malapert-massif",
+   "body": "earth",
+   "utc": "2027-06-15T06:30:00Z",
+   "azDeg": 9.894922,
+   "elDeg": -2.89723
+  },
+  {
+   "site": "malapert-massif",
+   "body": "earth",
+   "utc": "2028-03-01T18:15:00Z",
+   "azDeg": 357.413813,
+   "elDeg": 10.474856
+  },
+  {
+   "site": "haworth",
+   "body": "sun",
+   "utc": "2027-01-04T12:00:00Z",
+   "azDeg": 243.832945,
+   "elDeg": -0.655676
+  },
+  {
+   "site": "haworth",
+   "body": "sun",
+   "utc": "2027-01-19T12:00:00Z",
+   "azDeg": 61.35884,
+   "elDeg": 2.36901
+  },
+  {
+   "site": "haworth",
+   "body": "sun",
+   "utc": "2027-06-15T06:30:00Z",
+   "azDeg": 72.129695,
+   "elDeg": -0.068876
+  },
+  {
+   "site": "haworth",
+   "body": "sun",
+   "utc": "2028-03-01T18:15:00Z",
+   "azDeg": 137.406415,
+   "elDeg": -3.692593
+  },
+  {
+   "site": "haworth",
+   "body": "earth",
+   "utc": "2027-01-04T12:00:00Z",
+   "azDeg": 27.285274,
+   "elDeg": -3.467384
+  },
+  {
+   "site": "haworth",
+   "body": "earth",
+   "utc": "2027-01-19T12:00:00Z",
+   "azDeg": 19.114818,
+   "elDeg": 9.297019
+  },
+  {
+   "site": "haworth",
+   "body": "earth",
+   "utc": "2027-06-15T06:30:00Z",
+   "azDeg": 28.97138,
+   "elDeg": -3.719884
+  },
+  {
+   "site": "haworth",
+   "body": "earth",
+   "utc": "2028-03-01T18:15:00Z",
+   "azDeg": 16.774165,
+   "elDeg": 9.900909
+  },
+  {
+   "site": "de-gerlache-rim-2",
+   "body": "sun",
+   "utc": "2027-01-04T12:00:00Z",
+   "azDeg": 288.541249,
+   "elDeg": 1.395894
+  },
+  {
+   "site": "de-gerlache-rim-2",
+   "body": "sun",
+   "utc": "2027-01-19T12:00:00Z",
+   "azDeg": 106.011066,
+   "elDeg": 0.232444
+  },
+  {
+   "site": "de-gerlache-rim-2",
+   "body": "sun",
+   "utc": "2027-06-15T06:30:00Z",
+   "azDeg": 116.86229,
+   "elDeg": -1.811077
+  },
+  {
+   "site": "de-gerlache-rim-2",
+   "body": "sun",
+   "utc": "2028-03-01T18:15:00Z",
+   "azDeg": 182.235536,
+   "elDeg": -2.35916
+  },
+  {
+   "site": "de-gerlache-rim-2",
+   "body": "earth",
+   "utc": "2027-01-04T12:00:00Z",
+   "azDeg": 72.011447,
+   "elDeg": -6.300323
+  },
+  {
+   "site": "de-gerlache-rim-2",
+   "body": "earth",
+   "utc": "2027-01-19T12:00:00Z",
+   "azDeg": 63.814257,
+   "elDeg": 6.436081
+  },
+  {
+   "site": "de-gerlache-rim-2",
+   "body": "earth",
+   "utc": "2027-06-15T06:30:00Z",
+   "azDeg": 73.706261,
+   "elDeg": -6.540322
+  },
+  {
+   "site": "de-gerlache-rim-2",
+   "body": "earth",
+   "utc": "2028-03-01T18:15:00Z",
+   "azDeg": 61.491742,
+   "elDeg": 7.043492
+  }
+ ]
+}

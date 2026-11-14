@@ -137,8 +137,8 @@ export function RegionPicker() {
               <div className="sheet__head">
                 <span className="sheet__title">{t('Landing Regions')}</span>
                 <Listen id="view-regions" />
-                <span className="rpick__sub">NASA Artemis III candidates · {regions.length}</span>
-                <button type="button" className="sheet__close" aria-label={t('Close landing regions')} onClick={() => close(true)}>
+                <span className="rpick__sub">NASA Artemis candidates · {regions.length}</span>
+                <button type="button" className="sheet__close" aria-label="Close landing regions" onClick={() => close(true)}>
                   <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" /></svg>
                 </button>
               </div>

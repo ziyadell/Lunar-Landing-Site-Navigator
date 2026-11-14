@@ -335,6 +335,34 @@
   line-height: 1.45;
   color: var(--text-secondary);
 }
+.cond__body {
+  display: flex;
+  flex-direction: column;
+}
+.cond__next {
+  margin-top: auto;
+  padding-top: 9px;
+  display: grid;
+  gap: 2px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--text-tertiary);
+}
+.cond__next::before {
+  content: '';
+  display: block;
+  height: 1px;
+  margin-bottom: 7px;
+  background: var(--glass-line);
+}
+.cond__next-value {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 .cond__none {
   margin: 0;
   color: var(--warn);

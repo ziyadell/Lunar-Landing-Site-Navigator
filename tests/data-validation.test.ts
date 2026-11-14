@@ -4,7 +4,6 @@
  * previous release reached the nine-region bundle and crashed on nasaRegion.corners.
  */
 import { readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import { DataIncompatible, validateEphemeris, validateSites } from '../src/data/validate';
 
 let fail = 0;
@@ -27,14 +26,10 @@ const clone = () => JSON.parse(JSON.stringify(current));
 const cur = validateSites(clone());
 ok(cur.sites.regions.length === 9 && cur.dropped.length === 0, 'current nine-region file is accepted with nothing dropped');
 
-// 2. The real legacy four-region file (git main) is rejected, not mixed with this bundle.
-let legacy: unknown = null;
-try {
-  legacy = JSON.parse(execSync('git show 866ee68:public/data/sites.json', { encoding: 'utf8', maxBuffer: 1 << 24 }));
-} catch {
-  /* history unavailable */
-}
-if (legacy) ok(throwsIncompatible(() => validateSites(legacy)), 'legacy four-region file (866ee68) is rejected as incompatible');
+// 2. The real legacy four-region file (from commit 866ee68, kept as a portable fixture with
+//    thinned horizon arrays) is rejected, not mixed with this bundle.
+const legacy: unknown = JSON.parse(readFileSync('tests/fixtures/legacy-sites-866ee68.json', 'utf8'));
+ok(throwsIncompatible(() => validateSites(legacy)), 'legacy four-region file (866ee68 fixture) is rejected as incompatible');
 
 // 3. One malformed outline: only that overlay is dropped; the region and the others remain.
 for (const [label, bad] of [

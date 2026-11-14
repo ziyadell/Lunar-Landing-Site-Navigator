@@ -150,10 +150,24 @@ if (typeof window !== 'undefined')
 const TTS_VERSION = 'afuq-2';
 let serverVoiceDown = false;
 const serverAudio = new Map<string, string>(); // text → object URL (this visit)
+/** Paid voice budget: new live readings per browser tab session. Cached readings are free. */
+const LIVE_READINGS_PER_SESSION = 25;
+const BUDGET_KEY = 'lsn.liveReadings';
+function takeLiveReading(): boolean {
+  try {
+    const used = Number(sessionStorage.getItem(BUDGET_KEY) ?? '0');
+    if (used >= LIVE_READINGS_PER_SESSION) return false;
+    sessionStorage.setItem(BUDGET_KEY, String(used + 1));
+  } catch {
+    /* storage unavailable: no budget tracking, the server-side checks still apply */
+  }
+  return true;
+}
 async function serverVoice(text: string): Promise<string | null> {
   if (serverVoiceDown) return null;
   const hit = serverAudio.get(text);
   if (hit) return hit;
+  if (!takeLiveReading()) return null;
   // Give up if the server has not started answering in 12 s; once it has, allow up to
   // 40 s for the whole reading (the first request for a new time is synthesised live).
   const ctl = new AbortController();

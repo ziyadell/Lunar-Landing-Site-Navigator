@@ -549,6 +549,7 @@ a:hover {
   font-size: 10.5px;
   color: var(--text-tertiary);
   transform: translateX(-50%);
+  white-space: nowrap;
 }
 .vstrip__tick::before {
   content: '';
@@ -833,6 +834,7 @@ a:hover {
   position: absolute;
   transform: translateX(-50%);
   top: 2px;
+  white-space: nowrap;
 }
 .timeline__range {
   position: absolute;

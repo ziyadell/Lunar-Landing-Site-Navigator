@@ -283,7 +283,7 @@ function Calendar({
           </div>
         ))}
       </div>
-      <div className="cal__foot">UTC · available {toStr(lo)} – {toStr(hi)}</div>
+      <div className="cal__foot">Available {toStr(lo)} – {toStr(hi)}</div>
     </div>,
     document.body,
   );
