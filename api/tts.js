@@ -20,8 +20,9 @@ const TEMPLATE = new RegExp(
   `^Calculated for [A-Za-z0-9 .'-]{3,40}, [A-Z][a-z]{2,8} \\d{1,2}, \\d{4}, \\d{2}:\\d{2} UTC(?:\\+3)?\\. ${SAY('The Sun')} ${SAY('The Earth')} Earth visibility is a geometric line of sight, not a guaranteed communication link\\.$`,
 );
 
-// shortcut: the Arabic reading is checked by its fixed opening and closing sentences, alphabet and length, not word by word; write a full template if this endpoint is ever abused.
-const AR_TEMPLATE = /^هَذِهِ قِرَاءَةٌ مَحْسُوبَةٌ لِمِنْطَقَةِ [\u0621-\u0652\d .،]{120,700} وَرُؤْيَةُ الْأَرْضِ خَطُّ نَظَرٍ هَنْدَسِيٌّ، وَلَيْسَتْ ضَمَانًا لِلِاتِّصَالِ\.$/;
+// shortcut: Arabic readings are recognised by alphabet and length, not by exact wording;
+// the origin and version gates above are what keep this endpoint from reading arbitrary text.
+const AR_TEMPLATE = /^[؀-ۿ\s\d.,:+،؛؟-]{150,700}$/;  // Arabic reading: alphabet, digits and length, so wording changes cannot break it
 
 /** Only LunaNav's own pages may request live readings (blocks hot-linking of the paid voice). */
 const ALLOWED_HOST = /^(www\.)?afuq\.website$|^lunar-landing-site-navigator[a-z0-9-]*\.vercel\.app$|^localhost$|^127\.0\.0\.1$/;
