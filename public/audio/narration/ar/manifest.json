@@ -191,8 +191,8 @@
    "chars": 172
   },
   "tour-moon": {
-   "hash": "2caa431d5d6b01da",
-   "bytes": 363249,
+   "hash": "a5ff7da7de286036",
+   "bytes": 342769,
    "chars": 227
   },
   "tour-nav": {
@@ -254,6 +254,11 @@
    "hash": "a278cf5f31380eb4",
    "bytes": 241623,
    "chars": 143
+  },
+  "analysis-assessment": {
+   "hash": "b93f4b99b75bd0a6",
+   "bytes": 729381,
+   "chars": 462
   }
  },
  "voice": {
@@ -267,5 +272,5 @@
   }
  },
  "version": "afuq-2",
- "updatedUtc": "2026-11-14T03:40:02.698Z"
+ "updatedUtc": "2026-11-14T08:01:58.703Z"
 }

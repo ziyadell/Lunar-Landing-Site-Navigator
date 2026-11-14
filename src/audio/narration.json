@@ -157,6 +157,11 @@
       "text": "Results describe Sun and Earth visibility at one observation point per region. They do not assess overall landing safety. Earth visibility indicates geometric line of sight, not guaranteed communications."
     },
     {
+      "id": "analysis-assessment",
+      "title": "Power and communication assessment",
+      "text": "The power and communication assessment turns the visibility results into two planning figures. For power, enter an electrical load. LunaNav assumes it runs from stored energy for the whole of the longest time without the Sun, and reports how much stored energy that takes. For communication, choose how far the Earth must clear the skyline. LunaNav reports how often the Earth meets that, and the longest time without it. These are estimates from geometry at one observation point. They do not size solar panels, and they do not model temperature, antennas or relay satellites."
+    },
+    {
       "id": "view-regions",
       "title": "Landing Regions",
       "text": "Landing Regions lists all nine of NASA's candidate landing regions for the Artemis campaign. Choose one to select it, and the globe, the region card, and the Sun and Earth readings all switch to that region. Next to each name, two small dots show whether the Sun and the Earth are visible from its observation point at the current time."
