@@ -276,7 +276,7 @@
 }
 .cond__body + .cond__body {
   padding-inline-start: 16px;
-  border-left: 1px solid var(--glass-line);
+  border-inline-start: 1px solid var(--glass-line);
 }
 .cond__name {
   display: flex;
