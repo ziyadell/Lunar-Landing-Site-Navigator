@@ -229,7 +229,7 @@ export function RegionAtlas() {
   return (
     <div className="atlas">
       <p className="drawer__lede">
-        The nine regions NASA named for Artemis III (October 2024). Each picture covers NASA&rsquo;s outline; the dot is the point
+        The nine candidate landing regions NASA announced in October 2024 for its Artemis campaign. Each picture covers NASA&rsquo;s outline; the dot is the point
         used for the measurements.
       </p>
       <ul className="atlas__grid">

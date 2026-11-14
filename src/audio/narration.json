@@ -4,12 +4,12 @@
     {
       "id": "welcome",
       "title": "Welcome",
-      "text": "Welcome to Lunar Navigator. Explore the south pole. Follow the sunlight. Find a view of Earth. Your mission begins now."
+      "text": "Welcome to LunaNav. Explore the south pole. Follow the sunlight. Find a view of Earth. Your mission begins now."
     },
     {
       "id": "orbit-intro",
       "title": "The Moon and its south pole",
-      "text": "This is the Moon, shown with imagery from NASA's Lunar Reconnaissance Orbiter. Near the south pole the Sun never climbs far above the horizon, so long shadows shape the landscape. Some rims and peaks can stay sunlit for much of the year. NASA has named nine candidate regions for the Artemis Three landing. This app measures, from real terrain data, when each of them can see the Sun and the Earth."
+      "text": "This is the Moon, shown with imagery from NASA's Lunar Reconnaissance Orbiter. Near the south pole the Sun never climbs far above the horizon, so long shadows shape the landscape. Some rims and peaks can stay sunlit for much of the year. NASA has named nine candidate landing regions for its Artemis campaign. This app measures, from real terrain data, when each of them can see the Sun and the Earth."
     },
     {
       "id": "region-peak-near-cabeus-b",
@@ -114,7 +114,7 @@
     {
       "id": "view-sources",
       "title": "Data and method",
-      "text": "Data and method lists every source this app uses: NASA's nine Artemis Three candidate regions, JPL Horizons for the Sun and the Earth, LOLA terrain, LROC imagery, and the Yale Bright Star Catalogue. It also reports how the calculations were validated. This is a Space Apps project, not an official NASA product."
+      "text": "Data and method lists every source this app uses: NASA's nine candidate landing regions, JPL Horizons for the Sun and the Earth, LOLA terrain, LROC imagery, and the Yale Bright Star Catalogue. It also reports how the calculations were validated. This is a Space Apps project, not an official NASA product."
     },
     {
       "id": "view-atlas",
@@ -152,9 +152,14 @@
       "text": "The Sun and Earth directions come from NASA JPL Horizons. In a check against Horizons over January and February 2027, they agreed to within six thousandths of a degree. The skyline is traced through LOLA terrain data out to one hundred and fifty kilometers. Visible means the center of the disc is above the skyline. Results apply to one observation point, and slopes, hazards, temperatures, and radio links are not modeled."
     },
     {
+      "id": "analysis-limits",
+      "title": "Interpretation limits",
+      "text": "Results describe Sun and Earth visibility at one observation point per region. They do not assess overall landing safety. Earth visibility indicates geometric line of sight, not guaranteed communications."
+    },
+    {
       "id": "view-regions",
       "title": "Landing Regions",
-      "text": "Landing Regions lists all nine of NASA's candidate regions for Artemis Three. Choose one to select it, and the globe, the region card, and the Sun and Earth readings all switch to that region. Next to each name, two small dots show whether the Sun and the Earth are visible from its observation point at the current time."
+      "text": "Landing Regions lists all nine of NASA's candidate landing regions for the Artemis campaign. Choose one to select it, and the globe, the region card, and the Sun and Earth readings all switch to that region. Next to each name, two small dots show whether the Sun and the Earth are visible from its observation point at the current time."
     },
     {
       "id": "view-locator",
@@ -206,7 +211,7 @@
     {
       "id": "tour-pole",
       "title": "The lunar south pole",
-      "text": "We are now above the lunar south pole. Here the Sun skims the horizon, so high ground can stay sunlit for much of the year. The outlines mark NASA's nine candidate regions for Artemis Three.",
+      "text": "We are now above the lunar south pole. Here the Sun skims the horizon, so high ground can stay sunlit for much of the year. The outlines mark NASA's nine candidate landing regions for the Artemis campaign.",
       "step": 3
     },
     {

@@ -4,6 +4,7 @@ import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
 import { TimeInputs, VisibilityStrip } from '../TimeControls';
 import { Listen } from '../../audio/ui';
+import { TZ_LABEL, zoned } from '../../utils/format';
 
 const H = 3_600_000;
 const D = 24 * H;
@@ -15,12 +16,12 @@ const SPEEDS = [
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const fmtDay = (ms: number) => {
-  const d = new Date(ms);
+  const d = zoned(ms);
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 };
 
 function parts(ms: number) {
-  const d = new Date(ms);
+  const d = zoned(ms);
   return {
     date: `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`,
     time: `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`,
@@ -97,7 +98,7 @@ export function TimePill() {
         <section className="timesheet" aria-label={t('Observation time')}>
           <div className="timesheet__head">
             <span className="timesheet__title">
-              Observation time · UTC <Listen id="view-time" />
+              Observation time · {TZ_LABEL} <Listen id="view-time" />
             </span>
             <span className="timesheet__sub">
               When the Sun (gold) and Earth (cyan) clear the skyline at {regionName}. Drag or use the arrow keys.
@@ -106,7 +107,7 @@ export function TimePill() {
           <VisibilityStrip />
           <TimeInputs steps={false} />
           <p className="timesheet__range">
-            JPL Horizons ephemeris available {fmtDay(ephemeris.startMs)} – {fmtDay(ephemeris.endMs)} UTC
+            JPL Horizons ephemeris: {fmtDay(ephemeris.startMs)} – {fmtDay(ephemeris.endMs)}
           </p>
         </section>
       )}
@@ -120,7 +121,7 @@ export function TimePill() {
         <button type="button" className="timepill__when" aria-expanded={open} onClick={() => setOpen(!open)} title={t('Change observation time')}>
           <span className="timepill__date">{date}</span>
           <span className="timepill__time num">{time}</span>
-          <span className="timepill__utc">UTC</span>
+          <span className="timepill__utc">{TZ_LABEL}</span>
           <svg className="timepill__chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 6.5 5 3.5l3 3" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
         </button>
         <button type="button" className="timepill__step" onClick={() => step(H)} aria-label={t('Forward one hour')} title={t('Forward one hour')}>

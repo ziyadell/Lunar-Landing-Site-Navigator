@@ -1,149 +1,144 @@
-# Lunar Landing Site Navigator
+# LunaNav — Lunar Landing Site Navigator
 
-An interactive tool for examining **Sun and Earth visibility at candidate landing
-regions near the lunar south pole**: when a site has sunlight for power, and when
-it has a direct line of sight to Earth. Built for the NASA Space Apps Challenge
-2026 challenge "Lunar Landing Site Navigator".
+**By Team AFUQ.** LunaNav is a browser application for studying when the Sun and the Earth are visible from
+NASA's nine candidate landing regions near the lunar south pole (Artemis campaign). For one
+observation point in each region it computes the Sun and Earth directions at any time between
+1 July 2026 and 31 December 2028 (UTC), and compares them with the horizon formed by the
+real terrain, measured by the Lunar Orbiter Laser Altimeter (LOLA) out to 150 km.
 
-**Live site:** https://lunar-landing-site-navigator-six.vercel.app
+- Live site: https://www.afuq.website/
+- Source: branch `review` (see `git log` for the exact commit)
 
-> Independent hackathon project. Not an official NASA product and not endorsed by
-> NASA. NASA data are used under NASA's media and data usage guidelines — see
-> [docs/ATTRIBUTION.md](docs/ATTRIBUTION.md).
+LunaNav is an independent student project by Team AFUQ built for the NASA Space Apps Challenge 2026. It uses
+public NASA data, but it is not a NASA product and is not endorsed by NASA. It is a
+demonstration and decision-support prototype, not an operational mission-planning tool.
 
-![Orbital View](docs/screenshots/01-orbital-view-desktop-1440.jpg)
+## What the application does
 
-## Features
-
-| Mode | What it does |
+| View | Purpose |
 |---|---|
-| **01 Orbital View** | Multi-resolution 3D Moon: LROC WAC global mosaic (4K base, 16K tiles streamed on zoom), the LROC WAC South Pole Summer Mosaic (100 m) poleward of 80.6°S and at native resolution around the selected site, LOLA relief (80 m near the pole), lit by the real Sun direction at the selected time. A site-aware camera orbits and zooms on surface points; multi-scale markers cluster, separate and annotate the four regions. |
-| **02 Surface View** | Stand at the observation point: one continuous LOLA terrain mesh to 150 km (80 m / 400 m / 1 km) with cast shadows, the terrain-corrected skyline, the Sun and Earth at their computed positions, 2,847 catalogued stars, and Scientific / Clean / Realistic display presets. |
-| **03 Mission Analysis** | Compare two site + period scenarios: % of time the Sun / Earth / both are above the terrain horizon, longest gaps, elevation ranges, visibility timelines, horizon panoramas, CSV export. |
+| **Orbit** | A 3D Moon with LROC imagery and LOLA relief, lit by the Sun's direction at the selected time. Shows the nine NASA region outlines, a Landing Regions list, a polar locator map, live Sun/Earth readings and time controls. |
+| **Surface** | The view from 2 m above the selected observation point: LOLA terrain to 150 km with cast shadows, the computed LOLA skyline, the Sun, the Earth and catalogued stars. Three display presets (Survey, Landscape, Physical) separate measured layers from display aids. |
+| **Analysis** | Compares two scenarios (region, start date, duration of 7 days to 1 year). Shows how much of the period the Sun and/or Earth are above the terrain horizon, the longest gaps, timelines, horizon panoramas and a CSV export. |
 
-Region, time and mode stay synchronised across views and live in the URL, e.g.
-[`?mode=surface&site=haworth&t=2027-01-12T06:00Z`](https://lunar-landing-site-navigator-six.vercel.app/?mode=surface&site=haworth&t=2027-01-12T06:00Z).
+The **Mission guide** reads short explanations aloud from pre-recorded MP3 files (one
+narrator voice, with captions). Live readings of the current Sun/Earth state are voiced by a
+small server function (`api/tts.js`) that needs an ElevenLabs key; without the key the app
+shows those readings as captions. The app never uses the device's built-in speech voice.
 
-Layout redesign (full-window scene, floating controls, study-style analysis): [docs/REDESIGN.md](docs/REDESIGN.md).
-Before/after evidence and root causes: [docs/QUALITY-PASS.md](docs/QUALITY-PASS.md)
-(rendering, camera, markers, terrain) and [docs/EXPERIENCE-PASS.md](docs/EXPERIENCE-PASS.md)
-(interface, interaction, regions, references).
+The selected view, region, time and both Mission Analysis scenarios are kept in the URL (and the scenarios also in the browser), for example
+`https://www.afuq.website/?mode=analysis&site=haworth&t=2027-01-16T10:00Z&a=malapert-massif,2027-01-01,30&b=nobile-rim-1,2027-01-01,365`.
+Scenario format: `region,YYYY-MM-DD,days` with days one of 7, 14, 30, 60, 90, 180, 365.
 
-### Screenshots (live deployment, initial release)
+## Prerequisites
 
-| | Desktop (1440 px) | Mobile (375 px) |
-|---|---|---|
-| Orbital | [01](docs/screenshots/01-orbital-view-desktop-1440.jpg) | [02](docs/screenshots/02-orbital-view-mobile-375.jpg) |
-| Surface | [03](docs/screenshots/03-surface-view-desktop-1440.jpg) | [04](docs/screenshots/04-surface-view-mobile-375.jpg) |
-| Mission Analysis | [05](docs/screenshots/05-mission-analysis-desktop-1440.jpg), [05b charts](docs/screenshots/05b-mission-analysis-charts-desktop-1440.jpg) | [06](docs/screenshots/06-mission-analysis-mobile-375.jpg) |
+- Node.js 20 or later and npm (last built with Node 26.13.0 and npm 11.20.0).
+- A browser with WebGL 2 for the 3D views. Readings, time controls and Analysis also work
+  without WebGL.
+- Optional: the Vercel CLI, to run the voice endpoint locally or to deploy.
+- Optional, only for regenerating the data: Python 3 with `numpy`, `Pillow` and `scipy` (`preprocess/requirements.txt`).
 
-## Scientific data and method
-
-Full methodology: [docs/SCIENCE.md](docs/SCIENCE.md). Test record: [docs/VALIDATION.md](docs/VALIDATION.md).
-
-| Data | Source | Use |
-|---|---|---|
-| Sun / Earth geometry | NASA/JPL Horizons (hourly, 2026-07-01 → 2028-12-31 UTC) | Topocentric azimuth/elevation at each site; **validated** against Horizons topocentric output to ≤ 0.007° |
-| Terrain | LRO LOLA `LDEM_80S_80M` (PDS Geosciences) | Horizon profiles, Surface View terrain, polar relief |
-| Imagery | LRO LROC WAC mosaic via NASA SVS CGI Moon Kit (4K/16K) | Globe colour |
-| Polar imagery | LROC WAC South Pole Summer Mosaic, 100 m (Speyerer et al. 2020) | Polar cap and site detail |
-| Global relief | LOLA `ldem_16` via NASA SVS | Globe normal map |
-| Feature names / centres | IAU Gazetteer of Planetary Nomenclature | Region anchors |
-| Stars | Yale Bright Star Catalogue (BSC5, V < 5.5) + IAU 2009 Moon rotation model (validated to 0.008°) | Surface View sky |
-
-- Visibility is **terrain-corrected**: a body counts as visible when its disc centre
-  is above the LOLA skyline at that azimuth, for an observer 2 m above the surface.
-- NASA has not published coordinates for its ≈15 × 15 km candidate regions. Each
-  region uses one representative observation point selected by a documented,
-  reproducible rule. These are **not** NASA-designated landing sites.
-- Outside the precomputed ephemeris range the app shows "no data" rather than
-  extrapolating. No suitability scores are computed.
-
-## Technology
-
-React 19 · TypeScript 5.7 · Vite 6 · three.js 0.172 · React Three Fiber 9 · zustand 5 ·
-Python 3 (numpy, Pillow) for preprocessing. Fonts: IBM Plex Sans,
-IBM Plex Mono, Space Grotesk (self-hosted via `@fontsource`).
-
-## Install, build, run
-
-Requirements: Node 18+ (tested with Node 26 / npm 11).
+## Install and run
 
 ```bash
-npm ci
-npm run dev        # development server
-npm run build      # type-check + production build → dist/
-npm run preview    # serve dist/ locally
+npm ci              # install the exact versions in package-lock.json
+npm run dev         # development server (Vite), prints a local URL
+npm run typecheck   # TypeScript check only
+npm run test:data   # data-validation regression test
+npm run test:science # production calculations: Horizons fixture, nine regions, crossings, intervals
+npm test            # both test suites
+npm run build       # type-check and production build into dist/
+npm run preview     # serve the production build locally
 ```
 
-`dist/` is fully static (relative `base: './'`). All scientific data ships
-precomputed in `public/data/`; there are no API keys and no runtime calls to
-external services.
+`npm run dev` and `npm run preview` serve only the static app. The `/api/tts` endpoint does
+not run there, so live readings fall back to captions; all recorded narration still plays.
+To run the endpoint locally, use `vercel dev` with the key configured as described below.
+
+## Environment variables
+
+Only one variable exists, and it is optional:
+
+| Variable | Used by | Effect if missing |
+|---|---|---|
+| `ELEVENLABS_API_KEY` | `api/tts.js` (server, live readings) and `scripts/generate-narration.mjs` (re-recording the MP3 clips) | Live readings appear as captions. The recorded clips in `public/audio/narration/` are unaffected. |
+
+Paid-voice protection: `api/tts.js` accepts only the app's fixed reading template, only from LunaNav's own origins (afuq.website, its Vercel previews, localhost), and responses are cached by the CDN. The browser allows at most 25 new live readings per tab session; after that, readings are shown as captions. Recorded narration is not affected.
+
+Copy `.env.example` to `.env.local` and fill in the value. `.env.local` is ignored by git and
+must not be committed. On Vercel, set the variable in the project settings
+(Environment Variables) instead. The key is read only on the server and is never sent to
+the browser.
 
 ## Deployment
 
-Production is hosted on Vercel as an independent project
-(`lunar-landing-site-navigator`), configured by [`vercel.json`](vercel.json):
-`npm ci` → `npm run build` → serve `dist/`, with long-lived caching for hashed
-assets. Deploy with the Vercel CLI from the project root:
+The site is hosted on Vercel, configured by `vercel.json` (`npm ci`, then `npm run build`,
+serving `dist/` plus the `api/` function). The production domain is `www.afuq.website`.
 
 ```bash
-vercel deploy --prod
-```
-
-## Reproduce the data (optional)
-
-Committed `public/` assets were produced by the scripts in `preprocess/`. Raw
-downloads (~1.3 GB) go to `data_raw/`, which is git-ignored.
-
-```bash
-pip install -r preprocess/requirements.txt
-python preprocess/fetch_ephemeris.py        # JPL Horizons → public/data/ephemeris.json
-# download into data_raw/ (URLs in docs/ATTRIBUTION.md):
-#   lroc_color_poles_8k.tif, lroc_color_poles_16k.tif, ldem_16.tif   (NASA SVS CGI Moon Kit)
-#   ldem_80s_80m.img, ldem_80s_80m.lbl                                (PDS, LOLA GDR polar)
-python preprocess/build_globe_textures.py   # base colour map, normal maps, 16K tiles
-python preprocess/process_dem.py            # observation points, horizons, terrain tiles, polar relief (several minutes)
-python preprocess/validate_ephemeris.py     # cross-check vs Horizons topocentric → validation.json
-python preprocess/build_stars.py            # star catalogue + Moon rotation validation
-# also download WAC_ROI_SOUTH_SUMMER_100M.TIF (829 MB, LROC PDS) into data_raw/, then:
-python preprocess/build_polar_products.py   # polar imagery, anti-aliased polar normals, site detail, 1 km regional tiles
+vercel deploy          # preview deployment
+vercel deploy --prod   # production
 ```
 
 ## Project structure
 
 ```
+api/tts.js              server function: voices live readings (ElevenLabs), template-checked input
+voice-config.mjs        the single narrator voice configuration (shared by api/ and scripts/)
 src/
-  data/          typed scientific interfaces, loaders, data context
-  science/       frames & topocentric geometry, ephemeris, visibility metrics, Moon orientation
-  state/         app store (zustand), URL sync
-  three/         globe material + LOD tiles, orbital scene & camera, surface scene
-  three/surface/ terrain, stars, sky grid, range rings, illustrative regolith texture
-  ui/            stage/ (masthead, region deck + atlas, conditions, time pill, drawers),
-                 compass, surface overlays, analysis study page
-  ui/analysis/   comparison workspace, timelines, horizon panorama
-  styles/        design tokens + global styles
-preprocess/      reproducible Python data pipeline
-public/data/     ephemeris, sites (points + horizon profiles), validation, stars, terrain tiles
-public/textures/ globe base maps, 16K tiles, south-polar relief
-docs/            SCIENCE.md, ATTRIBUTION.md, VALIDATION.md, screenshots/
+  App.tsx, main.tsx     application shell, fonts and styles
+  audio/                narration engine, Mission guide UI, guided tours, narration scripts (narration.json)
+  data/                 typed loaders for the precomputed data, release/version checks
+  science/              coordinate frames, ephemeris interpolation, visibility and metrics
+  state/                application state (zustand), settings, URL sync
+  three/                Orbit globe and camera, region outlines and markers
+  three/surface/        Surface terrain mesh (built in a Web Worker), sky objects, stars, aids
+  ui/                   interface: masthead, region card, readings, time controls, drawers
+  ui/analysis/          Mission Analysis page, timelines, horizon panorama
+  styles/               design tokens (tokens.css) and component styles
+public/
+  data/                 ephemeris.json, sites.json, stars.json, validation.json, terrain tiles
+  textures/             globe maps, 16K tiles, south-polar imagery and relief, region thumbnails
+  audio/narration/      50 recorded narration clips and manifest.json
+preprocess/             Python pipeline that produced public/data and public/textures
+scripts/                generate-narration.mjs (records narration clips)
+tests/                  data-validation and science tests, portable fixtures (tests/fixtures), marker-drift browser check
+docs/ATTRIBUTION.md     data and asset credits
 ```
+
+## Data and method (summary)
+
+| Data | Source | Used for |
+|---|---|---|
+| Sun and Earth positions | NASA/JPL Horizons, hourly, 2026-07-01 to 2028-12-31 UTC | Azimuth and elevation at each observation point (interpolated to the minute) |
+| Terrain | LRO LOLA `LDEM_80S_80M` (80 m/pixel), PDS Geosciences Node | Horizon profiles (720 directions to 150 km), Surface terrain, polar relief |
+| Imagery | LRO LROC WAC global mosaic (NASA SVS) and LROC WAC South Pole Summer Mosaic (100 m) | Globe imagery, region pictures, surface brightness |
+| Stars | Yale Bright Star Catalogue (5th ed.), V < 5.5 | Night sky in both 3D views |
+
+Terrain grids around each point (Surface): 301 × 301 samples at 80 m (±12 km), 400 m (±60 km) and 1 km (±150 km); the mesh uses 80 m data to about 11 km, 400 m to 55 km and 1 km to 150 km. Accuracy terms are kept separate: Sun/Earth direction accuracy (≤ 0.006° against Horizons), terrain resolution (80 m, not independently validated) and Analysis sampling (15 or 60 minutes). See `docs/SCIENCE.md`.
+| Regions | NASA's list of nine candidate landing regions (28 October 2024; published for Artemis III, now listed for the Artemis campaign) and its published map | Region names and outlines (digitised from the map, about 0.5 km accuracy) |
+
+A body counts as visible when the centre of its disc is above the LOLA skyline in its
+direction. Each region uses one observation point chosen by a fixed rule (on a 1 km grid
+inside the outline, local slope at most 10°, the most hours of sunlight in 2027). These
+points are not NASA landing sites, and results apply to that point only. Earth visibility is
+a geometric line of sight, not a guaranteed communication link.
+
+To regenerate the data, `pip install -r preprocess/requirements.txt`, download the raw products
+listed in `docs/ATTRIBUTION.md` into `data_raw/` (about 1.3 GB, not included), and run the
+scripts in `preprocess/`. The committed outputs in `public/` are enough to run and build
+the app.
 
 ## Known limitations
 
-- Six of NASA's nine Oct 2024 candidate regions, one observation point each (three not representable with public data; see the app); no free point picking.
-- Ephemeris coverage fixed to 2026-07-01 – 2028-12-31 UTC.
-- Visibility uses the disc centre (partial-disc fraction shown in readings only);
-  geometric line of sight only — no link budgets, antennas, thermal or slope hazards.
-- Measured terrain resolution is 80 m, so the near field is smooth. The Surface
-  View's "Enhanced visibility" fill light (Scientific and Clean presets) and the
-  "Fine texture (illustrative)" (Realistic preset only) are display aids, not
-  measurements, and are labelled as such.
-- Close-zoom imagery is limited to 100 m/px poleward of 80.6°S and 0.67 km/px
-  elsewhere; the scale bar shows the active source.
-- Earth is a shaded disc with correct phase but no surface imagery.
-- The official challenge page could not be fetched from the development
-  environment (TLS certificate error); requirements came from the team brief.
-- Mission Voice Assistant deferred by design.
+- One observation point per region, observer height fixed at 2 m.
+- Terrain detail is limited to 80 m; features smaller than about 160 m are not represented.
+- Ephemeris coverage ends on 31 December 2028; the app does not extrapolate.
+- No slope, hazard, thermal or communication-link modelling, and no suitability score.
+- Not tested on physical iPhone, iPad or Android devices, Safari, or with screen readers.
 
-See [docs/VALIDATION.md](docs/VALIDATION.md) for test coverage and open issues.
+## License and attribution
+
+This snapshot does not include a software license file. Data and asset credits are listed
+in `docs/ATTRIBUTION.md`. Fonts (IBM Plex Sans, IBM Plex Mono, Space Grotesk) are
+installed from npm (`@fontsource`) under the SIL Open Font License 1.1.

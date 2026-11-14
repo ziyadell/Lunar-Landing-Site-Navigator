@@ -1,11 +1,14 @@
 import { t } from '../../i18n';
-import { useConditions } from '../../data/useConditions';
+import { useConditions, useNextCrossings } from '../../data/useConditions';
 import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
-import { compass, fmtDate, fmtDeg, fmtLat, fmtLon } from '../../utils/format';
+import { compass, fmtDate, fmtDeg, fmtLat, fmtLon, fmtUtc, TZ_LABEL, zoned } from '../../utils/format';
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 import { EarthGlyph, Readout, SunGlyph } from '../primitives';
+import { HorizonsCheck } from './HorizonsCheck';
 import type { TopocentricBody } from '../../data/types';
-import { STATE_LABEL } from '../../science/visibility';
+import { CROSSING_WINDOW_DAYS, STATE_LABEL, type Crossing } from '../../science/visibility';
 import { Listen } from '../../audio/ui';
 import { useSettings } from '../../state/settings';
 import type { NarrationItem } from '../../audio/engine';
@@ -28,7 +31,31 @@ function plain(b: TopocentricBody) {
   );
 }
 
-function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
+/** "3 d 4 h", "9 h 20 min", "42 min": time remaining, coarser the further away it is. */
+export function fmtRemaining(ms: number): string {
+  const min = Math.max(0, Math.round(ms / 60_000));
+  if (min < 1) return 'under 1 min';
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 48) return min % 60 ? `${h} h ${min % 60} min` : `${h} h`;
+  const hr = Math.round(min / 60);
+  return hr % 24 ? `${Math.floor(hr / 24)} d ${hr % 24} h` : `${hr / 24} d`;
+}
+
+/** Sunset, Sunrise, Earthset or Earthrise: the next skyline crossing of that body. */
+function eventName(which: 'sun' | 'earth', c: Crossing) {
+  return `${which === 'sun' ? 'Sun' : 'Earth'}${c.kind}`;
+}
+
+function remaining(which: 'sun' | 'earth', c: Crossing, timeMs: number) {
+  const name = eventName(which, c);
+  if (c.timeMs !== null) return { label: `${name} in`, value: fmtRemaining(c.timeMs - timeMs), title: `${name} at ${fmtUtc(c.timeMs)}, when the centre of the disc crosses the measured skyline` };
+  if (c.none === 'coverage') return { label: `No ${name.toLowerCase()}`, value: 'before the data ends', title: 'The ephemeris ends before the next crossing' };
+  return { label: `No ${name.toLowerCase()} for`, value: `${CROSSING_WINDOW_DAYS}+ d`, title: `No crossing in the next ${CROSSING_WINDOW_DAYS} days` };
+}
+
+function Body({ which, b, next, timeMs }: { which: 'sun' | 'earth'; b: TopocentricBody; next: Crossing | null; timeMs: number }) {
+  const r = next ? remaining(which, next, timeMs) : null;
   const up = b.state === 'visible';
   return (
     <div className={`cond__body cond__body--${which}${up ? ' is-up' : ' is-down'}`}>
@@ -41,14 +68,33 @@ function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
         {Math.abs(b.marginDeg).toFixed(1)}°<span className="cond__unit">{t(b.marginDeg > 0 ? 'above horizon' : 'below horizon')}</span>
       </div>
       <div className="cond__plain">{plain(b)}</div>
+      {r && (
+        <div className="cond__next" title={r.title}>
+          <span className="cond__next-label">{r.label}</span> <span className="cond__next-value num">{r.value}</span>
+        </div>
+      )}
     </div>
   );
 }
 
 /** Spoken summary of the current readings (calculated from app state, never invented). */
+const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
 function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<typeof useConditions>['conditions']>): NarrationItem {
-  const d = new Date(timeMs);
-  const when = `${d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })} ${d.getUTCDate()}, ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC`;
+  if (useSettings.getState().lang === 'ar') {
+    // Arabic reading (captions): same calculated values, Arabic wording.
+    const d = new Date(timeMs + 3 * 3_600_000);
+    const when = `${d.getUTCDate()} ${AR_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}، الساعة ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} بتوقيت UTC+3`;
+    const say = (name: string, b: TopocentricBody) => {
+      const el = `${Math.abs(b.elDeg).toFixed(1)} درجة ${b.elDeg >= 0 ? 'فوق' : 'تحت'} المستوى الأفقي`;
+      if (b.state === 'visible') return `${name} مرئية، على ${el}، وتعلو أفق التضاريس بمقدار ${b.marginDeg.toFixed(1)} درجة.`;
+      if (b.state === 'below-horizontal') return `${name} غير مرئية: فهي على ${el}.`;
+      return `${name} محجوبة بالتضاريس: فهي على ${el}، وتحت أفق التضاريس بمقدار ${Math.abs(b.marginDeg).toFixed(1)} درجة.`;
+    };
+    return { id: `now-ar-${timeMs}`, title: 'الأحوال الآن', calculated: true, text: `محسوب لمنطقة ${t(regionName)}، ${when}. ${say('الشمس', c.sun)} ${say('الأرض', c.earth)} ورؤية الأرض خط نظر هندسي، وليست ضمانًا للاتصال.` };
+  }
+  const d = zoned(timeMs);
+  const when = `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC+3`;
   const say = (name: string, b: TopocentricBody) => {
     const el = `${Math.abs(b.elDeg).toFixed(1)} degrees ${b.elDeg >= 0 ? 'above' : 'below'} the horizontal`;
     if (b.state === 'visible') return `${name} is visible, ${el}, clearing the skyline by ${b.marginDeg.toFixed(1)} degrees.`;
@@ -83,6 +129,7 @@ export function ConditionsCard() {
   const openDrawer = useApp((s) => s.openDrawer);
   const folded = useSettings((s) => s.readingsFolded);
   const setS = useSettings((s) => s.set);
+  const next = useNextCrossings();
   if (folded)
     return (
       <section className="cond cond--folded" aria-label={t('Conditions at the observation point')} data-obstacle>
@@ -112,12 +159,12 @@ export function ConditionsCard() {
     <section className="cond" aria-label={t('Conditions at the observation point')} aria-live="polite" data-obstacle>
       {conditions ? (
         <div className="cond__pair">
-          <Body which="sun" b={conditions.sun} />
-          <Body which="earth" b={conditions.earth} />
+          <Body which="sun" b={conditions.sun} next={next.sun} timeMs={timeMs} />
+          <Body which="earth" b={conditions.earth} next={next.earth} timeMs={timeMs} />
         </div>
       ) : (
         <p className="cond__none">
-          No ephemeris for this time. Coverage {fmtDate(ephemeris.startMs)} – {fmtDate(ephemeris.endMs)} UTC.
+          No ephemeris for this time. Coverage {fmtDate(ephemeris.startMs)} – {fmtDate(ephemeris.endMs)} ({TZ_LABEL}).
         </p>
       )}
       <div className="cond__foot">
@@ -134,7 +181,8 @@ export function ConditionsCard() {
   );
 }
 
-function BodyTable({ which, b, range }: { which: 'sun' | 'earth'; b: TopocentricBody; range?: number }) {
+function BodyTable({ which, b, range, next, timeMs }: { which: 'sun' | 'earth'; b: TopocentricBody; range?: number; next: Crossing | null; timeMs: number }) {
+  const r = next ? remaining(which, next, timeMs) : null;
   return (
     <section className={`mtable mtable--${which}`}>
       <h3 className="mtable__head">
@@ -143,12 +191,21 @@ function BodyTable({ which, b, range }: { which: 'sun' | 'earth'; b: Topocentric
         <span className="mtable__state">{t(STATE_LABEL[b.state])}</span>
       </h3>
       <dl className="readouts">
-        <Readout label={t('Elevation')} value={fmtDeg(b.elDeg)} hint={t('Above the local horizontal plane')} />
-        <Readout label={t('Azimuth')} value={`${b.azDeg.toFixed(2)}°`} unit={compass(b.azDeg)} hint={t('Clockwise from local north')} />
-        <Readout label={t('Terrain skyline')} value={fmtDeg(b.horizonDeg)} hint={t('LOLA skyline elevation at this azimuth')} />
-        <Readout label={t('Clearance')} value={fmtDeg(b.marginDeg)} hint={t('Elevation minus skyline')} />
-        <Readout label={t('Disc above skyline')} value={(b.discFraction * 100).toFixed(0)} unit="%" hint={t('Flat-skyline approximation')} />
-        {range !== undefined && <Readout label={t('Range')} value={Math.round(range).toLocaleString('en-US')} unit="km" />}
+        <Readout label="Elevation" value={fmtDeg(b.elDeg)} hint="Above the local horizontal plane" />
+        <Readout label="Azimuth" value={`${b.azDeg.toFixed(2)}°`} unit={compass(b.azDeg)} hint="Clockwise from local north" />
+        <Readout label="Terrain skyline" value={fmtDeg(b.horizonDeg)} hint="LOLA skyline elevation at this azimuth" />
+        <Readout label="Clearance" value={fmtDeg(b.marginDeg)} hint="Elevation minus skyline" />
+        <Readout label="Disc above skyline" value={(b.discFraction * 100).toFixed(0)} unit="%" hint="Flat-skyline approximation" />
+        {range !== undefined && <Readout label="Range" value={Math.round(range).toLocaleString('en-US')} unit="km" />}
+        {next && r && (
+          <Readout
+            label={next.timeMs !== null ? `Time to ${eventName(which, next).toLowerCase()}` : `Next ${eventName(which, next).toLowerCase()}`}
+            value={next.timeMs !== null ? r.value : next.none === 'coverage' ? 'After the data ends' : `More than ${CROSSING_WINDOW_DAYS} d away`}
+            hint={r.title}
+            emphasis
+          />
+        )}
+        {next && next.timeMs !== null && <Readout label={`${eventName(which, next)} at`} value={fmtUtc(next.timeMs)} hint="Centre of the disc crosses the measured skyline; found in 10-minute steps, refined to about a minute" />}
       </dl>
     </section>
   );
@@ -156,7 +213,8 @@ function BodyTable({ which, b, range }: { which: 'sun' | 'earth'; b: Topocentric
 
 /** Drawer: the full measurement set and how the point was chosen. */
 export function DetailsDrawer() {
-  const { region, conditions, sample } = useConditions();
+  const { region, conditions, sample, timeMs } = useConditions();
+  const next = useNextCrossings();
   const p = region.observationPoint;
   const f = region.referenceFeature;
   return (
@@ -167,10 +225,11 @@ export function DetailsDrawer() {
       </p>
       {conditions && sample && (
         <div className="details__bodies">
-          <BodyTable which="sun" b={conditions.sun} />
-          <BodyTable which="earth" b={conditions.earth} range={sample.earth.distanceKm} />
+          <BodyTable which="sun" b={conditions.sun} next={next.sun} timeMs={timeMs} />
+          <BodyTable which="earth" b={conditions.earth} range={sample.earth.distanceKm} next={next.earth} timeMs={timeMs} />
         </div>
       )}
+      {conditions && <HorizonsCheck p={p} timeMs={timeMs} sun={conditions.sun} earth={conditions.earth} />}
       <p className="details__terms">
         <span>{t('Listen:')}</span>
         <Listen id="term-elevation" /> Elevation <Listen id="term-azimuth" /> Azimuth <Listen id="term-skyline" /> Skyline{' '}

@@ -5,7 +5,8 @@ export function prefersReducedMotion(): boolean {
 export function webglAvailable(): boolean {
   try {
     const c = document.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl'));
+    // three.js r163+ renders with WebGL 2 only; a WebGL 1-only browser cannot draw the scenes.
+    return !!c.getContext('webgl2');
   } catch {
     return false;
   }

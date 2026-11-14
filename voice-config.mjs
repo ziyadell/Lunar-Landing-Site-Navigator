@@ -1,5 +1,5 @@
 /**
- * The one narrator configuration for AFUQ. Used by both the recorded clips
+ * The one narrator configuration for LunaNav (by Team AFUQ). Used by both the recorded clips
  * (scripts/generate-narration.mjs) and the live-reading endpoint (api/tts.js), so every
  * clip and every live reading comes from the same voice, model and settings.
  *

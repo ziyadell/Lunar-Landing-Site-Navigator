@@ -1,14 +1,14 @@
 {
  "files": {
   "welcome": {
-   "hash": "579252d72962107a",
-   "bytes": 150926,
-   "chars": 119
+   "hash": "f4bed9b6e2e305d9",
+   "bytes": 144238,
+   "chars": 111
   },
   "orbit-intro": {
-   "hash": "e407160935bc5942",
-   "bytes": 437646,
-   "chars": 398
+   "hash": "4a4ad7d53cabbfce",
+   "bytes": 436392,
+   "chars": 401
   },
   "region-peak-near-cabeus-b": {
    "hash": "b95e57e730216c70",
@@ -111,9 +111,9 @@
    "chars": 342
   },
   "view-sources": {
-   "hash": "f91755799b5a9d28",
-   "bytes": 361995,
-   "chars": 311
+   "hash": "7779c31589d2d32a",
+   "bytes": 354472,
+   "chars": 305
   },
   "view-atlas": {
    "hash": "587e5dc2904a6306",
@@ -161,9 +161,9 @@
    "chars": 298
   },
   "tour-pole": {
-   "hash": "78c22683a670979b",
-   "bytes": 207350,
-   "chars": 190
+   "hash": "d76cc5e1b97c0a44",
+   "bytes": 221143,
+   "chars": 205
   },
   "tour-region": {
    "hash": "db48fb5f31e73ba1",
@@ -211,9 +211,9 @@
    "chars": 311
   },
   "view-regions": {
-   "hash": "ae71702959521604",
-   "bytes": 323543,
-   "chars": 321
+   "hash": "db383512df8e6079",
+   "bytes": 333992,
+   "chars": 336
   },
   "view-locator": {
    "hash": "5a4bb38cbc3b6700",
@@ -249,6 +249,11 @@
    "hash": "7b765549d598f86c",
    "bytes": 199409,
    "chars": 182
+  },
+  "analysis-limits": {
+   "hash": "de4b9b8efbc21790",
+   "bytes": 218635,
+   "chars": 204
   }
  },
  "voice": {
@@ -262,5 +267,5 @@
   }
  },
  "version": "afuq-2",
- "updatedUtc": "2026-11-08T00:52:32.861Z"
+ "updatedUtc": "2026-11-12T10:43:51.243Z"
 }

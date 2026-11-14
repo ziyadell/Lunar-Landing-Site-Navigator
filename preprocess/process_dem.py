@@ -59,8 +59,8 @@ RULE = ("Observation point = of candidate points on a {g:g} km grid inside NASA'
         "LOLA terrain horizon for the largest fraction of 2027 (hourly). A representative point for this "
         "analysis, not a NASA landing site.")
 MAX_SLOPE_DEG = 10.0
-L24 = "Artemis III candidate region in NASA's refined list of nine (Oct 28, 2024)"
-L22 = "Artemis III candidate region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)"
+L24 = "Candidate landing region in NASA's refined list of nine (Oct 28, 2024)"
+L22 = "Candidate landing region in NASA's Aug 2022 list and its refined list of nine (Oct 28, 2024)"
 
 # Reference features: IAU Gazetteer of Planetary Nomenclature (retrieved 2026-11-07), used for naming only.
 F_MALAPERT = {"name": "Mons Malapert", "type": "Mons", "latDeg": -85.98, "lonDeg": -1.67, "diameterKm": 67.0, "gazetteerId": 16338}

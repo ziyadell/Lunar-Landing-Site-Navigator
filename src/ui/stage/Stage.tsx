@@ -11,15 +11,16 @@ import { SurfaceMethod } from '../SurfaceOverlay';
 import { RegionAtlas } from './Regions';
 import { DetailsDrawer } from './Conditions';
 import { SettingsPanel } from './Settings';
+import { CrewPanel } from './Crew';
 import { Listen } from '../../audio/ui';
 import { FoldButton, FoldedTools } from '../Fold';
 import { useSettings } from '../../state/settings';
 
-const DRAWER_ITEM = { atlas: 'view-atlas', details: 'view-measurements', about: 'view-sources', settings: 'view-settings' } as const;
+const DRAWER_ITEM: Partial<Record<keyof typeof TITLES, string>> = { atlas: 'view-atlas', details: 'view-measurements', about: 'view-sources', settings: 'view-settings' };
 
 /* ------------------------------------------------------------------ drawers */
 
-const TITLES = { atlas: 'All candidate regions', details: 'Measurements', about: 'Data & method', settings: 'Settings' } as const;
+const TITLES = { atlas: 'All candidate regions', details: 'Measurements', about: 'Data & method', settings: 'Settings', crew: 'Artemis III crew' } as const;
 
 /** One contextual drawer at a time; the scene stays visible and interactive beside it. */
 export function Drawer() {
@@ -50,6 +51,7 @@ export function Drawer() {
         {drawer === 'atlas' && <RegionAtlas />}
         {drawer === 'details' && <DetailsDrawer />}
         {drawer === 'settings' && <SettingsPanel />}
+        {drawer === 'crew' && <CrewPanel />}
         {drawer === 'about' && (
           <>
             {mode === 'surface' && <SurfaceMethod />}

@@ -42,7 +42,7 @@ function loadCore() {
   core ??= Promise.all([
     getJson<unknown>('data/sites.json').then((raw) => {
       const { sites, dropped } = validateSites(raw);
-      if (dropped.length) console.warn('Lunar Navigator data check:', dropped);
+      if (dropped.length) console.warn('LunaNav data check:', dropped);
       return sites;
     }),
     getJson<unknown>('data/ephemeris.json').then(validateEphemeris),
@@ -95,7 +95,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
         });
       })
       .catch(async (e: unknown) => {
-        console.error('Lunar Navigator could not load its data:', e);
+        console.error('LunaNav could not load its data:', e);
         // A mismatch or incompatible file usually means the site was updated while this
         // tab was open (or a cache kept an old file): check before blaming the network.
         const mismatch = e instanceof ReleaseMismatch || e instanceof DataIncompatible;

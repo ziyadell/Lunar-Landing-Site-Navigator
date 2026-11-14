@@ -334,7 +334,7 @@
 }
 
 /* Number stepper in the interface's own style (no browser spinner). */
-.stepper {
+.nstep {
   display: inline-flex;
   align-items: center;
   height: 34px;
@@ -344,7 +344,7 @@
   direction: ltr;
   overflow: hidden;
 }
-.stepper__btn {
+.nstep__btn {
   width: 32px;
   height: 100%;
   border: 0;
@@ -353,15 +353,15 @@
   font: 500 16px var(--font-ui);
   cursor: pointer;
 }
-.stepper__btn:hover:not(:disabled) {
+.nstep__btn:hover:not(:disabled) {
   color: var(--text);
   background: rgba(241, 245, 249, 0.06);
 }
-.stepper__btn:disabled {
+.nstep__btn:disabled {
   opacity: 0.35;
   cursor: default;
 }
-.stepper .delay__n {
+.nstep .delay__n {
   width: 52px;
   height: 100%;
   padding: 0;
@@ -373,8 +373,8 @@
   appearance: textfield;
   -moz-appearance: textfield;
 }
-.stepper .delay__n::-webkit-outer-spin-button,
-.stepper .delay__n::-webkit-inner-spin-button {
+.nstep .delay__n::-webkit-outer-spin-button,
+.nstep .delay__n::-webkit-inner-spin-button {
   appearance: none;
   -webkit-appearance: none;
   margin: 0;
@@ -384,4 +384,18 @@
 :root[lang='ar'] .sel__opt-label {
   line-height: 1.9;
   overflow: visible;
+}
+/* Arabic: the reading and its words sit on the right, under the body's name. */
+[dir='rtl'] .cond__value,
+[dir='rtl'] .cond__next {
+  text-align: right;
+}
+[dir='rtl'] .cond__unit {
+  direction: rtl;
+}
+/* Laptop widths: the top bar holds one more button now, so drop the keyboard hint. */
+@media (max-width: 1500px) {
+  .masthead__aside .ghost-btn__kbd {
+    display: none;
+  }
 }

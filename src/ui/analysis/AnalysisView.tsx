@@ -12,6 +12,7 @@ import { useMedia } from '../../utils/useMedia';
 import { HorizonPanorama } from './HorizonPanorama';
 import { Select } from '../Select';
 import { DateField } from '../DateField';
+import { AssessmentPanel } from './Assessment';
 
 const DURATIONS = [7, 14, 30, 60, 90, 180, 365];
 const DAY = 86_400_000;
@@ -86,7 +87,7 @@ function Vantage({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
       </div>
       <div className="vantage__when">
         <div className="field field--date">
-          <label htmlFor={`${id}-start`}>{t('Start date (UTC)')}</label>
+          <label htmlFor={`${id}-start`}>Start date <span className="field__hint" title="Each period starts at 00:00 UTC, which is 03:00 in UTC+3">· from 03:00 UTC+3</span></label>
           <DateField
             id={`${id}-start`}
             label={`Scenario ${res.key} start date`}
@@ -157,7 +158,7 @@ const HEADLINES: Headline[] = [
   { key: 'sun', q: 'Sun above the skyline', note: 'share of the period', tone: 'sun', get: (m) => m.sunVisiblePct, pct: true, better: 'higher' },
   { key: 'earth', q: 'Earth above the skyline', note: 'share of the period', tone: 'earth', get: (m) => m.earthVisiblePct, pct: true, better: 'higher' },
   { key: 'both', q: 'Sun and Earth together', note: 'share of the period', tone: 'both', get: (m) => m.bothVisiblePct, pct: true, better: 'higher' },
-  { key: 'dark', q: 'Longest stretch without Sun', note: 'shorter is easier on power · ≥ is a lower bound', tone: 'dark', get: (m) => m.longestNoSunHours, pct: false, better: 'lower', trunc: (m) => m.noSunTruncated },
+  { key: 'dark', q: 'Longest stretch without Sun', note: 'Sun’s centre below the skyline · ≥ is a lower bound', tone: 'dark', get: (m) => m.longestNoSunHours, pct: false, better: 'lower', trunc: (m) => m.noSunTruncated },
 ];
 
 function Headlines({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
@@ -447,12 +448,12 @@ function LaunchDelay() {
       <strong className="delay__q">Launch delayed?</strong>
       <label className="delay__field">
         <span>Delay by</span>
-        <span className="stepper">
-          <button type="button" className="stepper__btn" aria-label="Fewer days" disabled={days <= 1} onClick={() => setDays(Math.max(1, days - 1))}>
+        <span className="nstep">
+          <button type="button" className="nstep__btn" aria-label="Fewer days" disabled={days <= 1} onClick={() => setDays(Math.max(1, days - 1))}>
             −
           </button>
           <input className="delay__n num" type="number" inputMode="numeric" min={1} max={365} value={days} onChange={(e) => setDays(Math.min(365, Math.max(0, Math.round(Number(e.target.value) || 0))))} />
-          <button type="button" className="stepper__btn" aria-label="More days" disabled={days >= 365} onClick={() => setDays(Math.min(365, days + 1))}>
+          <button type="button" className="nstep__btn" aria-label="More days" disabled={days >= 365} onClick={() => setDays(Math.min(365, days + 1))}>
             +
           </button>
         </span>
@@ -506,8 +507,23 @@ export default function AnalysisView() {
           <aside className="glance-notes">
             <h4>What this means</h4>
             <Observations a={a} b={b} />
+            <h4 className="glance-notes__limits">
+              Interpretation limits <Listen id="analysis-limits" />
+            </h4>
+            <p className="metrics__note">
+              Results describe Sun and Earth visibility at one observation point per region. They do not assess overall landing
+              safety. Earth visibility indicates geometric line of sight, not guaranteed communications.
+            </p>
           </aside>
         </div>
+      </section>
+
+      <section className="study__block">
+        <div className="study__head">
+          <h3>Power and communication assessment</h3>
+          <p>What the visibility above means for an electrical load and for a direct view of Earth. Change the two inputs to fit your case.</p>
+        </div>
+        <AssessmentPanel a={a} b={b} />
       </section>
 
       <section className="study__block">
@@ -573,6 +589,7 @@ export default function AnalysisView() {
           <li>“Visible” means the disc centre is above the skyline. Partial-disc illumination is reported under Measurements, not in these percentages.</li>
           <li>Region outlines are digitised from NASA&rsquo;s official map. Observation points follow a documented rule inside each outline and are not NASA-designated landing sites. Results apply to that point only, at 2 m height.</li>
           <li>Earth visibility is geometric line of sight; it does not model antennas, link budgets or ground-station availability.</li>
+          <li>Power and communication assessment: stored energy is load × longest time without the Sun, and the link is line of sight with a clearance margin. Both follow from the geometry and the inputs you set; no hardware is modelled.</li>
           <li>No suitability score is computed. Landing decisions also depend on slope, hazards, thermal and operational constraints not modelled here.</li>
         </ul>
         </details>

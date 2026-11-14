@@ -29,11 +29,13 @@ function useAlbedo(region: LandingRegion, enabled: boolean): TerrainAlbedo | nul
     if (!enabled || !d || !capUrl) return;
     let alive = true;
     const load = (u: string) => loadTex(u, true, 8);
-    Promise.all([load(d.imagery), load(capUrl)])
-      .then(([detail, cap]) => {
-        if (!alive) {
-          detail.dispose();
-          cap.dispose();
+    Promise.allSettled([load(d.imagery), load(capUrl)])
+      .then((res) => {
+        const [detail, cap] = res.map((r) => (r.status === 'fulfilled' ? r.value : null));
+        // A half-failed or superseded load must not leave a texture on the GPU.
+        if (!alive || !detail || !cap) {
+          detail?.dispose();
+          cap?.dispose();
           return;
         }
         setAlb((prev) => {
@@ -47,6 +49,13 @@ function useAlbedo(region: LandingRegion, enabled: boolean): TerrainAlbedo | nul
       alive = false;
     };
   }, [region, enabled, sites]);
+  // Release the textures when Surface View closes (each visit would otherwise keep two on the GPU).
+  const current = useRef(alb);
+  current.current = alb;
+  useEffect(() => () => {
+    current.current?.a.detail.dispose();
+    current.current?.a.cap.dispose();
+  }, []);
   return enabled && alb?.id === region.id ? alb.a : null;
 }
 
