@@ -415,3 +415,21 @@
 .cond__body {
   min-width: 0;
 }
+
+/* Arabic: menus and dropdown arrows sit on the side the layout mirrors to. */
+[dir='rtl'] .more__menu {
+  right: auto;
+  left: 0;
+}
+[dir='rtl'] .sel__chev {
+  right: auto;
+  left: 12px;
+}
+[dir='rtl'] .sel__btn {
+  padding: 0 12px 0 34px;
+}
+
+/* Arabic words inside number boxes use the interface font, not a typewriter fallback. */
+:root[lang='ar'] {
+  --font-mono: 'IBM Plex Mono', 'Segoe UI', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, sans-serif;
+}
