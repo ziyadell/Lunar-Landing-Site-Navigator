@@ -165,6 +165,14 @@ function takeLiveReading(): boolean {
   }
   return true;
 }
+/** Base64url of the UTF-8 text: a query value that survives any server's decoding. */
+function b64url(s: string): string {
+  const bytes = new TextEncoder().encode(s);
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 async function serverVoice(text: string): Promise<string | null> {
   if (serverVoiceDown) return null;
   const hit = serverAudio.get(text);
@@ -175,7 +183,7 @@ async function serverVoice(text: string): Promise<string | null> {
   const ctl = new AbortController();
   let timer = window.setTimeout(() => ctl.abort(), 12_000);
   try {
-    const r = await fetch(`${import.meta.env.BASE_URL}api/tts?v=${TTS_VERSION}&text=${encodeURIComponent(text)}`, { signal: ctl.signal });
+    const r = await fetch(`${import.meta.env.BASE_URL}api/tts?v=${TTS_VERSION}&t64=${b64url(text)}`, { signal: ctl.signal });
     window.clearTimeout(timer);
     timer = window.setTimeout(() => ctl.abort(), 40_000);
     if (!r.ok || !(r.headers.get('content-type') ?? '').includes('audio')) {

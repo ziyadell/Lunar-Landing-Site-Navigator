@@ -41,7 +41,11 @@ function fromOwnSite(req) {
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'method' });
   if (!fromOwnSite(req)) return res.status(403).json({ error: 'origin' });
-  const text = String(req.query.text ?? '');
+  // Arabic does not survive the query string intact, so the app sends the text base64-encoded.
+  const b64 = typeof req.query.t64 === 'string' ? req.query.t64 : '';
+  const text = b64
+    ? Buffer.from(b64.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')
+    : String(req.query.text ?? '');
   if (req.query.v !== VOICE_VERSION) return res.status(400).json({ error: 'version' });
   const arabic = AR_TEMPLATE.test(text);
   if (!arabic && (text.length > 420 || !TEMPLATE.test(text))) return res.status(400).json({ error: 'text' });
