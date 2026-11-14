@@ -520,7 +520,9 @@ export default function AnalysisView() {
 
       <section className="study__block">
         <div className="study__head">
-          <h3>Power and communication assessment</h3>
+          <h3>
+            Power and communication assessment <Listen id="analysis-assessment" />
+          </h3>
           <p>What the visibility above means for an electrical load and for a direct view of Earth. Change the two inputs to fit your case.</p>
         </div>
         <AssessmentPanel a={a} b={b} />

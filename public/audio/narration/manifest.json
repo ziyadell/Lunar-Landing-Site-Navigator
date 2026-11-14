@@ -254,6 +254,11 @@
    "hash": "de4b9b8efbc21790",
    "bytes": 218635,
    "chars": 204
+  },
+  "analysis-assessment": {
+   "hash": "d43f93dd2d35401a",
+   "bytes": 600232,
+   "chars": 577
   }
  },
  "voice": {
@@ -267,5 +272,5 @@
   }
  },
  "version": "afuq-2",
- "updatedUtc": "2026-11-12T10:43:51.243Z"
+ "updatedUtc": "2026-11-14T08:01:30.473Z"
 }
