@@ -15,7 +15,7 @@ export function lookup(raw: string): string | null {
   if (!k || !/[A-Za-z]/.test(k)) return null;
   const hit = AR[k];
   if (hit !== undefined) return hit;
-  for (const [re, to] of PATTERNS) if (re.test(k)) return k.replace(re, (...m) => to.replace(/\$(\d)/g, (_, i) => lookup(m[+i]) ?? names(m[+i])));
+  for (const [re, to] of PATTERNS) if (re.test(k)) return k.replace(re, (...m) => to.replace(/\$(\d)/g, (_, i) => (m[+i] ? (lookup(m[+i]) ?? names(m[+i])) : '')));
   return null;
 }
 function text(n: Text) {
@@ -40,9 +40,14 @@ function walk(root: Node) {
 }
 const obs = new MutationObserver((list) => {
   for (const m of list) {
-    if (m.type === 'characterData') text(m.target as Text);
-    else if (m.type === 'attributes') attrs(m.target as Element);
-    else m.addedNodes.forEach(walk);
+    // One string that cannot be translated must never stop the rest of the page.
+    try {
+      if (m.type === 'characterData') text(m.target as Text);
+      else if (m.type === 'attributes') attrs(m.target as Element);
+      else m.addedNodes.forEach(walk);
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('i18n-dom', e);
+    }
   }
 });
 function sync() {
