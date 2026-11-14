@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { useConditions } from '../../data/useConditions';
 import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
@@ -16,9 +17,15 @@ import type { NarrationItem } from '../../audio/engine';
  */
 
 function plain(b: TopocentricBody) {
-  if (b.state === 'visible') return `${b.marginDeg.toFixed(1)}° above the skyline`;
-  if (b.state === 'below-horizontal') return 'Below the horizon';
-  return `Hidden by terrain · ${Math.abs(b.marginDeg).toFixed(1)}° short`;
+  const s = b.state === 'visible' ? 'Clears the terrain horizon' : b.state === 'below-horizontal' ? 'Below the local horizontal' : 'Hidden by terrain';
+  return (
+    <>
+      <span>{t(s)}</span>
+      <span>
+        {t('elevation')} <bdi dir="ltr" className="num">{fmtDeg(b.elDeg, 2)}</bdi>
+      </span>
+    </>
+  );
 }
 
 function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
@@ -27,11 +34,11 @@ function Body({ which, b }: { which: 'sun' | 'earth'; b: TopocentricBody }) {
     <div className={`cond__body cond__body--${which}${up ? ' is-up' : ' is-down'}`}>
       <div className="cond__name">
         {which === 'sun' ? <SunGlyph size={13} /> : <EarthGlyph size={13} />}
-        {which === 'sun' ? 'Sun' : 'Earth'}
-        <span className="cond__state">{up ? 'Visible' : 'Not visible'}</span>
+        {t(which === 'sun' ? 'Sun' : 'Earth')}
+        <span className="cond__state">{t(up ? 'Visible' : 'Not visible')}</span>
       </div>
       <div className="cond__value num">
-        {fmtDeg(b.elDeg, 2)}
+        {Math.abs(b.marginDeg).toFixed(1)}°<span className="cond__unit">{t(b.marginDeg > 0 ? 'above horizon' : 'below horizon')}</span>
       </div>
       <div className="cond__plain">{plain(b)}</div>
     </div>
@@ -56,6 +63,18 @@ function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<t
   };
 }
 
+/** Surface view in darkness: say why it is dark and what to do about it. */
+export function SunDownNote() {
+  const { conditions } = useConditions();
+  if (!conditions || conditions.sun.state === 'visible') return null;
+  return (
+    <div className="loadchip sundown" role="status">
+      <SunGlyph size={12} />
+      <span>{t(conditions.sun.state === 'below-horizontal' ? 'Sun is below the horizon — advance time.' : 'Sun is hidden behind terrain — advance time.')}</span>
+    </div>
+  );
+}
+
 export function ConditionsCard() {
   const { conditions, region } = useConditions();
   const timeMs = useApp((s) => s.timeMs);
@@ -66,7 +85,7 @@ export function ConditionsCard() {
   const setS = useSettings((s) => s.set);
   if (folded)
     return (
-      <section className="cond cond--folded" aria-label="Conditions at the observation point" data-obstacle>
+      <section className="cond cond--folded" aria-label={t('Conditions at the observation point')} data-obstacle>
         {conditions ? (
           <div className="cond__mini">
             {(['sun', 'earth'] as const).map((w) => {
@@ -75,22 +94,22 @@ export function ConditionsCard() {
               return (
                 <span key={w} className={`cond__mini-body cond__mini-body--${w}${up ? ' is-up' : ''}`}>
                   {w === 'sun' ? <SunGlyph size={12} /> : <EarthGlyph size={12} />}
-                  <span className="num">{fmtDeg(b.elDeg, 2)}</span>
-                  <span className="cond__mini-state">{up ? 'Visible' : 'Hidden'}</span>
+                  <span className="num">{fmtDeg(b.marginDeg, 1)}</span>
+                  <span className="cond__mini-state">{t(up ? 'Visible' : 'Hidden')}</span>
                 </span>
               );
             })}
           </div>
         ) : (
-          <span className="cond__mini">No ephemeris for this time</span>
+          <span className="cond__mini">{t('No ephemeris for this time')}</span>
         )}
-        <button type="button" className="cond__fold" aria-expanded={false} aria-label="Show Sun and Earth readings" title="Show readings" onClick={() => setS({ readingsFolded: false })}>
+        <button type="button" className="cond__fold" aria-expanded={false} aria-label={t('Show Sun and Earth readings')} title={t('Show readings')} onClick={() => setS({ readingsFolded: false })}>
           <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
         </button>
       </section>
     );
   return (
-    <section className="cond" aria-label="Conditions at the observation point" aria-live="polite" data-obstacle>
+    <section className="cond" aria-label={t('Conditions at the observation point')} aria-live="polite" data-obstacle>
       {conditions ? (
         <div className="cond__pair">
           <Body which="sun" b={conditions.sun} />
@@ -103,11 +122,11 @@ export function ConditionsCard() {
       )}
       <div className="cond__foot">
         <button type="button" className="cond__more" aria-expanded={drawer === 'details'} onClick={() => openDrawer('details')}>
-          {drawer === 'details' ? 'Hide measurements' : 'All measurements'}
+          {t(drawer === 'details' ? 'Hide measurements' : 'All measurements')}
           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 6.5 5l-3 3" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
         </button>
         {conditions && <Listen item={nowItem(region.name, timeMs, conditions)} />}
-        <button type="button" className="cond__fold" aria-expanded={true} aria-label="Hide Sun and Earth readings" title="Hide readings" onClick={() => setS({ readingsFolded: true })}>
+        <button type="button" className="cond__fold" aria-expanded={true} aria-label={t('Hide Sun and Earth readings')} title={t('Hide readings')} onClick={() => setS({ readingsFolded: true })}>
           <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 7.5 6 4l3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
         </button>
       </div>
@@ -121,15 +140,15 @@ function BodyTable({ which, b, range }: { which: 'sun' | 'earth'; b: Topocentric
       <h3 className="mtable__head">
         {which === 'sun' ? <SunGlyph size={13} /> : <EarthGlyph size={13} />}
         {which === 'sun' ? 'Sun' : 'Earth'}
-        <span className="mtable__state">{STATE_LABEL[b.state]}</span>
+        <span className="mtable__state">{t(STATE_LABEL[b.state])}</span>
       </h3>
       <dl className="readouts">
-        <Readout label="Elevation" value={fmtDeg(b.elDeg)} hint="Above the local horizontal plane" />
-        <Readout label="Azimuth" value={`${b.azDeg.toFixed(2)}°`} unit={compass(b.azDeg)} hint="Clockwise from local north" />
-        <Readout label="Terrain skyline" value={fmtDeg(b.horizonDeg)} hint="LOLA skyline elevation at this azimuth" />
-        <Readout label="Clearance" value={fmtDeg(b.marginDeg)} hint="Elevation minus skyline" />
-        <Readout label="Disc above skyline" value={(b.discFraction * 100).toFixed(0)} unit="%" hint="Flat-skyline approximation" />
-        {range !== undefined && <Readout label="Range" value={Math.round(range).toLocaleString('en-US')} unit="km" />}
+        <Readout label={t('Elevation')} value={fmtDeg(b.elDeg)} hint={t('Above the local horizontal plane')} />
+        <Readout label={t('Azimuth')} value={`${b.azDeg.toFixed(2)}°`} unit={compass(b.azDeg)} hint={t('Clockwise from local north')} />
+        <Readout label={t('Terrain skyline')} value={fmtDeg(b.horizonDeg)} hint={t('LOLA skyline elevation at this azimuth')} />
+        <Readout label={t('Clearance')} value={fmtDeg(b.marginDeg)} hint={t('Elevation minus skyline')} />
+        <Readout label={t('Disc above skyline')} value={(b.discFraction * 100).toFixed(0)} unit="%" hint={t('Flat-skyline approximation')} />
+        {range !== undefined && <Readout label={t('Range')} value={Math.round(range).toLocaleString('en-US')} unit="km" />}
       </dl>
     </section>
   );
@@ -153,16 +172,16 @@ export function DetailsDrawer() {
         </div>
       )}
       <p className="details__terms">
-        <span>Listen:</span>
+        <span>{t('Listen:')}</span>
         <Listen id="term-elevation" /> Elevation <Listen id="term-azimuth" /> Azimuth <Listen id="term-skyline" /> Skyline{' '}
         <Listen id="term-clearance" /> Clearance <Listen id="term-coordinates" /> Coordinates
       </p>
       <section className="mtable">
-        <h3 className="mtable__head">Observation point</h3>
+        <h3 className="mtable__head">{t('Observation point')}</h3>
         <dl className="readouts">
-          <Readout label="Position" value={`${fmtLat(p.latDeg)} ${fmtLon(p.lonDeg)}`} />
-          <Readout label="Elevation" value={p.elevationM.toFixed(0)} unit="m" hint="Relative to the 1737.4 km reference sphere (LOLA)" />
-          {p.sunVisibleFraction2027 !== undefined && <Readout label="Sun in 2027" value={(p.sunVisibleFraction2027 * 100).toFixed(1)} unit="% of hours" />}
+          <Readout label={t('Position')} value={`${fmtLat(p.latDeg)} ${fmtLon(p.lonDeg)}`} />
+          <Readout label={t('Elevation')} value={p.elevationM.toFixed(0)} unit="m" hint="Relative to the 1737.4 km reference sphere (LOLA)" />
+          {p.sunVisibleFraction2027 !== undefined && <Readout label={t('Sun in 2027')} value={(p.sunVisibleFraction2027 * 100).toFixed(1)} unit="% of hours" />}
         </dl>
         <p className="details__ref">
           {region.nasaRegion && (
@@ -183,7 +202,7 @@ export function DetailsDrawer() {
         </p>
       </section>
       <details className="disclose">
-        <summary>How this point was chosen</summary>
+        <summary>{t('How this point was chosen')}</summary>
         <p className="disclose__text">
           NASA has published its candidate regions only as outlines on a map. The outline here was digitised from that map by
           registering it to the LROC mosaic (about 0.5 km accuracy). Readings use one representative point inside it, not a

@@ -92,7 +92,7 @@
   background: rgba(5, 8, 15, 0.6);
   color: var(--text);
   font: 400 13.5px/1 var(--font-ui);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   transition:
     border-color var(--dur-fast) ease,
@@ -398,7 +398,7 @@ button:disabled {
   border-radius: 9px;
   background: none;
   color: var(--text);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .guide__item:hover {
@@ -444,7 +444,7 @@ button:disabled {
   background: none;
   color: var(--text-secondary);
   font-size: 13px;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .guide__topic:hover {
@@ -589,7 +589,7 @@ button:disabled {
 
 /* ------------------------------------------------------------ recovery note */
 .vp-note__btn {
-  margin-left: 8px;
+  margin-inline-start: 8px;
   height: 28px;
   padding: 0 12px;
   border: 1px solid rgba(241, 245, 249, 0.25);

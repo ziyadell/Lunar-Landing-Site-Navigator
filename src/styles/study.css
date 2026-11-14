@@ -288,7 +288,7 @@
   opacity: 0.5;
 }
 .glance__v {
-  text-align: right;
+  text-align: end;
   font-size: 14.5px;
 }
 .glance__row--sun {
@@ -306,14 +306,14 @@
 .glance__verdict {
   font-size: 13.5px;
   color: var(--text-secondary);
-  text-align: right;
+  text-align: end;
 }
 .glance__verdict strong {
   display: inline-grid;
   place-items: center;
   width: 22px;
   height: 22px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   border-radius: 6px;
   background: rgba(241, 245, 249, 0.1);
   color: var(--text);
@@ -347,7 +347,7 @@
 }
 .glance-notes .observations li {
   position: relative;
-  padding-left: 16px;
+  padding-inline-start: 16px;
   font-size: 14px;
   line-height: 1.6;
   color: var(--text-secondary);
@@ -383,7 +383,7 @@
   place-items: center;
   width: 22px;
   height: 22px;
-  margin-right: 8px;
+  margin-inline-end: 8px;
   border-radius: 6px;
   background: var(--lunar-white);
   color: var(--bg);
@@ -425,7 +425,7 @@
   place-items: center;
   width: 22px;
   height: 22px;
-  margin-right: 6px;
+  margin-inline-end: 6px;
   border-radius: 6px;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -459,7 +459,7 @@
 }
 .study__all > summary::after {
   content: '+';
-  margin-left: auto;
+  margin-inline-start: auto;
   font-size: 20px;
   line-height: 1;
   color: var(--text-secondary);
@@ -557,7 +557,7 @@
     padding: 18px;
   }
   .glance__verdict {
-    text-align: left;
+    text-align: start;
   }
   .study__card {
     padding: 16px;

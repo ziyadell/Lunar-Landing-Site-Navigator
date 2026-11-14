@@ -1,3 +1,5 @@
+import { t, switchLang } from '../../i18n';
+import { useSettings as useLang } from '../../state/settings';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApp, type Mode } from '../../state/store';
 import { Listen } from '../../audio/ui';
@@ -54,7 +56,7 @@ export function Brand() {
         <circle cx="11" cy="11" r="10.25" fill="none" stroke="#4DDCF4" strokeWidth="1" strokeDasharray="2 2.6" />
       </svg>
       <div className="brand__text">
-        <h1 className="brand__name">Lunar Landing Site Navigator</h1>
+        <h1 className="brand__name">{t('Lunar Landing Site Navigator')}</h1>
         <span className="brand__sub">
           Artemis south-polar regions <Listen id="orbit-intro" />
         </span>
@@ -70,7 +72,7 @@ export function ModeNav() {
   const transitioning = useApp((s) => s.transitioning);
   const idx = MODES.findIndex((m) => m.id === mode);
   return (
-    <nav className="modenav" aria-label="View" data-obstacle>
+    <nav className="modenav" aria-label={t('View')} data-obstacle>
       <span className="modenav__glide" style={{ transform: `translateX(${idx * 100}%)` }} aria-hidden="true" />
       {MODES.map((m) => (
         <button
@@ -78,12 +80,12 @@ export function ModeNav() {
           type="button"
           className={`modenav__btn${mode === m.id ? ' is-active' : ''}`}
           aria-current={mode === m.id ? 'page' : undefined}
-          title={m.hint}
+          title={t(m.hint)}
           disabled={transitioning && m.id === 'surface'}
           onClick={() => (m.id === 'surface' ? enterSurface() : setMode(m.id))}
         >
           {m.icon}
-          <span>{m.label}</span>
+          <span>{t(m.label)}</span>
         </button>
       ))}
     </nav>
@@ -126,7 +128,7 @@ export function FocusToggle() {
           <path d="M1.5 5V1.5H5M12.5 5V1.5H9M1.5 9v3.5H5M12.5 9v3.5H9" fill="none" stroke="currentColor" strokeWidth="1.3" />
         )}
       </svg>
-      <span className="ghost-btn__long">{focus ? 'Show controls' : 'Focus'}</span>
+      <span className="ghost-btn__long">{t(focus ? 'Show controls' : 'Focus')}</span>
       <kbd className="ghost-btn__kbd" aria-hidden="true">F</kbd>
     </button>
   );
@@ -163,13 +165,14 @@ function MoreMenu() {
       window.removeEventListener('pointerdown', down, true);
     };
   }, [open]);
+  const lang = useLang((st) => st.lang);
   const pick = (f: () => void) => {
     setOpen(false);
     f();
   };
   return (
     <div className="more">
-      <button ref={btn} type="button" className={`ghost-btn ghost-btn--icon more__btn${open ? ' is-on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="More: focus, settings, data and method" onClick={() => setOpen((o) => !o)}>
+      <button ref={btn} type="button" className={`ghost-btn ghost-btn--icon more__btn${open ? ' is-on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label={t('More: focus, settings, data and method')} onClick={() => setOpen((o) => !o)}>
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
           <circle cx="3.5" cy="8" r="1.4" fill="currentColor" />
           <circle cx="8" cy="8" r="1.4" fill="currentColor" />
@@ -180,18 +183,31 @@ function MoreMenu() {
         <div ref={menu} className="more__menu" role="menu">
           {mode !== 'analysis' && (
             <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().setFocus(!focus))}>
-              {focus ? 'Show controls' : 'Focus on the scene'}
+              {t(focus ? 'Show controls' : 'Focus on the scene')}
             </button>
           )}
           <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().openDrawer('settings'))}>
-            Settings
+            {t('Settings')}
           </button>
           <button type="button" role="menuitem" className="more__item" onClick={() => pick(() => useApp.getState().openDrawer('about'))}>
-            Data &amp; method
+            {t('Data & method')}
+          </button>
+          <button type="button" role="menuitem" className="more__item" lang={lang === 'ar' ? 'en' : 'ar'} onClick={switchLang}>
+            {lang === 'ar' ? 'English' : 'العربية'}
           </button>
         </div>
       )}
     </div>
+  );
+}
+
+/** Arabic / English. Shows the language you would switch to, in that language. */
+export function LangToggle() {
+  const lang = useLang((s) => s.lang);
+  return (
+    <button type="button" className="ghost-btn lang-btn" lang={lang === 'ar' ? 'en' : 'ar'} aria-label={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'} onClick={switchLang} data-obstacle>
+      {lang === 'ar' ? 'English' : 'العربية'}
+    </button>
   );
 }
 
@@ -207,7 +223,8 @@ export function Masthead() {
       <Brand />
       <ModeNav />
       <div className="masthead__aside">
-        {!covered && <span className="masthead__warn">Outside ephemeris coverage</span>}
+        {!covered && <span className="masthead__warn">{t('Outside ephemeris coverage')}</span>}
+        <LangToggle />
         <MoreMenu />
         <FocusToggle />
         <button
@@ -215,7 +232,7 @@ export function Masthead() {
           className={`ghost-btn ghost-btn--icon${drawer === 'settings' ? ' is-on' : ''}`}
           aria-expanded={drawer === 'settings'}
           onClick={() => openDrawer('settings')}
-          aria-label="Settings: quality, audio guide, tour"
+          aria-label={t('Settings: quality, audio guide, tour')}
           title="Settings"
           data-obstacle
         >
@@ -230,14 +247,14 @@ export function Masthead() {
           className={`ghost-btn${drawer === 'about' ? ' is-on' : ''}`}
           aria-expanded={drawer === 'about'}
           onClick={() => openDrawer('about')}
-          aria-label="Data and method"
+          aria-label={t('Data and method')}
           data-obstacle
         >
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
             <circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" strokeWidth="1.2" />
             <path d="M7 6.2v3.9M7 3.9v.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          <span className="ghost-btn__long">Data &amp; method</span>
+          <span className="ghost-btn__long">{t('Data & method')}</span>
         </button>
       </div>
     </header>

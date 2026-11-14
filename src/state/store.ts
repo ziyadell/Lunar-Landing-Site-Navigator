@@ -137,7 +137,6 @@ interface AppState {
 }
 
 const DAY = 86_400_000;
-const nowHour = () => Math.floor(Date.now() / 3_600_000) * 3_600_000;
 
 export const useApp = create<AppState>((set) => ({
   focus: false,
@@ -159,7 +158,7 @@ export const useApp = create<AppState>((set) => ({
     }),
   mode: 'orbital',
   regionId: 'malapert-massif',
-  timeMs: nowHour(),
+  timeMs: Date.UTC(2026, 10, 14, 7), // first launch: 14 Nov 2026, 10:00 UTC+3
   cameraCommand: { kind: 'global', seq: 0 },
   transitioning: false,
   layers: {

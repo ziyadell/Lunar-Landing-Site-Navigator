@@ -25,13 +25,16 @@ interface Settings {
   toolsFolded: boolean;
   /** Surface skyline strip folded to its title. */
   skylineFolded: boolean;
+  /** Homepage site ranking folded to its title. */
+  rankFolded: boolean;
+  lang: 'en' | 'ar';
   /** Region card folded to its name and arrows. */
   regionFolded: boolean;
   set: (p: Partial<Omit<Settings, 'set'>>) => void;
 }
 
 const KEY = 'lsn.settings.v2';
-const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, sound: true, rate: 1 as const, transcript: true, welcomeSeen: false, readingsFolded: false, toolsFolded: false, skylineFolded: false, regionFolded: false };
+const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, sound: true, rate: 1 as const, transcript: true, welcomeSeen: false, readingsFolded: false, toolsFolded: false, skylineFolded: false, regionFolded: false, rankFolded: typeof window !== 'undefined' && window.innerWidth < 760, /* phones: title only until opened */ lang: 'en' as 'en' | 'ar' };
 
 function read() {
   try {
@@ -42,7 +45,8 @@ function read() {
     if (!['recorded', 'captions'].includes(out.voice)) out.voice = 'recorded'; // old "device"/"browser" choices
     if (typeof out.sound !== 'boolean') out.sound = true;
     // The Start Mission welcome opens every visit; only the current visit remembers it.
-    out.welcomeSeen = false;
+    out.welcomeSeen = sessionStorage.getItem('lsn.skipWelcome') === '1'; // set by a language switch
+    sessionStorage.removeItem('lsn.skipWelcome');
     return out;
   } catch {
     return defaults;

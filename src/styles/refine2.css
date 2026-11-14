@@ -14,12 +14,12 @@
   cursor: inherit;
 }
 .pano-strip__head {
-  padding-right: 0;
+  padding-inline-end: 0;
 }
 .pano-strip__head .fold-btn {
   width: 28px;
   height: 28px;
-  margin-right: -4px;
+  margin-inline-end: -4px;
 }
 
 /* Touch screens: no "stuck" hover backgrounds after a tap. */

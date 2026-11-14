@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { t } from '../../i18n';
+import { useMemo, useState } from 'react';
 import { Listen, MissionGuide } from '../../audio/ui';
 import { useApp, type Scenario } from '../../state/store';
 import { useData } from '../../data/DataContext';
@@ -85,7 +86,7 @@ function Vantage({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
       </div>
       <div className="vantage__when">
         <div className="field field--date">
-          <label htmlFor={`${id}-start`}>Start date (UTC)</label>
+          <label htmlFor={`${id}-start`}>{t('Start date (UTC)')}</label>
           <DateField
             id={`${id}-start`}
             label={`Scenario ${res.key} start date`}
@@ -182,8 +183,8 @@ function Headlines({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
         return (
           <div key={h.key} className={`glance__row glance__row--${h.tone}`}>
             <div className="glance__q">
-              {h.q}
-              <span className="glance__unit">{h.note}</span>
+              {t(h.q)}
+              <span className="glance__unit">{t(h.note)}</span>
             </div>
             <div className="glance__bars">
               {rows.map((x) => (
@@ -273,10 +274,10 @@ function MetricsStack({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
         <section key={g} className="mstack__group" aria-label={g}>
           <h4 className="mstack__head">{g}</h4>
           {ROWS.filter((r) => r.group === g).map((row) => (
-            <div key={row.label} className="mstack__row">
+            <div key={t(row.label)} className="mstack__row">
               <div className="mstack__label">
-                {row.label}
-                {row.unit && <span className="metrics__unit"> {row.unit}</span>}
+                {t(row.label)}
+                {row.unit && <span className="metrics__unit"> {t(row.unit)}</span>}
               </div>
               <dl className="mstack__vals">
                 <div>
@@ -319,10 +320,10 @@ function MetricsTable({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
   return (
     <div className="table-wrap">
       <table className="metrics">
-        <caption className="sr-only">Comparison of terrain-corrected visibility metrics for scenarios A and B</caption>
+        <caption className="sr-only">{t('Comparison of terrain-corrected visibility metrics for scenarios A and B')}</caption>
         <thead>
           <tr>
-            <th scope="col">Metric</th>
+            <th scope="col">{t('Metric')}</th>
             <th scope="col" className="is-a">A · {a.region.name}</th>
             <th scope="col" className="is-b">B · {b.region.name}</th>
             <th scope="col">B − A</th>
@@ -337,14 +338,14 @@ function MetricsTable({ a, b }: { a: ScenarioResult; b: ScenarioResult }) {
             const isPct = row.unit.startsWith('%');
             return [
               head ? (
-                <tr key={`${row.group}-h`} className="metrics__group">
-                  <th colSpan={4} scope="colgroup">{row.group}</th>
+                <tr key={`${t(row.group)}-h`} className="metrics__group">
+                  <th colSpan={4} scope="colgroup">{t(row.group)}</th>
                 </tr>
               ) : null,
-              <tr key={row.label}>
+              <tr key={t(row.label)}>
                 <th scope="row">
-                  {row.label}
-                  {row.unit && <span className="metrics__unit"> {row.unit}</span>}
+                  {t(row.label)}
+                  {row.unit && <span className="metrics__unit"> {t(row.unit)}</span>}
                 </th>
                 <td className="num">{cell(a.metrics, row)}</td>
                 <td className="num">{cell(b.metrics, row)}</td>
@@ -424,14 +425,55 @@ function downloadCsv(res: ScenarioResult) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+/**
+ * The planner's question when a launch slips: same site, later date. Scenario B becomes
+ * Scenario A's site and duration, starting the given number of days later.
+ */
+function LaunchDelay() {
+  const [days, setDays] = useState(14);
+  const a = useApp((st) => st.scenarios[0]);
+  const set = useApp((st) => st.setScenario);
+  const { ephemeris } = useData();
+  const late = a.startMs + days * DAY;
+  const fits = days >= 1 && late + a.durationDays * DAY <= ephemeris.endMs;
+  return (
+    <form
+      className="delay"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (fits) set(1, { regionId: a.regionId, startMs: late, durationDays: a.durationDays });
+      }}
+    >
+      <strong className="delay__q">Launch delayed?</strong>
+      <label className="delay__field">
+        <span>Delay by</span>
+        <span className="stepper">
+          <button type="button" className="stepper__btn" aria-label="Fewer days" disabled={days <= 1} onClick={() => setDays(Math.max(1, days - 1))}>
+            −
+          </button>
+          <input className="delay__n num" type="number" inputMode="numeric" min={1} max={365} value={days} onChange={(e) => setDays(Math.min(365, Math.max(0, Math.round(Number(e.target.value) || 0))))} />
+          <button type="button" className="stepper__btn" aria-label="More days" disabled={days >= 365} onClick={() => setDays(Math.min(365, days + 1))}>
+            +
+          </button>
+        </span>
+        <span>days</span>
+      </label>
+      <button type="submit" className="cta" disabled={!fits}>
+        Compare the same site, later
+      </button>
+      <span className="delay__hint">{fits ? 'Scenario B becomes Scenario A’s site and duration, starting that many days later.' : 'That date is outside the period covered by the ephemeris.'}</span>
+    </form>
+  );
+}
+
 export default function AnalysisView() {
   const a = useScenario(0);
   const b = useScenario(1);
   const step = a.stepMin === b.stepMin ? `${a.stepMin}` : `${a.stepMin}/${b.stepMin}`;
   return (
-    <main className="study" aria-label="Mission analysis">
+    <main className="study" aria-label={t('Mission analysis')}>
       <header className="study__hero">
-        <span className="study__eyebrow">Mission analysis</span>
+        <span className="study__eyebrow">{t('Mission analysis')}</span>
         <h2 className="study__title">
           How much sunlight and Earth contact does each site get? <Listen id="analysis-intro" />
         </h2>
@@ -444,13 +486,14 @@ export default function AnalysisView() {
         </div>
       </header>
 
-      <section className="matchup" aria-label="Scenarios">
+      <section className="matchup" aria-label={t('Scenarios')}>
         <Vantage i={0} res={a} />
         <span className="matchup__vs" aria-hidden="true">
           vs
         </span>
         <Vantage i={1} res={b} />
       </section>
+      <LaunchDelay />
 
       <section className="study__block">
         <div className="study__head">
@@ -510,7 +553,7 @@ export default function AnalysisView() {
             <span className="study__all-title">
               Every metric <Listen id="analysis-metrics" />
             </span>
-            <span className="study__all-hint">Ten measures side by side, with the difference</span>
+            <span className="study__all-hint">{t('Ten measures side by side, with the difference')}</span>
           </summary>
           <MetricsTable a={a} b={b} />
         </details>
@@ -522,7 +565,7 @@ export default function AnalysisView() {
             <span className="study__method-title">
               Method and limits <Listen id="analysis-method" />
             </span>
-            <span className="study__all-hint">Data sources, validation, and what is not modeled</span>
+            <span className="study__all-hint">{t('Data sources, validation, and what is not modeled')}</span>
           </summary>
         <ul>
           <li>Sun and Earth directions: NASA/JPL Horizons hourly sub-solar and sub-Earth points, interpolated; validated against Horizons topocentric Az/El to better than 0.01°.</li>

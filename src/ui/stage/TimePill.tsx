@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
@@ -93,7 +94,7 @@ export function TimePill() {
   return (
     <div className={`timepill${open ? ' is-open' : ''}`} ref={host} data-obstacle>
       {open && (
-        <section className="timesheet" aria-label="Observation time">
+        <section className="timesheet" aria-label={t('Observation time')}>
           <div className="timesheet__head">
             <span className="timesheet__title">
               Observation time · UTC <Listen id="view-time" />
@@ -109,23 +110,23 @@ export function TimePill() {
           </p>
         </section>
       )}
-      <div className="timepill__bar" role="group" aria-label="Observation time">
-        <button type="button" className="timepill__step" onClick={() => step(-D)} aria-label="Back one day" title="Back one day">
+      <div className="timepill__bar" role="group" aria-label={t('Observation time')}>
+        <button type="button" className="timepill__step" onClick={() => step(-D)} aria-label={t('Back one day')} title={t('Back one day')}>
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 3.5 3.5 7 7 10.5M11 3.5 7.5 7l3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
         </button>
-        <button type="button" className="timepill__step" onClick={() => step(-H)} aria-label="Back one hour" title="Back one hour">
+        <button type="button" className="timepill__step" onClick={() => step(-H)} aria-label={t('Back one hour')} title={t('Back one hour')}>
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 3.5 5 7l3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
         </button>
-        <button type="button" className="timepill__when" aria-expanded={open} onClick={() => setOpen(!open)} title="Change observation time">
+        <button type="button" className="timepill__when" aria-expanded={open} onClick={() => setOpen(!open)} title={t('Change observation time')}>
           <span className="timepill__date">{date}</span>
           <span className="timepill__time num">{time}</span>
           <span className="timepill__utc">UTC</span>
           <svg className="timepill__chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 6.5 5 3.5l3 3" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
         </button>
-        <button type="button" className="timepill__step" onClick={() => step(H)} aria-label="Forward one hour" title="Forward one hour">
+        <button type="button" className="timepill__step" onClick={() => step(H)} aria-label={t('Forward one hour')} title={t('Forward one hour')}>
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5.5 3.5 9 7l-3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
         </button>
-        <button type="button" className="timepill__step" onClick={() => step(D)} aria-label="Forward one day" title="Forward one day">
+        <button type="button" className="timepill__step" onClick={() => step(D)} aria-label={t('Forward one day')} title={t('Forward one day')}>
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 3.5 10.5 7 7 10.5M3 3.5 6.5 7 3 10.5" stroke="currentColor" fill="none" strokeWidth="1.4" /></svg>
         </button>
         <button
@@ -147,7 +148,7 @@ export function TimePill() {
           className="timepill__speed num"
           onClick={() => setSpeed((v) => (v + 1) % SPEEDS.length)}
           aria-label={`Playback speed: ${SPEEDS[speed].name}. Change speed.`}
-          title="Playback speed"
+          title={t('Playback speed')}
         >
           {SPEEDS[speed].label}
         </button>

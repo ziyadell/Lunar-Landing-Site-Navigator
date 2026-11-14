@@ -28,15 +28,24 @@ import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { VOICE, VOICE_VERSION } from '../voice-config.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const out = join(root, 'public', 'audio', 'narration');
 const args = process.argv.slice(2);
+// --lang=ar records the Arabic script (narration.ar.json) with the same voice into narration/ar.
+const lang = args.find((a) => a.startsWith('--lang='))?.slice(7) ?? 'en';
+const out = lang === 'en' ? join(root, 'public', 'audio', 'narration') : join(root, 'public', 'audio', 'narration', lang);
 const flag = (f) => args.includes(f);
 const onlyArg = args.find((a) => a.startsWith('--only='))?.slice(7) ?? (flag('--only') ? args[args.indexOf('--only') + 1] : '');
 const only = (onlyArg ?? '').split(',').filter(Boolean);
 const force = flag('--force');
 const dry = flag('--dry-run');
 
-const { items } = JSON.parse(readFileSync(join(root, 'src', 'audio', 'narration.json'), 'utf8'));
+const { items } = JSON.parse(readFileSync(join(root, 'src', 'audio', lang === 'en' ? 'narration.json' : `narration.${lang}.json`), 'utf8'));
+// Arabic is spoken from a fully vowelled copy (scripts/narration.ar.say.json), so every word is
+// pronounced as written; the captions keep the plain text.
+const sayPath = join(root, 'scripts', `narration.${lang}.say.json`);
+const say = existsSync(sayPath) ? JSON.parse(readFileSync(sayPath, 'utf8')) : {};
+for (const it of items) if (say[it.id]) it.say = say[it.id];
+const missing = lang === 'en' ? [] : items.filter((it) => !it.calculated && !it.say).map((it) => it.id);
+if (missing.length) console.warn(`No vowelled text for: ${missing.join(', ')}`);
 const recordable = items.filter((it) => !it.calculated);
 const unknown = only.filter((id) => !recordable.some((it) => it.id === id));
 if (unknown.length) {
@@ -44,7 +53,7 @@ if (unknown.length) {
   process.exit(2);
 }
 
-const hashOf = (it) => createHash('sha256').update(JSON.stringify([VOICE_VERSION, VOICE, it.text])).digest('hex').slice(0, 16);
+const hashOf = (it) => createHash('sha256').update(JSON.stringify(lang === 'en' ? [VOICE_VERSION, VOICE, it.text] : [VOICE_VERSION, VOICE, it.say ?? it.text, lang])).digest('hex').slice(0, 16);
 
 mkdirSync(out, { recursive: true });
 const manPath = join(out, 'manifest.json');
@@ -65,7 +74,7 @@ const todo = recordable.filter((it) => {
   const file = join(out, `${it.id}.mp3`);
   return force || manifest.files[it.id]?.hash !== hashOf(it) || !existsSync(file);
 });
-const chars = todo.reduce((n, it) => n + it.text.length, 0);
+const chars = todo.reduce((n, it) => n + (it.say ?? it.text).length, 0);
 console.log(`Voice: ${VOICE.voiceName} (${VOICE.voiceId}), model ${VOICE.modelId}, ${VOICE.outputFormat}, config ${VOICE_VERSION}`);
 console.log(`${todo.length} clip(s) to record, ${chars} characters; ${recordable.length - todo.length} up to date or not selected.`);
 if (dry) {
@@ -98,9 +107,9 @@ for (const it of todo) {
   const file = join(out, `${it.id}.mp3`);
   try {
     const stream = await client.textToSpeech.convert(VOICE.voiceId, {
-      text: it.text,
+      text: it.say ?? it.text,
       modelId: VOICE.modelId,
-      languageCode: VOICE.languageCode,
+      languageCode: lang === 'en' ? VOICE.languageCode : lang,
       outputFormat: VOICE.outputFormat,
       voiceSettings: VOICE.voiceSettings,
     });

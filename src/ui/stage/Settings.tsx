@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { renderSettings, useSettings, type Quality } from '../../state/settings';
 import { useApp } from '../../state/store';
 import { exitTour, startTour } from '../../audio/tour';
@@ -16,11 +17,11 @@ export function SettingsPanel() {
   return (
     <div className="settings">
       <section className="settings__group">
-        <h3 className="settings__h">Display quality</h3>
-        <div className="seg seg--wide" role="radiogroup" aria-label="Display quality">
+        <h3 className="settings__h">{t('Display quality')}</h3>
+        <div className="seg seg--wide" role="radiogroup" aria-label={t('Display quality')}>
           {QUALITY.map((q) => (
-            <button key={q.k} type="button" role="radio" aria-checked={s.quality === q.k} className={`seg__btn${s.quality === q.k ? ' is-active' : ''}`} title={q.hint} onClick={() => s.set({ quality: q.k })}>
-              {q.label}
+            <button key={q.k} type="button" role="radio" aria-checked={s.quality === q.k} className={`seg__btn${s.quality === q.k ? ' is-active' : ''}`} title={t(q.hint)} onClick={() => s.set({ quality: q.k })}>
+              {t(q.label)}
             </button>
           ))}
         </div>
@@ -32,7 +33,7 @@ export function SettingsPanel() {
       </section>
 
       <section className="settings__group">
-        <h3 className="settings__h">Mission guide</h3>
+        <h3 className="settings__h">{t('Mission guide')}</h3>
         <label className="check">
           <input type="checkbox" checked={s.audioGuide} onChange={() => s.set({ audioGuide: !s.audioGuide })} />
           <span className="check__box" aria-hidden="true" />
@@ -74,7 +75,7 @@ export function SettingsPanel() {
       </section>
 
       <section className="settings__group">
-        <h3 className="settings__h">Guided exploration</h3>
+        <h3 className="settings__h">{t('Guided exploration')}</h3>
         <p className="settings__note">The full tour has twelve narrated steps, from the Moon in orbit to the data sources and limits. The regions tour visits all nine landing regions. Pause, skip ahead or exit at any time.</p>
         <div className="settings__actions">
           <button

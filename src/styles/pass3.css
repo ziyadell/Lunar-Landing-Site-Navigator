@@ -307,7 +307,7 @@
 /* ---------------------------------------------- failures and retries */
 .loadchip--failed {
   gap: 10px;
-  padding-right: 4px;
+  padding-inline-end: 4px;
   border-color: rgba(255, 107, 107, 0.4);
 }
 .loadchip__text {
@@ -320,7 +320,7 @@
 .aplayer__retry {
   flex: none;
   height: 26px;
-  margin-left: 6px;
+  margin-inline-start: 6px;
   padding: 0 12px;
   border: 1px solid rgba(241, 245, 249, 0.25);
   border-radius: 999px;
@@ -519,7 +519,7 @@
   background: rgba(5, 8, 15, 0.75);
 }
 .heading .listen {
-  margin-left: 6px;
+  margin-inline-start: 6px;
   vertical-align: middle;
   pointer-events: auto;
 }
@@ -555,7 +555,7 @@
 }
 .study__method details > summary::after {
   content: '+';
-  margin-left: auto;
+  margin-inline-start: auto;
   font-size: 20px;
   line-height: 1;
   color: var(--text-secondary);

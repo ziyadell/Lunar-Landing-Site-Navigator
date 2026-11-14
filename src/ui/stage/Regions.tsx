@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { useMemo } from 'react';
 import { useApp } from '../../state/store';
 import { useData } from '../../data/DataContext';
@@ -71,7 +72,7 @@ export function Locator() {
       <img className="locator__img" src={assetUrl(loc.file)} alt="" />
       <span className="locator__pole" style={{ left: `${L(0)}%`, top: `${T(0)}%` }} aria-hidden="true">
         <i />
-        <span>South Pole</span>
+        <span>{t('South Pole')}</span>
       </span>
       {sites.regions.map((r) => {
         if (!r.nasaRegion) return null; // no valid outline: no box on the locator
@@ -129,11 +130,11 @@ export function BodyLights({ c, compact = false }: { c: SiteConditions | null; c
     <span className={`lights${compact ? ' lights--compact' : ''}`}>
       <span className={`light light--sun${sun ? ' is-on' : ''}`}>
         <i aria-hidden="true" />
-        {compact ? 'Sun' : sun ? 'Sunlit' : 'Sun hidden'}
+        {t(compact ? 'Sun' : sun ? 'Sunlit' : 'Sun hidden')}
       </span>
       <span className={`light light--earth${earth ? ' is-on' : ''}`}>
         <i aria-hidden="true" />
-        {compact ? 'Earth' : earth ? 'Earth in view' : 'Earth hidden'}
+        {t(compact ? 'Earth' : earth ? 'Earth in view' : 'Earth hidden')}
       </span>
     </span>
   );
@@ -179,10 +180,10 @@ export function RegionDeck() {
           </div>}
         </div>
         <div className="deck-card__step">
-          <button type="button" className="round-btn" aria-label="Previous region" title="Previous region" onClick={() => go(-1)}>
+          <button type="button" className="round-btn" aria-label={t('Previous region')} title={t('Previous region')} onClick={() => go(-1)}>
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
           </button>
-          <button type="button" className="round-btn" aria-label="Next region" title="Next region" onClick={() => go(1)}>
+          <button type="button" className="round-btn" aria-label={t('Next region')} title={t('Next region')} onClick={() => go(1)}>
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
           </button>
           <FoldButton k="regionFolded" what="region details" className="deck-card__fold" />
@@ -193,11 +194,11 @@ export function RegionDeck() {
 
       {!folded && <div className="deck-card__foot">
         <button type="button" className={`text-btn${drawer === 'atlas' ? ' is-on' : ''}`} aria-expanded={drawer === 'atlas'} onClick={() => openDrawer('atlas')}>
-          Compare all
+          {t('Compare all')}
         </button>
         {orbital ? (
           <button type="button" className="cta" onClick={enterSurface} disabled={transitioning}>
-            {transitioning ? 'Descending…' : 'Explore the surface'}
+            {t(transitioning ? 'Descending…' : 'Explore the surface')}
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2.5 6.5 6 10l3.5-3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
           </button>
         ) : (
@@ -210,7 +211,7 @@ export function RegionDeck() {
             }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10V2M2.5 5.5 6 2l3.5 3.5" stroke="currentColor" fill="none" strokeWidth="1.5" /></svg>
-            Back to orbit
+            {t('Back to orbit')}
           </button>
         )}
       </div>}
