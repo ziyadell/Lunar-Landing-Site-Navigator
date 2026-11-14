@@ -77,7 +77,7 @@ export function TimePill() {
   useEffect(() => {
     if (!open) return;
     const key = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    const down = (e: PointerEvent) => host.current && !host.current.contains(e.target as Node) && setOpen(false);
+    const down = (e: PointerEvent) => !(e.target as Element).closest?.('[data-portal]') && host.current && !host.current.contains(e.target as Node) && setOpen(false);
     window.addEventListener('keydown', key);
     window.addEventListener('pointerdown', down);
     return () => {
@@ -98,7 +98,7 @@ export function TimePill() {
         <section className="timesheet" aria-label={t('Observation time')}>
           <div className="timesheet__head">
             <span className="timesheet__title">
-              Observation time · {TZ_LABEL} <Listen id="view-time" />
+              {t(`Observation time · ${TZ_LABEL}`)} <Listen id="view-time" />
             </span>
             <span className="timesheet__sub">
               When the Sun (gold) and Earth (cyan) clear the skyline at {regionName}. Drag or use the arrow keys.

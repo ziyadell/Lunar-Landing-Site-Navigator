@@ -229,6 +229,7 @@ function Calendar({
   if (!pos) return null;
   return createPortal(
     <div
+      data-portal
       ref={ref}
       className={`cal${pos.up ? ' is-up' : ''}`}
       role="dialog"

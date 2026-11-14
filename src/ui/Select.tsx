@@ -227,6 +227,7 @@ function ListboxSelect<T extends string | number>({
         pos &&
         createPortal(
           <ul
+      data-portal
             ref={list}
             id={listId}
             className={`sel__list${pos.up ? ' is-up' : ''}`}

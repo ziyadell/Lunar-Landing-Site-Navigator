@@ -48,7 +48,7 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
   return (
     <div className={`time-inputs${compact ? ' time-inputs--compact' : ''}`}>
       <div className="field">
-        <label htmlFor="obs-date">Date ({TZ_LABEL})</label>
+        <label htmlFor="obs-date">{t(`Date (${TZ_LABEL})`)}</label>
         <DateField
           id="obs-date"
           label={t('Observation date')}
@@ -62,7 +62,7 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
         />
       </div>
       <div className="field field--time">
-        <label htmlFor="obs-time">Time ({TZ_LABEL})</label>
+        <label htmlFor="obs-time">{t(`Time (${TZ_LABEL})`)}</label>
         <input
           id="obs-time"
           type="text"

@@ -440,3 +440,16 @@
   color: var(--text-secondary);
   line-height: 1.8;
 }
+
+/* The clamp left the strip 18 px short of its own buttons on a 620 px screen. */
+.app .hud__right .tool-col {
+  max-height: calc(100% - 24px);
+}
+/* Last resort on any screen: scroll inside the strip rather than spill buttons out of it. */
+.app .hud__right .tool-col {
+  overflow: hidden auto;
+  scrollbar-width: none;
+}
+.app .hud__right .tool-col::-webkit-scrollbar {
+  display: none;
+}
