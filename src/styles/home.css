@@ -399,3 +399,19 @@
     display: none;
   }
 }
+
+/* The load field uses the same stepper; its number can be longer. */
+.assess__num .nstep .delay__n {
+  width: 84px;
+}
+/* The state badge never runs into the divider between Sun and Earth. */
+.cond__name {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.cond__state {
+  white-space: nowrap;
+}
+.cond__body {
+  min-width: 0;
+}

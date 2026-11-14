@@ -34,7 +34,12 @@ export function AssessmentPanel({ a, b }: { a: ScenarioResult; b: ScenarioResult
         <div className="field">
           <label htmlFor={`${id}-load`}>Electrical load to keep running</label>
           <div className="assess__num">
+            <span className="nstep">
+              <button type="button" className="nstep__btn" aria-label="Lower the load" disabled={loadW <= 10} onClick={() => setLoadW(Math.max(1, loadW - 10))}>
+                −
+              </button>
             <input
+              className="delay__n num"
               id={`${id}-load`}
               type="number"
               inputMode="numeric"
@@ -47,6 +52,10 @@ export function AssessmentPanel({ a, b }: { a: ScenarioResult; b: ScenarioResult
                 if (Number.isFinite(v)) setLoadW(Math.min(100000, Math.max(1, v)));
               }}
             />
+              <button type="button" className="nstep__btn" aria-label="Raise the load" disabled={loadW >= 100000} onClick={() => setLoadW(Math.min(100000, loadW + 10))}>
+                +
+              </button>
+            </span>
             <span>W</span>
           </div>
         </div>
