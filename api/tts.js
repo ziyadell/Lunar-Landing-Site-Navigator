@@ -20,6 +20,9 @@ const TEMPLATE = new RegExp(
   `^Calculated for [A-Za-z0-9 .'-]{3,40}, [A-Z][a-z]{2,8} \\d{1,2}, \\d{4}, \\d{2}:\\d{2} UTC(?:\\+3)?\\. ${SAY('The Sun')} ${SAY('The Earth')} Earth visibility is a geometric line of sight, not a guaranteed communication link\\.$`,
 );
 
+// shortcut: the Arabic reading is checked by its fixed opening and closing sentences, alphabet and length, not word by word; write a full template if this endpoint is ever abused.
+const AR_TEMPLATE = /^هَذِهِ قِرَاءَةٌ مَحْسُوبَةٌ لِلْمَوْقِعِ وَالْوَقْتِ الْمُخْتَارَيْنِ\. [\u0621-\u0652\d .،]{60,520} وَرُؤْيَةُ الْأَرْضِ خَطُّ نَظَرٍ هَنْدَسِيٌّ، وَلَيْسَتْ ضَمَانًا لِلِاتِّصَالِ\.$/;
+
 /** Only LunaNav's own pages may request live readings (blocks hot-linking of the paid voice). */
 const ALLOWED_HOST = /^(www\.)?afuq\.website$|^lunar-landing-site-navigator[a-z0-9-]*\.vercel\.app$|^localhost$|^127\.0\.0\.1$/;
 function fromOwnSite(req) {
@@ -39,7 +42,8 @@ export default async function handler(req, res) {
   if (!fromOwnSite(req)) return res.status(403).json({ error: 'origin' });
   const text = String(req.query.text ?? '');
   if (req.query.v !== VOICE_VERSION) return res.status(400).json({ error: 'version' });
-  if (text.length > 420 || !TEMPLATE.test(text)) return res.status(400).json({ error: 'text' });
+  const arabic = AR_TEMPLATE.test(text);
+  if (!arabic && (text.length > 420 || !TEMPLATE.test(text))) return res.status(400).json({ error: 'text' });
   if (!process.env.ELEVENLABS_API_KEY) {
     res.setHeader('Cache-Control', 'no-store');
     return res.status(503).json({ error: 'tts-unconfigured' });
@@ -49,7 +53,7 @@ export default async function handler(req, res) {
     const stream = await client.textToSpeech.convert(VOICE.voiceId, {
       text,
       modelId: VOICE.modelId,
-      languageCode: VOICE.languageCode,
+      languageCode: arabic ? 'ar' : VOICE.languageCode,
       outputFormat: VOICE.outputFormat,
       voiceSettings: VOICE.voiceSettings,
     });
