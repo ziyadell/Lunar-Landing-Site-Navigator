@@ -391,6 +391,8 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
   );
 
   const inTour = tour.step >= 0;
+  // "Conditions now" is written out, so its panel offers no playback at all.
+  const written = !!item?.calculated && !inTour;
   const active = !!(item || inTour);
   // Movable wherever the player floats over the page (not on phones, where it sits in the HUD column).
   const drag = usePlayerDrag(host, wide && active && (placement === 'float' || inTour));
@@ -401,7 +403,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
     else stop();
   };
   const title = inTour ? narrationItem(tour.ids[tour.step])?.title : item?.title;
-  const status = loading || tour.waiting ? (tour.waiting ? 'Preparing the view…' : 'Loading…') : item?.calculated ? `Calculated now · ${SOURCE_LABEL[source]}` : SOURCE_LABEL[source];
+  const status = loading || tour.waiting ? (tour.waiting ? 'Preparing the view…' : 'Loading…') : item?.calculated ? 'Calculated now' : SOURCE_LABEL[source];
   const playPause = () => (inTour ? toggleTourPause() : playing ? pause() : resume());
   const isPlaying = inTour ? !tour.paused && (playing || tour.waiting) : playing;
 
@@ -416,17 +418,21 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
       {active && minimized && (
         <div className="aplayer-mini" role="group" aria-label="Narration (hidden player)" {...drag.handle}>
           <Grip grip={drag.grip} moved={drag.moved} />
-          <button type="button" className="aplayer__btn aplayer__btn--main" aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'} onClick={playPause}>
-            {isPlaying ? I.pause : I.play}
-          </button>
+          {!written && (
+            <button type="button" className="aplayer__btn aplayer__btn--main" aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'} onClick={playPause}>
+              {isPlaying ? I.pause : I.play}
+            </button>
+          )}
           <button type="button" className="aplayer-mini__title" onClick={() => setMin(false)} aria-label={`Show player: ${title ?? 'narration'}`}>
             <span className="aplayer-mini__name">
               {inTour && <span className="num">{tour.step + 1}/{tour.length} · </span>}
               {title}
             </span>
-            <span className="aplayer-mini__bar" aria-hidden="true">
-              <span style={{ width: `${progress * 100}%` }} />
-            </span>
+            {!written && (
+              <span className="aplayer-mini__bar" aria-hidden="true">
+                <span style={{ width: `${progress * 100}%` }} />
+              </span>
+            )}
           </button>
           <button type="button" className="aplayer__btn" aria-label="Show player" title="Show player" onClick={() => setMin(false)}>
             {I.expand}
@@ -441,7 +447,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
           <Grip grip={drag.grip} moved={drag.moved} />
           <div className="aplayer__head" {...drag.handle}>
             <span className="aplayer__icon" aria-hidden="true">
-              <Headphones />
+              {written ? <TextLines size={16} /> : <Headphones />}
             </span>
             <div className="aplayer__titles">
               <span className="aplayer__title">
@@ -467,37 +473,41 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
               </button>
             </div>
           </div>
-          <div className="aplayer__bar" role="progressbar" aria-label="Narration progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
-            <span style={{ width: `${progress * 100}%` }} />
-          </div>
-          <div className="aplayer__ctrl">
-            <button type="button" className="aplayer__btn aplayer__btn--main" aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'} onClick={playPause}>
-              {isPlaying ? I.pause : I.play}
-            </button>
-            <button type="button" className="aplayer__btn" aria-label="Replay" title="Replay" onClick={() => (inTour ? replayStep() : replay())}>
-              {I.replay}
-            </button>
-            <button type="button" className="aplayer__btn aplayer__btn--rate num" aria-label={`Playback speed ${rate} times. Change speed.`} title={t('Playback speed')} onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}>
-              {rate}×
-            </button>
-            <button type="button" className={`aplayer__btn${muted ? ' is-on' : ''}`} aria-pressed={muted} aria-label="Mute" title={muted ? 'Unmute' : 'Mute'} onClick={() => setMuted(!muted)}>
-              {muted ? I.muted : I.sound}
-            </button>
-            <button type="button" className={`aplayer__btn aplayer__btn--cc${transcript ? ' is-on' : ''}`} aria-pressed={transcript} aria-label="Captions" title="Captions" onClick={() => setS({ transcript: !transcript })}>
-              CC
-            </button>
-            {inTour && (
-              <span className="aplayer__tour">
-                <button type="button" className="aplayer__next" onClick={prevStep} disabled={tour.step === 0} aria-label="Previous step">
-                  Back
-                </button>
-                <button type="button" className="aplayer__next aplayer__next--primary" onClick={nextStep}>
-                  {tour.step + 1 < tour.length ? 'Next' : 'Finish'}
-                </button>
-              </span>
-            )}
-          </div>
-          {transcript && item && <p className="aplayer__text">{item.text}</p>}
+          {!written && (
+            <div className="aplayer__bar" role="progressbar" aria-label="Narration progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
+              <span style={{ width: `${progress * 100}%` }} />
+            </div>
+          )}
+          {!written && (
+            <div className="aplayer__ctrl">
+              <button type="button" className="aplayer__btn aplayer__btn--main" aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'} onClick={playPause}>
+                {isPlaying ? I.pause : I.play}
+              </button>
+              <button type="button" className="aplayer__btn" aria-label="Replay" title="Replay" onClick={() => (inTour ? replayStep() : replay())}>
+                {I.replay}
+              </button>
+              <button type="button" className="aplayer__btn aplayer__btn--rate num" aria-label={`Playback speed ${rate} times. Change speed.`} title={t('Playback speed')} onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}>
+                {rate}×
+              </button>
+              <button type="button" className={`aplayer__btn${muted ? ' is-on' : ''}`} aria-pressed={muted} aria-label="Mute" title={muted ? 'Unmute' : 'Mute'} onClick={() => setMuted(!muted)}>
+                {muted ? I.muted : I.sound}
+              </button>
+              <button type="button" className={`aplayer__btn aplayer__btn--cc${transcript ? ' is-on' : ''}`} aria-pressed={transcript} aria-label="Captions" title="Captions" onClick={() => setS({ transcript: !transcript })}>
+                CC
+              </button>
+              {inTour && (
+                <span className="aplayer__tour">
+                  <button type="button" className="aplayer__next" onClick={prevStep} disabled={tour.step === 0} aria-label="Previous step">
+                    Back
+                  </button>
+                  <button type="button" className="aplayer__next aplayer__next--primary" onClick={nextStep}>
+                    {tour.step + 1 < tour.length ? 'Next' : 'Finish'}
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+          {(transcript || written) && item && <p className="aplayer__text">{item.text}</p>}
         </div>
       )}
       <div className={`guide__launch${active && minimized ? ' is-hidden' : ''}`}>
