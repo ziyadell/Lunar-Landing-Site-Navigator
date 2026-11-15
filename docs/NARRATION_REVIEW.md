@@ -146,10 +146,9 @@ Add these back only with a cited source:
 ## Voice and generation
 
 - **Configuration:** `voice-config.mjs`. Voice "Bella" (`hpp4J3VqNfWAUOO0d1Us`, American; replaced "Alice", British, at the user's request), model `eleven_v4`, language `en`, `mp3_44100_128`, stability 0.7, similarity 0.6, config version `afuq-2`.
-- **Shared:** the recorded clips and the live-reading endpoint (`api/tts.js`) use the same configuration.
+- **Shared:** the recorded clips use one voice configuration in `voice-config.mjs`.
 - **Generate:** `node --env-file=.env.local scripts/generate-narration.mjs [--only id1,id2] [--dry-run] [--force]`.
   - It skips unchanged clips (the hash covers the text and the voice configuration).
   - It saves progress after each clip and lists failed clips with a non-zero exit code.
   - It stops before exceeding the account's character allowance.
 - **Key:** `.env.local` (git-ignored and Vercel-ignored), created by `npx @elevenlabs/cli onboard`. It never goes in code, chat or Git.
-- **Live readings on the website:** add `ELEVENLABS_API_KEY` in Vercel, under Project > Settings > Environment Variables, marked Sensitive.

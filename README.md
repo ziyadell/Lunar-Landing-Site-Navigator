@@ -22,9 +22,10 @@ demonstration and decision-support prototype, not an operational mission-plannin
 | **Analysis** | Compares two scenarios (region, start date, duration of 7 days to 1 year). Shows how much of the period the Sun and/or Earth are above the terrain horizon, the longest gaps, timelines, horizon panoramas and a CSV export. |
 
 The **Mission guide** reads short explanations aloud from pre-recorded MP3 files (one
-narrator voice, with captions). Live readings of the current Sun/Earth state are voiced by a
-small server function (`api/tts.js`) that needs an ElevenLabs key; without the key the app
-shows those readings as captions. The app never uses the device's built-in speech voice.
+narrator voice, with captions), in English and Arabic. The live reading of the current
+Sun/Earth state is written out rather than spoken, because it changes with every minute and
+region; its button carries a text mark instead of headphones. The app never uses the
+device's built-in speech voice.
 
 The selected view, region, time and both Mission Analysis scenarios are kept in the URL (and the scenarios also in the browser), for example
 `https://www.afuq.website/?mode=analysis&site=haworth&t=2027-01-16T10:00Z&a=malapert-massif,2027-01-01,30&b=nobile-rim-1,2027-01-01,365`.
@@ -51,9 +52,8 @@ npm run build       # type-check and production build into dist/
 npm run preview     # serve the production build locally
 ```
 
-`npm run dev` and `npm run preview` serve only the static app. The `/api/tts` endpoint does
-not run there, so live readings fall back to captions; all recorded narration still plays.
-To run the endpoint locally, use `vercel dev` with the key configured as described below.
+`npm run dev` and `npm run preview` serve the whole app; the only server function is
+`api/horizons.js`, used by the optional live check against JPL Horizons.
 
 ## Environment variables
 
@@ -61,9 +61,8 @@ Only one variable exists, and it is optional:
 
 | Variable | Used by | Effect if missing |
 |---|---|---|
-| `ELEVENLABS_API_KEY` | `api/tts.js` (server, live readings) and `scripts/generate-narration.mjs` (re-recording the MP3 clips) | Live readings appear as captions. The recorded clips in `public/audio/narration/` are unaffected. |
+| `ELEVENLABS_API_KEY` | `scripts/generate-narration.mjs` only, when re-recording the MP3 clips | Nothing at run time. The recorded clips in `public/audio/narration/` are committed and play without any key. |
 
-Paid-voice protection: `api/tts.js` accepts only the app's fixed reading template, only from LunaNav's own origins (afuq.website, its Vercel previews, localhost), and responses are cached by the CDN. The browser allows at most 25 new live readings per tab session; after that, readings are shown as captions. Recorded narration is not affected.
 
 Copy `.env.example` to `.env.local` and fill in the value. `.env.local` is ignored by git and
 must not be committed. On Vercel, set the variable in the project settings
@@ -83,8 +82,7 @@ vercel deploy --prod   # production
 ## Project structure
 
 ```
-api/tts.js              server function: voices live readings (ElevenLabs), template-checked input
-voice-config.mjs        the single narrator voice configuration (shared by api/ and scripts/)
+voice-config.mjs        the single narrator voice configuration (used when re-recording)
 src/
   App.tsx, main.tsx     application shell, fonts and styles
   audio/                narration engine, Mission guide UI, guided tours, narration scripts (narration.json)

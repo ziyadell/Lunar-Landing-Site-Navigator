@@ -5,7 +5,8 @@
 >
 > - **Fixed narration** (welcome, views, regions, terms, tour) plays the pre-generated
 >   recordings only.
-> - **Live calculated readings** use the server-side voice at `/api/tts`. It uses the same
+> - **The live calculated reading** ("Conditions now") is written out, not spoken: it changes
+>   with every minute and region. Everything below describes the recorded clips, which use the same
 >   voice ID, model and settings as the clips. The key stays on the server, only the
 >   reading template is accepted, and responses are CDN-cached by text and configuration
 >   version.
@@ -18,7 +19,6 @@
 >
 > **Still missing:** the recordings themselves and the server key. Both need an ElevenLabs
 > API key. Generate the clips with `scripts/generate-narration.mjs`. For live readings,
-> set `ELEVENLABS_API_KEY` in the Vercel project environment.
 >
 > The sections below that describe device voices are historical.
 
