@@ -87,7 +87,7 @@ function Vantage({ i, res }: { i: 0 | 1; res: ScenarioResult }) {
       </div>
       <div className="vantage__when">
         <div className="field field--date">
-          <label htmlFor={`${id}-start`}>Start date <span className="field__hint" title="Each period starts at 00:00 UTC, which is 03:00 in UTC+3">· from 03:00 UTC+3</span></label>
+          <label htmlFor={`${id}-start`}>Start date <span className="field__hint" title="Each period starts at 00:00 UTC">· from 00:00 UTC</span></label>
           <DateField
             id={`${id}-start`}
             label={`Scenario ${res.key} start date`}

@@ -1,15 +1,15 @@
 const pad = (n: number, w = 2) => String(n).padStart(w, '0');
 
 /**
- * Times are shown in UTC+3 (Arabia Standard Time, no daylight saving). All calculations,
- * the ephemeris, shared links and CSV exports stay in UTC; only what is displayed is shifted.
+ * Times are shown in UTC, the same scale as the calculations, the ephemeris, shared links and
+ * CSV exports. The offset is kept so a display time zone could be set in one place.
  */
-export const TZ_OFFSET_MS = 3 * 3_600_000;
-export const TZ_LABEL = 'UTC+3';
-/** A Date whose getUTC* fields read as UTC+3 wall-clock time. */
+export const TZ_OFFSET_MS = 0;
+export const TZ_LABEL = 'UTC';
+/** A Date whose getUTC* fields read as display wall-clock time. */
 export const zoned = (ms: number) => new Date(ms + TZ_OFFSET_MS);
 
-/** "2027-03-06 12:22 UTC+3" */
+/** "2027-03-06 12:22 UTC" */
 export function fmtUtc(ms: number): string {
   return `${fmtDate(ms)} ${fmtTime(ms)} ${TZ_LABEL}`;
 }
@@ -47,7 +47,7 @@ export function compass(az: number): string {
   return names[Math.round(az / 22.5) % 16];
 }
 
-/** Parse YYYY-MM-DD + HH:MM, read as UTC+3 wall-clock time, to a UTC instant. */
+/** Parse YYYY-MM-DD + HH:MM, read as display wall-clock time, to a UTC instant. */
 export function parseUtc(date: string, time: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
   const t = /^(\d{2}):(\d{2})$/.exec(time);

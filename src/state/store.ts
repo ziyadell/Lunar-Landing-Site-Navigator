@@ -164,7 +164,7 @@ export const useApp = create<AppState>((set) => ({
     }),
   mode: 'orbital',
   regionId: 'malapert-massif',
-  timeMs: Date.UTC(2026, 10, 14, 7), // first launch: 14 Nov 2026, 10:00 UTC+3
+  timeMs: Date.UTC(2026, 10, 14, 7), // first launch: 14 Nov 2026, 07:00 UTC
   cameraCommand: { kind: 'global', seq: 0 },
   transitioning: false,
   layers: {

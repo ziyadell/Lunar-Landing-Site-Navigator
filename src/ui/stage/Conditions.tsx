@@ -83,8 +83,8 @@ const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ما
 function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<typeof useConditions>['conditions']>): NarrationItem {
   if (useSettings.getState().lang === 'ar') {
     // Arabic reading (captions): same calculated values, Arabic wording.
-    const d = new Date(timeMs + 3 * 3_600_000);
-    const when = `${d.getUTCDate()} ${AR_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}، الساعة ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} بتوقيت UTC+3`;
+    const d = zoned(timeMs);
+    const when = `${d.getUTCDate()} ${AR_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}، الساعة ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} بتوقيت ${TZ_LABEL}`;
     const say = (name: string, b: TopocentricBody) => {
       const el = `${Math.abs(b.elDeg).toFixed(1)} درجة ${b.elDeg >= 0 ? 'فوق' : 'تحت'} المستوى الأفقي`;
       if (b.state === 'visible') return `${name} مرئية، على ${el}، وتعلو أفق التضاريس بمقدار ${b.marginDeg.toFixed(1)} درجة.`;
@@ -99,7 +99,7 @@ function nowItem(regionName: string, timeMs: number, c: NonNullable<ReturnType<t
     };
   }
   const d = zoned(timeMs);
-  const when = `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC+3`;
+  const when = `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} ${TZ_LABEL}`;
   const say = (name: string, b: TopocentricBody) => {
     const el = `${Math.abs(b.elDeg).toFixed(1)} degrees ${b.elDeg >= 0 ? 'above' : 'below'} the horizontal`;
     if (b.state === 'visible') return `${name} is visible, ${el}, clearing the skyline by ${b.marginDeg.toFixed(1)} degrees.`;

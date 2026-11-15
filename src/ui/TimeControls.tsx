@@ -9,7 +9,7 @@ import { DateField } from './DateField';
 const H = 3_600_000;
 const D = 24 * H;
 
-/** Date + time inputs (UTC+3), step buttons, playback. */
+/** Date + time inputs (UTC), step buttons, playback. */
 export function TimeInputs({ compact = false, steps = true }: { compact?: boolean; steps?: boolean }) {
   const { ephemeris } = useData();
   const timeMs = useApp((s) => s.timeMs);
@@ -78,7 +78,7 @@ export function TimeInputs({ compact = false, steps = true }: { compact?: boolea
           }}
           onBlur={() => setTimeStr(fmtTime(timeMs))}
         />
-        <span id="obs-time-hint" className="sr-only">24-hour clock in UTC+3, for example 14:30</span>
+        <span id="obs-time-hint" className="sr-only">24-hour clock in UTC, for example 14:30</span>
       </div>
       {steps && <div className="stepper" role="group" aria-label={t('Step observation time')}>
         <button type="button" onClick={() => step(-D)} aria-label={t('Back one day')}>−1d</button>
