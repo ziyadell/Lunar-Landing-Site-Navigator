@@ -24,3 +24,7 @@ Thumbs.db
 .vercel
 .env*
 !.env.example
+
+# test output
+test-results
+playwright-report

@@ -36,7 +36,7 @@ readout), plus `after-*-1024/375` images.
 | Scene size | Viewport framed between two side panels and a dock | Full window, edge to edge | The Moon and the terrain are the product. At 1440 × 900 the globe is now ≈ 800 px across instead of ≈ 680 px, and nothing covers its centre. |
 | Composition | Fixed grid of columns and rows | Four quiet corners around an open centre: identity and navigation at the top, live conditions top right, the region bottom left, time at the bottom | The panels sit on a diagonal (top right, bottom left), so the eye goes to the Moon first and then to the two answers that matter. |
 | Navigation | Three numbered tabs in an engineering top bar (`01 Orbital View`…) | One floating control with icon and word (Orbit · Surface · Analysis) and a highlight that slides between them | Reads as three ways of looking at the same place rather than three separate tools. "Surface" still plays the descent from orbit. |
-| Region discovery | A text list of six names with coordinates and Sun/Earth dots | A region card that shows the place through its **own LROC image** (24 km square, 100 m/px), previous/next, and a strip of six image thumbnails with live Sun/Earth lights. "Compare all" opens an atlas of image cards side by side, with live elevations and the 2027 sunlit share. | Regions are recognised by their ground, not their names. The images are crops of the existing mosaic at native resolution (see §4). |
+| Region discovery | A text list of region names with coordinates and Sun/Earth dots | A region card that shows the place through its **own LROC image** (24 km square, 100 m/px), previous/next, and a strip of nine image thumbnails with live Sun/Earth lights. "Compare all" opens an atlas of image cards side by side, with live elevations and the 2027 sunlit share. | Regions are recognised by their ground, not their names. The images are crops of the existing mosaic at native resolution (see §4). |
 | Scientific readings | A full-height panel of cards, readouts and disclosures | A compact card with only the two answers: Sun and Earth elevation, visible or not, and the margin to the skyline in words. "All measurements" opens a drawer with azimuth, skyline, clearance, disc fraction, range, location and how the point was chosen. | The essential answer stays on screen; precision is one tap away and never removed. |
 | Time | A permanent 128 px dock: date and time inputs, steppers, a 30-day strip and layer toggles | A pill: ±1 day, ±1 hour, play, and the date. Clicking the date opens a sheet with the 30-day visibility scrubber (drag or arrow keys) and exact UTC inputs. | Time is changed often but needs little space; the scrubber appears only while in use. |
 | Display layers | Checkboxes in the dock | A layers button in the tool column, opening a popover (Surface View adds the presets there) | Rarely changed settings no longer take permanent space. |
@@ -61,7 +61,7 @@ dashboard panels:
 
 1. **A question as the title**: "How much sunlight and Earth contact does each site get?"
 2. **Two scenario cards side by side**: each has the region's image, a
-   six-image region picker, a start date and period buttons (7 d, 30 d, 90 d,
+   nine-image region picker, a start date and period buttons (7 d, 30 d, 90 d,
    1 yr, plus a menu with every period offered before).
 3. **At a glance**: four questions (Sun above the skyline, Earth above the
    skyline, both together, longest stretch without Sun). Each has paired bars

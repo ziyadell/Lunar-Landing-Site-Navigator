@@ -55,8 +55,8 @@ for the `firefox-*` files, Firefox 159 on the local GPU. The
 - **Marker tooltips:** hovering or keyboard-focusing a region label shows that
   region's live Sun and Earth state at the selected time. On touch, a tap
   selects directly with no hover required.
-- **Six regions:** clustering and label placement scale to six points
-  (`experience/02-*`, `08-*`).
+- **Nine regions:** clustering and label placement scale to NASA's nine candidate
+  regions (first checked with six points in `experience/02-*`, `08-*`).
 
 ## 4. Interface (premium, comfortable)
 
@@ -124,10 +124,10 @@ Custom observation points were **not** implemented. They need horizon
 ray-tracing in the browser against the 115 MB LOLA grid (or a server), and the
 app should not show unvalidated numbers.
 
-## 8. Validation (rerun for six regions)
+## 8. Validation (current nine regions)
 
-- Sun/Earth topocentric vs JPL Horizons: ≤ 0.0007° elevation (Sun), ≤ 0.0009°
-  (Earth), ≤ 0.006° azimuth. 233 epochs × 6 sites.
+- Sun/Earth topocentric vs JPL Horizons: ≤ 0.0007° elevation (Sun), ≤ 0.0008°
+  (Earth), ≤ 0.006° azimuth. 233 epochs × 9 sites (`public/data/validation.json`).
 - IAU Moon orientation vs Horizons: ≤ 0.0083°.
 - Polar mosaic orientation: five permanently shadowed craters are dark only in
   the correct orientation.

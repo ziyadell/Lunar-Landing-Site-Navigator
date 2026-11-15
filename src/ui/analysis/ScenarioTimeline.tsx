@@ -100,7 +100,7 @@ export function ScenarioTimeline({ res }: { res: ScenarioResult }) {
             tabIndex={0}
             aria-label={`Timeline for scenario ${res.key}. Use arrow keys to move the cursor; Enter pins the time.`}
             aria-valuemin={startMs}
-            aria-valuemax={endMs}
+            aria-valuemax={series[series.length - 1]?.t ?? endMs}
             aria-valuenow={p?.t ?? startMs}
             aria-valuetext={p ? `${fmtUtc(p.t)}: Sun ${p.sunVis ? 'visible' : 'not visible'}, Earth ${p.earthVis ? 'visible' : 'not visible'}` : 'No cursor'}
             onPointerMove={(e) => setCursor(idxAt(e.clientX))}

@@ -135,3 +135,27 @@ with distance fades (previous pass). It is unchanged here.
   particular could not be measured meaningfully here.
 - First-frame timing on a real network is computed from byte counts, not measured.
 - GPU memory figures are estimates (2048² RGBA with mipmaps ≈ 22 MB per texture).
+
+## Phone-sized memory and frame-rate check (15 November 2026)
+
+`node scripts/mobile-perf.mjs` against the dev server: 390 × 844 viewport at 3× pixel ratio,
+touch emulation, Chrome's CPU slowed 4×, real GPU (AMD Radeon integrated, Direct3D 11). Frame
+times were recorded while dragging the view for 6–8 s; the JS heap was read after a forced
+garbage collection.
+
+| View | Mean fps | Median frame | 95th percentile | Frames over 50 ms | JS heap |
+|---|---|---|---|---|---|
+| Orbit, first view | 31.5 | 27.9 ms | 55.4 ms | 13 | 12.9 MB |
+| Surface | 40.1 | 7.0 ms | 83.5 ms | 80 | 13.4 MB |
+| Orbit, after 24 region switches | 56.8 | 14.0 ms | 20.9 ms | 0 | 15.1 MB |
+
+- **Memory is stable.** The JS heap was 14.2 MB before switching regions, 14.9 MB after 12
+  switches and 15.1 MB after 24: 0.1 MB growth over the second dozen, so switching does not
+  leak. GPU memory is not visible to this measurement.
+- **Orbit is smooth once warm.** The first measurement includes the high-resolution imagery
+  still arriving; after that, no frame took over 50 ms.
+- **Surface stutters under the slowed CPU.** Most frames are fast (median 7 ms), but one in
+  five took over 50 ms while dragging. This is the main open performance item.
+- **Limits.** A desktop GPU stands in for a phone GPU and the CPU slowdown is an
+  approximation, so these numbers are indicative. They are not a substitute for a test on a
+  real iPhone and Android phone.

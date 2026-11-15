@@ -8,8 +8,8 @@ const MODES: Mode[] = ['orbital', 'surface', 'analysis'];
 const DURATIONS = [7, 14, 30, 60, 90, 180, 365];
 const SCN_KEY = 'lsn.scenarios.v1';
 /** Mission Analysis scenario as "region,YYYY-MM-DD,days" (URL parameters a and b). */
-const encodeScenario = (s: Scenario) => `${s.regionId},${new Date(s.startMs).toISOString().slice(0, 10)},${s.durationDays}`;
-function decodeScenario(v: string | null | undefined, validSites: string[]): Scenario | null {
+export const encodeScenario = (s: Scenario) => `${s.regionId},${new Date(s.startMs).toISOString().slice(0, 10)},${s.durationDays}`;
+export function decodeScenario(v: string | null | undefined, validSites: string[]): Scenario | null {
   if (!v) return null;
   const [regionId, date, days] = v.split(',');
   const startMs = Date.parse(`${date}T00:00:00Z`);

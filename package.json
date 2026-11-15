@@ -10,7 +10,9 @@
     "typecheck": "tsc -b",
     "test:data": "esbuild tests/data-validation.test.ts --bundle --platform=node --format=esm --log-level=error --outfile=node_modules/.cache/data-validation.test.mjs && node node_modules/.cache/data-validation.test.mjs",
     "test:science": "esbuild tests/science.test.ts --bundle --platform=node --format=esm --log-level=error --outfile=node_modules/.cache/science.test.mjs && node node_modules/.cache/science.test.mjs",
-    "test": "npm run test:data && npm run test:science"
+    "test": "npm run test:data && npm run test:science && npm run test:unit",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.77.0",
@@ -24,12 +26,15 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.55.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.172.0",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "~5.7.2",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^3.2.4"
   },
-  "description": "LunaNav \u2014 Lunar Landing Site Navigator, by Team AFUQ"
+  "description": "LunaNav â€” Lunar Landing Site Navigator, by Team AFUQ"
 }
