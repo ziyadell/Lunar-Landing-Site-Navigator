@@ -33,6 +33,15 @@ const I = {
  * Small "listen" button beside a piece of information. Shown by default; it can be hidden
  * in Settings. Nothing plays until it is pressed.
  */
+/** Lines of text: this reading is written out, not spoken. */
+function TextLines({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3 4h10M3 8h10M3 12h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
 export function Listen({ id, item, className = '' }: { id?: string; item?: NarrationItem; className?: string }) {
   const on = useSettings((s) => s.audioGuide);
   const current = usePlayer((s) => s.item?.id);
@@ -44,8 +53,8 @@ export function Listen({ id, item, className = '' }: { id?: string; item?: Narra
     <button
       type="button"
       className={`listen${active ? ' is-active' : ''} ${className}`}
-      aria-label={active ? `Pause narration: ${it.title}` : `Listen: ${it.title}`}
-      title={active ? 'Pause' : `Listen: ${it.title}`}
+      aria-label={active ? `Pause narration: ${it.title}` : it.calculated ? `Read: ${it.title}` : `Listen: ${it.title}`}
+      title={active ? 'Pause' : it.calculated ? `Read: ${it.title}` : `Listen: ${it.title}`}
       onClick={(e) => {
         e.stopPropagation();
         e.preventDefault(); // inside <summary>: listen without toggling the section
@@ -54,7 +63,7 @@ export function Listen({ id, item, className = '' }: { id?: string; item?: Narra
         else void play(it);
       }}
     >
-      <Headphones size={13} />
+      {it.calculated ? <TextLines size={13} /> : <Headphones size={13} />}
     </button>
   );
 }
@@ -241,7 +250,7 @@ function Grip({ grip, moved }: { grip: GripProps | null; moved: boolean }) {
   );
 }
 const VIEW_ITEM = { orbital: 'orbit-intro', surface: 'surface-intro', analysis: 'analysis-intro' } as const;
-const SOURCE_LABEL = { recorded: 'Recorded narrator', server: 'Narrator voice', captions: 'Captions' } as const;
+const SOURCE_LABEL = { recorded: 'Recorded narrator', captions: 'Captions' } as const;
 
 function topicGroups() {
   const all = narrationItems();

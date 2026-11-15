@@ -11,7 +11,7 @@ import { assetUrl } from '../data/release';
  *  - Static narration (welcome, views, regions, terms, tour): pre-generated recordings in
  *    public/audio/narration/<id>.mp3, listed in manifest.json, all from one voice with one set
  *    of production settings (scripts/generate-narration.mjs).
- *  - Live calculated readings ("Conditions now"): the server-side voice at /api/tts (same
+ *  - Live calculated readings ("Conditions now"): shown as text, since they change with every
  *    voice ID, model and settings; provider key stays on the server; responses cached by
  *    text + voice configuration).
  *  - Browser/system speech synthesis is never used: when a recording or the server voice is
@@ -24,8 +24,6 @@ import { assetUrl } from '../data/release';
  */
 
 export interface NarrationItem {
-  /** Fully vowelled copy for the voice (Arabic); captions show `text`. */
-  say?: string;
   id: string;
   title: string;
   text: string;
@@ -46,7 +44,7 @@ export const narrationItems = () => [...ITEMS.keys()].map((id) => narrationItem(
 /** Recordings live beside each other: English in audio/narration, Arabic in audio/narration/ar. */
 const clipDir = () => (isAr() ? 'audio/narration/ar' : 'audio/narration');
 
-export type Source = 'recorded' | 'server' | 'captions';
+export type Source = 'recorded' | 'captions';
 interface PlayerState {
   item: NarrationItem | null;
   source: Source;
@@ -147,59 +145,6 @@ if (typeof window !== 'undefined')
         .catch(() => null),
     );
 
-// ------------------------------------------------------------------ server voice (live readings)
-/** Must equal VOICE_VERSION in voice-config.mjs (the endpoint rejects other versions). */
-const TTS_VERSION = 'afuq-2';
-let serverVoiceDown = false;
-const serverAudio = new Map<string, string>(); // text → object URL (this visit)
-/** Paid voice budget: new live readings per browser tab session. Cached readings are free. */
-const LIVE_READINGS_PER_SESSION = 25;
-const BUDGET_KEY = 'lsn.liveReadings';
-function takeLiveReading(): boolean {
-  try {
-    const used = Number(sessionStorage.getItem(BUDGET_KEY) ?? '0');
-    if (used >= LIVE_READINGS_PER_SESSION) return false;
-    sessionStorage.setItem(BUDGET_KEY, String(used + 1));
-  } catch {
-    /* storage unavailable: no budget tracking, the server-side checks still apply */
-  }
-  return true;
-}
-/** Base64url of the UTF-8 text: a query value that survives any server's decoding. */
-function b64url(s: string): string {
-  const bytes = new TextEncoder().encode(s);
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-async function serverVoice(text: string): Promise<string | null> {
-  if (serverVoiceDown) return null;
-  const hit = serverAudio.get(text);
-  if (hit) return hit;
-  if (!takeLiveReading()) return null;
-  // Give up if the server has not started answering in 12 s; once it has, allow up to
-  // 40 s for the whole reading (the first request for a new time is synthesised live).
-  const ctl = new AbortController();
-  let timer = window.setTimeout(() => ctl.abort(), 12_000);
-  try {
-    const r = await fetch(`${import.meta.env.BASE_URL}api/tts?v=${TTS_VERSION}&t64=${b64url(text)}`, { signal: ctl.signal });
-    window.clearTimeout(timer);
-    timer = window.setTimeout(() => ctl.abort(), 40_000);
-    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('audio')) {
-      if (r.status === 404 || r.status === 503 || r.ok) serverVoiceDown = true; // not configured here
-      return null;
-    }
-    const url = URL.createObjectURL(await r.blob());
-    serverAudio.set(text, url);
-    return url;
-  } catch {
-    return null;
-  } finally {
-    window.clearTimeout(timer);
-  }
-}
-
 // ------------------------------------------------------------------ playback core
 let audio: HTMLAudioElement | null = null;
 let token = 0;
@@ -257,7 +202,7 @@ function toCaptions(item: NarrationItem, t: number, note: string | null, canRetr
   runCaptions(t);
 }
 
-function playAudio(item: NarrationItem, t: number, src: string, kind: 'recorded' | 'server') {
+function playAudio(item: NarrationItem, t: number, src: string, kind: 'recorded') {
   const fallback = (why: string) => {
     if (t !== token || fellBack) return;
     fellBack = true; // "error" and a rejected play() can both fire: fall back once
@@ -310,12 +255,7 @@ export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {
   fellBack = false;
   usePlayer.setState({ item, playing: false, loading: true, progress: 0, note: null, canRetry: false, onEnd: opts.onEnd ?? null, started: false });
   if (useSettings.getState().voice === 'captions') return toCaptions(item, t, null, false);
-  if (item.calculated) {
-    const url = await serverVoice(item.say ?? item.text);
-    if (t !== token) return; // a newer narration (or a region change) replaced this one
-    if (url) return playAudio(item, t, url, 'server');
-    return toCaptions(item, t, tr('Voice not available for live readings · captions'), false);
-  }
+  if (item.calculated) return toCaptions(item, t, null, false);
   const ids = await recordedIds();
   if (t !== token) return;
   // A known list without this clip means there is no recording. An unreadable list (busy
@@ -339,7 +279,6 @@ export function retryVoice() {
   const st = usePlayer.getState();
   if (!st.item) return;
   manifests.delete(clipDir());
-  serverVoiceDown = false;
   void play(st.item, { onEnd: st.onEnd ?? undefined });
 }
 

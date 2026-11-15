@@ -330,6 +330,7 @@ export const names = (s: string) => s.replace(NAMES, (n) => AR_MORE[n] ?? n);
 export const PATTERNS_MORE: [RegExp, string][] = [
   [/^(\d{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4})$/, '⁧$1 $2 $3⁩'],
   [/^Listen: (.+)$/, 'استمع: $1'],
+  [/^Read: (.+)$/, 'اقرأ: $1'],
   [/^(≥ )?(\d+(?:\.\d+)?) kWh$/, '⁧⁦$1$2⁩ كيلوواط ساعة⁩'],
   [/^(≥ )?(\d+\.\d+) d$/, '⁧⁦$1$2⁩ يوم⁩'],
   [/^(≥ )?(\d+\.\d+) h$/, '⁧⁦$1$2⁩ ساعة⁩'],
