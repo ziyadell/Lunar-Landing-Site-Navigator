@@ -741,6 +741,13 @@
   }
   .app.app--surface .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
     margin-top: 72px !important; /* below the compass tape */
+  }  /* The status chip ("Sun is below the horizon", "Loading … imagery") shares this corner:
+     the guide waits below it. */
+  .app:has(.hud__bottom > .loadchip) .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    margin-top: 62px !important;
+  }
+  .app.app--surface:has(.hud__bottom > .loadchip) .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    margin-top: 112px !important;
   }
 }
 @media (min-height: 501px) {
@@ -819,4 +826,11 @@
     max-height: calc(100svh - var(--mast-h) - 52px) !important;
     overflow: hidden auto;
   }
+}
+
+/* The scene's guide button can be dragged: no page scroll or text selection starts on it. */
+.hud .guide__btn {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }

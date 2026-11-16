@@ -262,6 +262,104 @@ function topicGroups() {
   ];
 }
 
+/** Where the user dragged the closed guide button (kept across Orbit and Surface). */
+const useLaunchPos = create<{ x: number; y: number; set: (p: { x: number; y: number }) => void }>((set) => ({ x: 0, y: 0, set: (p) => set(p) }));
+
+/**
+ * Drag the closed guide button anywhere on screen. It moves only after a real drag (more
+ * than a few pixels), so a tap or click still opens the menu; it always stays fully on
+ * screen. A relative offset (not a transform) keeps the phone menu sheet anchored to the
+ * screen.
+ */
+function useLaunchDrag(btn: React.RefObject<HTMLButtonElement | null>, enabled: boolean, view: string, onTap: () => void) {
+  const { x, y, set } = useLaunchPos();
+  const s0 = useRef<{ px: number; py: number; ox: number; oy: number; id: number; moved: boolean } | null>(null);
+  const dragged = useRef(false);
+  const tappedAt = useRef(0);
+  const clamp = useCallback(
+    (nx: number, ny: number) => {
+      const b = btn.current?.getBoundingClientRect();
+      if (!b) return { x: nx, y: ny };
+      const cur = useLaunchPos.getState();
+      const left = b.left - cur.x;
+      const top = b.top - cur.y;
+      const e = 8;
+      return {
+        x: Math.round(Math.min(Math.max(nx, e - left), Math.max(e - left, innerWidth - e - b.width - left))),
+        y: Math.round(Math.min(Math.max(ny, e - top), Math.max(e - top, innerHeight - e - b.height - top))),
+      };
+    },
+    [btn],
+  );
+  // Back on screen whenever the layout or the window changes under it.
+  useEffect(() => {
+    const el = btn.current;
+    if (!enabled || !el || typeof IntersectionObserver === 'undefined') return;
+    const fit = () => {
+      const p = useLaunchPos.getState();
+      if (!p.x && !p.y) return;
+      const c = clamp(p.x, p.y);
+      if (c.x !== p.x || c.y !== p.y) useLaunchPos.getState().set(c);
+    };
+    const io = new IntersectionObserver(fit, { threshold: 1 });
+    io.observe(el);
+    window.addEventListener('resize', fit);
+    // Each view has its own starting spot (Surface sits lower than Orbit), and the button is
+    // re-created after the descent: check once the new layout has settled.
+    const raf = requestAnimationFrame(() => requestAnimationFrame(fit));
+    return () => {
+      io.disconnect();
+      window.removeEventListener('resize', fit);
+      cancelAnimationFrame(raf);
+    };
+  }, [enabled, btn, clamp, view]);
+  if (!enabled) return { style: undefined, handlers: {}, consumeClick: () => false };
+  return {
+    style: x || y ? { left: x, top: y } : undefined,
+    handlers: {
+      onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
+        dragged.current = false; // a touch drag ends without a click, so clear the flag here
+        if (e.button !== 0) return;
+        const p = useLaunchPos.getState();
+        const st = { px: e.clientX, py: e.clientY, ox: p.x, oy: p.y, id: e.pointerId, moved: false, touch: e.pointerType !== 'mouse' };
+        s0.current = st;
+        // Follow the pointer on the whole window: a fast flick leaves the button before it moves.
+        const move = (ev: PointerEvent) => {
+          if (ev.pointerId !== st.id) return;
+          const dx = ev.clientX - st.px, dy = ev.clientY - st.py;
+          if (!st.moved && Math.hypot(dx, dy) < 6) return;
+          st.moved = true;
+          set(clamp(st.ox + dx, st.oy + dy));
+        };
+        const end = (ev: PointerEvent) => {
+          if (ev.pointerId !== st.id) return;
+          dragged.current = st.moved;
+          s0.current = null;
+          // Touch and pen: open on lift. Some touch browsers drop the click of a tap that
+          // follows a drag; the click that does arrive is then ignored (consumeClick).
+          if (!st.moved && st.touch && ev.type === 'pointerup' && btn.current?.contains(ev.target as Node)) {
+            tappedAt.current = performance.now();
+            onTap();
+          }
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', end);
+          window.removeEventListener('pointercancel', end);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', end);
+        window.addEventListener('pointercancel', end);
+      },
+    },
+    /** True once for the click that ends a drag, so dropping the button does not open the menu. */
+    consumeClick: () => {
+      const d = dragged.current || performance.now() - tappedAt.current < 800;
+      dragged.current = false;
+      tappedAt.current = 0;
+      return d;
+    },
+  };
+}
+
 /** Guide menu: explain this view, full tour, browse topics. Escape and outside clicks close it. */
 function GuideMenu({ onClose, anchor }: { onClose: (restore: boolean) => void; anchor: React.RefObject<HTMLButtonElement | null> }) {
   const mode = useApp((s) => s.mode);
@@ -370,6 +468,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const host = useRef<HTMLElement>(null);
+
   const wide = useMedia('(min-width: 760px)');
   useRegionAutoNarration();
   const close = useRef((restore: boolean) => {
@@ -396,6 +495,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
   const active = !!(item || inTour);
   // Movable wherever the player floats over the page (not on phones, where it sits in the HUD column).
   const drag = usePlayerDrag(host, wide && active && (placement === 'float' || inTour));
+  const launch = useLaunchDrag(btn, placement === 'float', `${mode}|${intro}|${welcomeSeen}|${active}`, () => setOpen((o) => !o));
   if (intro || (mode === 'orbital' && !welcomeSeen)) return null;
   const exit = () => {
     setMin(false); // the next narration opens in full
@@ -510,8 +610,8 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
           {(transcript || written) && item && <p className="aplayer__text">{item.text}</p>}
         </div>
       )}
-      <div className={`guide__launch${active && minimized ? ' is-hidden' : ''}`}>
-        <button ref={btn} type="button" className={`guide__btn${open ? ' is-on' : ''}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((o) => !o)}>
+      <div className={`guide__launch${active && minimized ? ' is-hidden' : ''}`} style={launch.style}>
+        <button ref={btn} type="button" className={`guide__btn${open ? ' is-on' : ''}`} aria-expanded={open} aria-haspopup="dialog" title={placement === 'float' ? 'Drag to move' : undefined} onClick={() => !launch.consumeClick() && setOpen((o) => !o)} {...launch.handlers}>
           <Headphones size={14} />
           Mission guide
         </button>
