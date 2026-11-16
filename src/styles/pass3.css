@@ -696,3 +696,127 @@
 .glance-notes .glance-notes__limits {
   margin-top: 14px;
 }
+
+/* ===================================================== every screen size: nothing overlaps */
+
+/* Mission guide (closed): top-left of the scene, under the top bar (and the Surface compass),
+   where no panel sits. Its menu opens downward. While a narration plays, the player keeps its
+   own place. Region labels on the globe already steer around it (data-obstacle). */
+@media (min-width: 760px) and (min-height: 501px) {
+  .app:not(.app--analysis) .hud .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    top: calc(var(--mast-h) + 12px);
+    left: var(--gutter);
+    right: auto;
+    bottom: auto;
+  }
+  .app.app--surface:not(.app--analysis) .hud .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    top: calc(var(--mast-h) + 56px);
+  }
+  /* First-visit tips card (top-left, 244 px wide): the guide waits beside it, not on it. */
+  .app:not(.app--analysis) .hud:has(.hud__intro .intro) .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    top: calc(var(--mast-h) + 8px);
+    left: calc(var(--gutter) + 256px);
+  }
+}
+/* Portrait tablets: the camera tools leave no room beside the tips card, so the guide waits
+   below it (the region card is far down the screen there). */
+@media (min-width: 760px) and (max-width: 900px) and (min-height: 501px) {
+  .app:not(.app--analysis) .hud:has(.hud__intro .intro) .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    top: calc(var(--mast-h) + 8px + 160px);
+    left: var(--gutter);
+  }
+}
+/* Short tablets/laptops in Surface: the raised region card reaches the top-left, so the guide
+   sits just to its right, under the compass. */
+@media (min-width: 760px) and (max-width: 1100px) and (min-height: 501px) and (max-height: 640px) {
+  .app.app--surface:not(.app--analysis) .hud .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    left: calc(var(--gutter) + 352px);
+  }
+}
+@media (max-width: 759px) and (min-height: 501px) {
+  .app .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    align-self: start !important;
+    justify-self: start !important;
+    margin: 10px 0 0 var(--gutter) !important;
+  }
+  .app.app--surface .hud__audio:not(:has(.aplayer)):not(:has(.aplayer-mini)) {
+    margin-top: 72px !important; /* below the compass tape */
+  }
+}
+@media (min-height: 501px) {
+  .app:not(.app--analysis) .hud__audio:not(:has(.aplayer)) .guide {
+    justify-items: start;
+  }
+  .app:not(.app--analysis) .hud__audio:not(:has(.aplayer)) .guide__menu {
+    top: calc(100% + 8px);
+    bottom: auto;
+    left: 0;
+    right: auto;
+  }
+}
+
+/* Right column: never below the map scale (Orbit) or the skyline strip (Surface). On a short
+   screen the cards scroll inside instead of running under them. */
+@media (min-width: 760px) and (min-height: 501px) {
+  .app.app--orbital .hud .hud__right > .hud__stack,
+  .app.app--orbital .hud .hud__right > .tool-col {
+    max-height: calc(100svh - var(--mast-h) - 180px);
+  }
+  .app.app--surface .hud .hud__right > .hud__stack,
+  .app.app--surface .hud .hud__right > .tool-col {
+    max-height: calc(100svh - var(--mast-h) - 44px - 196px);
+  }
+  .app:not(.app--analysis) .hud__right > .hud__stack {
+    overflow: hidden auto;
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+  }
+  .app:not(.app--analysis) .hud__right > .hud__stack > * {
+    flex: none;
+  }
+}
+
+/* Region card clear of the bottom band: above the skyline strip on tablets, and above the
+   time bar on narrow laptops where the bar reaches under the card. */
+@media (min-width: 760px) and (max-width: 1100px) and (min-height: 501px) {
+  .app--surface .hud .hud__left {
+    bottom: calc(var(--gutter) + 160px);
+  }
+}
+@media (min-width: 1101px) and (max-width: 1320px) {
+  .app:not(.app--analysis) .hud .hud__left {
+    bottom: calc(var(--gutter) + 76px);
+  }
+}
+@media (min-width: 1101px) and (max-width: 1320px) and (max-height: 700px), (min-width: 1101px) and (max-height: 680px) {
+  .app:not(.app--analysis) .hud .hud__left .locator {
+    display: none;
+  }
+}
+
+/* Header: the secondary buttons fold into the More menu until they fit beside the views. */
+@media (min-width: 760px) and (max-width: 1419px) {
+  .more {
+    display: block;
+  }
+  .masthead__aside > .ghost-btn:not(.more__btn),
+  .masthead__aside > .focus-btn {
+    display: none;
+  }
+}
+
+/* Phones held sideways: the look tools fit the screen height. */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* The guide is a row of the right-hand column here; desktop offsets pushed it off screen. */
+  .app:not(.app--analysis) .hud .hud__audio {
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+  }
+  .app.app--surface .hud .hud__right .tool-col,
+  .app.app--orbital .hud .hud__right .tool-col {
+    max-height: calc(100svh - var(--mast-h) - 52px) !important;
+    overflow: hidden auto;
+  }
+}

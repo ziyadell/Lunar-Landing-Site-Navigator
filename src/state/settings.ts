@@ -34,7 +34,7 @@ interface Settings {
 }
 
 const KEY = 'lsn.settings.v2';
-const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, sound: true, rate: 1 as const, transcript: true, welcomeSeen: false, readingsFolded: typeof window !== 'undefined' && window.innerWidth < 760, toolsFolded: false, skylineFolded: false, regionFolded: false, rankFolded: typeof window !== 'undefined' && window.innerWidth < 760, /* phones: title only until opened */ lang: 'en' as 'en' | 'ar' };
+const defaults = { quality: 'auto' as Quality, audioGuide: true, voice: 'recorded' as VoicePref, sound: true, rate: 1 as const, transcript: true, welcomeSeen: false, readingsFolded: typeof window !== 'undefined' && window.innerWidth < 760, toolsFolded: false, skylineFolded: false, regionFolded: false, rankFolded: typeof window !== 'undefined' && (window.innerWidth < 760 || window.innerHeight < 640), /* phones and short laptops: title only until opened */ lang: 'en' as 'en' | 'ar' };
 
 function read() {
   try {
