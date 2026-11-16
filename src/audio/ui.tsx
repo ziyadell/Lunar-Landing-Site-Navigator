@@ -262,8 +262,13 @@ function topicGroups() {
   ];
 }
 
-/** Where the user dragged the closed guide button (kept across Orbit and Surface). */
-const useLaunchPos = create<{ x: number; y: number; set: (p: { x: number; y: number }) => void }>((set) => ({ x: 0, y: 0, set: (p) => set(p) }));
+/** Where the user dragged the closed guide button: Orbit and Surface each keep their own. */
+type Pos = { x: number; y: number };
+const useLaunchPos = create<{ pos: Record<string, Pos>; set: (mode: string, p: Pos) => void }>((set) => ({
+  pos: {},
+  set: (mode, p) => set((s) => ({ pos: { ...s.pos, [mode]: p } })),
+}));
+const ZERO: Pos = { x: 0, y: 0 };
 
 /**
  * Drag the closed guide button anywhere on screen. It moves only after a real drag (more
@@ -271,8 +276,9 @@ const useLaunchPos = create<{ x: number; y: number; set: (p: { x: number; y: num
  * screen. A relative offset (not a transform) keeps the phone menu sheet anchored to the
  * screen.
  */
-function useLaunchDrag(btn: React.RefObject<HTMLButtonElement | null>, enabled: boolean, view: string, onTap: () => void) {
-  const { x, y, set } = useLaunchPos();
+function useLaunchDrag(btn: React.RefObject<HTMLButtonElement | null>, enabled: boolean, mode: string, view: string, onTap: () => void) {
+  const { x, y } = useLaunchPos((s) => s.pos[mode] ?? ZERO);
+  const set = (p: Pos) => useLaunchPos.getState().set(mode, p);
   const s0 = useRef<{ px: number; py: number; ox: number; oy: number; id: number; moved: boolean } | null>(null);
   const dragged = useRef(false);
   const tappedAt = useRef(0);
@@ -280,7 +286,7 @@ function useLaunchDrag(btn: React.RefObject<HTMLButtonElement | null>, enabled: 
     (nx: number, ny: number) => {
       const b = btn.current?.getBoundingClientRect();
       if (!b) return { x: nx, y: ny };
-      const cur = useLaunchPos.getState();
+      const cur = useLaunchPos.getState().pos[mode] ?? ZERO;
       const left = b.left - cur.x;
       const top = b.top - cur.y;
       const e = 8;
@@ -289,17 +295,17 @@ function useLaunchDrag(btn: React.RefObject<HTMLButtonElement | null>, enabled: 
         y: Math.round(Math.min(Math.max(ny, e - top), Math.max(e - top, innerHeight - e - b.height - top))),
       };
     },
-    [btn],
+    [btn, mode],
   );
   // Back on screen whenever the layout or the window changes under it.
   useEffect(() => {
     const el = btn.current;
     if (!enabled || !el || typeof IntersectionObserver === 'undefined') return;
     const fit = () => {
-      const p = useLaunchPos.getState();
+      const p = useLaunchPos.getState().pos[mode] ?? ZERO;
       if (!p.x && !p.y) return;
       const c = clamp(p.x, p.y);
-      if (c.x !== p.x || c.y !== p.y) useLaunchPos.getState().set(c);
+      if (c.x !== p.x || c.y !== p.y) useLaunchPos.getState().set(mode, c);
     };
     const io = new IntersectionObserver(fit, { threshold: 1 });
     io.observe(el);
@@ -312,7 +318,7 @@ function useLaunchDrag(btn: React.RefObject<HTMLButtonElement | null>, enabled: 
       window.removeEventListener('resize', fit);
       cancelAnimationFrame(raf);
     };
-  }, [enabled, btn, clamp, view]);
+  }, [enabled, btn, clamp, view, mode]);
   if (!enabled) return { style: undefined, handlers: {}, consumeClick: () => false };
   return {
     style: x || y ? { left: x, top: y } : undefined,
@@ -320,7 +326,7 @@ function useLaunchDrag(btn: React.RefObject<HTMLButtonElement | null>, enabled: 
       onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
         dragged.current = false; // a touch drag ends without a click, so clear the flag here
         if (e.button !== 0) return;
-        const p = useLaunchPos.getState();
+        const p = useLaunchPos.getState().pos[mode] ?? ZERO;
         const st = { px: e.clientX, py: e.clientY, ox: p.x, oy: p.y, id: e.pointerId, moved: false, touch: e.pointerType !== 'mouse' };
         s0.current = st;
         // Follow the pointer on the whole window: a fast flick leaves the button before it moves.
@@ -495,7 +501,7 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
   const active = !!(item || inTour);
   // Movable wherever the player floats over the page (not on phones, where it sits in the HUD column).
   const drag = usePlayerDrag(host, wide && active && (placement === 'float' || inTour));
-  const launch = useLaunchDrag(btn, placement === 'float', `${mode}|${intro}|${welcomeSeen}|${active}`, () => setOpen((o) => !o));
+  const launch = useLaunchDrag(btn, placement === 'float', mode, `${mode}|${intro}|${welcomeSeen}|${active}`, () => setOpen((o) => !o));
   if (intro || (mode === 'orbital' && !welcomeSeen)) return null;
   const exit = () => {
     setMin(false); // the next narration opens in full
