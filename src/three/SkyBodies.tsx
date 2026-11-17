@@ -111,7 +111,7 @@ export function SkyBodies() {
   const { ephemeris } = useData();
   const timeMs = useApp((s) => s.timeMs);
   const sample = ephemeris.sample(timeMs);
-  const earthMap = useLoader(THREE.TextureLoader, assetUrl('textures/earth_2k.jpg'));
+  const earthMap = useLoader(THREE.TextureLoader, assetUrl('textures/earth_1k.jpg'));
   useMemo(() => {
     earthMap.colorSpace = THREE.SRGBColorSpace;
     earthMap.anisotropy = 4;
@@ -163,11 +163,11 @@ export function SkyBodies() {
       </mesh>
       <group ref={earthRef}>
         <mesh matrixAutoUpdate={false} matrix={basis} frustumCulled={false}>
-          <sphereGeometry args={[1, 96, 64]} />
+          <sphereGeometry args={[1, 64, 40]} />
           <meshStandardMaterial map={earthMap} roughness={0.85} metalness={0} />
         </mesh>
         <mesh material={atmoMat} scale={1.035} frustumCulled={false}>
-          <sphereGeometry args={[1, 64, 48]} />
+          <sphereGeometry args={[1, 48, 32]} />
         </mesh>
       </group>
     </>

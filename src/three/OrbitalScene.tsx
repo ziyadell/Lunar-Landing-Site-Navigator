@@ -9,6 +9,7 @@ import { DrawerFrame } from './DrawerFrame';
 import { RegionOutlines } from './RegionOutlines';
 import { SkyBodies } from './SkyBodies';
 import { useApp } from '../state/store';
+import { useReadiness } from '../state/loading';
 import { useData } from '../data/DataContext';
 import { lonLatToVec, meToThree } from '../science/geometry';
 
@@ -89,16 +90,19 @@ function SunLight() {
 }
 
 export function OrbitalScene({ tier }: { tier: TextureTier }) {
+  const globeDone = useReadiness((s) => s.globe !== 'pending');
   return (
     <>
       <color attach="background" args={['#05080F']} />
       <OrbitalStars />
       <ambientLight intensity={0.035} color="#b8c4d8" />
       <SunLight />
-      {/* Own boundary: the Earth image never delays the Moon. */}
-      <Suspense fallback={null}>
-        <SkyBodies />
-      </Suspense>
+      {/* Only after the Moon's own maps have loaded, so the first screen is never slower. */}
+      {globeDone && (
+        <Suspense fallback={null}>
+          <SkyBodies />
+        </Suspense>
+      )}
       <Suspense fallback={null}>
         <MoonGlobe tier={tier} />
         <BodyVectors />
