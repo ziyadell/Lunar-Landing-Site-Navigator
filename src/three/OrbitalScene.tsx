@@ -7,6 +7,7 @@ import { MarkerProjector } from './MarkerProjector';
 import { OrbitalStars } from './OrbitalStars';
 import { DrawerFrame } from './DrawerFrame';
 import { RegionOutlines } from './RegionOutlines';
+import { SkyBodies } from './SkyBodies';
 import { useApp } from '../state/store';
 import { useData } from '../data/DataContext';
 import { lonLatToVec, meToThree } from '../science/geometry';
@@ -94,6 +95,10 @@ export function OrbitalScene({ tier }: { tier: TextureTier }) {
       <OrbitalStars />
       <ambientLight intensity={0.035} color="#b8c4d8" />
       <SunLight />
+      {/* Own boundary: the Earth image never delays the Moon. */}
+      <Suspense fallback={null}>
+        <SkyBodies />
+      </Suspense>
       <Suspense fallback={null}>
         <MoonGlobe tier={tier} />
         <BodyVectors />
