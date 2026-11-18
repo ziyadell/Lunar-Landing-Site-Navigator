@@ -133,5 +133,7 @@ export function renderSettings(q: Quality): RenderSettings {
   const weak = d.cores <= 4 || (d.memoryGB !== null && d.memoryGB <= 4);
   if (d.small || weak)
     return { level: 'balanced', dpr: Math.min(d.dpr, 1.75), tier: d.small || !bigTex ? 'standard' : 'high', shadowMap: 2048, terrainSegments: d.small ? 240 : 300, reason: d.small ? 'Small screen' : 'Modest CPU or memory' };
-  return { ...high, level: 'high', reason: 'Capable device' };
+  // Auto loads the phone's image set on every device: the extra high-tier imagery (about 25 MB)
+  // clogs slower connections. High quality in Settings still loads it.
+  return { ...high, level: 'high', tier: 'standard', reason: 'Capable device' };
 }
