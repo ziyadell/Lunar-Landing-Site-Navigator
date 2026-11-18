@@ -139,7 +139,7 @@ if (typeof window !== 'undefined')
   for (const id of EARLY_CLIPS)
     early.set(
       id,
-      fetch(assetUrl(`audio/narration/${id}.mp3`))
+      fetch(assetUrl(`${clipDir()}/${id}.mp3`)) // the page's language (switching it reloads)
         .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('audio') ? r.blob() : null))
         .then((b) => (b ? URL.createObjectURL(b) : null))
         .catch(() => null),
@@ -262,7 +262,7 @@ export async function play(item: NarrationItem, opts: { onEnd?: () => void } = {
   // network) is not proof of that: try the recording itself, which falls back to captions
   // if it does not load.
   if (ids && !ids.has(item.id)) return toCaptions(item, t, tr('Recorded narration not available · captions'), true);
-  const pre = isAr() ? undefined : early.get(item.id);
+  const pre = early.get(item.id);
   // Normally already downloaded; if not, wait a little, then stream it instead.
   const local = pre ? await Promise.race([pre, new Promise<null>((r) => window.setTimeout(() => r(null), 6000))]) : null;
   if (t !== token) return;

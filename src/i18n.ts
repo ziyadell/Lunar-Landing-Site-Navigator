@@ -216,10 +216,6 @@ useSettings.subscribe(apply);
 export function switchLang() {
   const s = useSettings.getState();
   s.set({ lang: s.lang === 'ar' ? 'en' : 'ar' });
-  try {
-    if (s.welcomeSeen) sessionStorage.setItem('lsn.skipWelcome', '1');
-  } catch {
-    /* storage unavailable: the welcome simply shows again */
-  }
+  // The welcome shows again in the new language: its tap is what lets the browser play sound.
   window.location.reload();
 }
