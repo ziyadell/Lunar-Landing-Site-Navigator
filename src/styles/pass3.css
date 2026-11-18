@@ -773,13 +773,38 @@
   .app.app--surface .hud .hud__right > .tool-col {
     max-height: calc(100svh - var(--mast-h) - 44px - 196px);
   }
+  /* Only the ranking list scrolls, inside its own card: the stack itself ignores touches (the
+     Moon stays draggable between cards), so a scrolling stack could not be moved by a finger
+     on iPad, and its bar sat outside the cards. */
   .app:not(.app--analysis) .hud__right > .hud__stack {
-    overflow: hidden auto;
-    scrollbar-width: thin;
-    overscroll-behavior: contain;
+    overflow: hidden;
   }
   .app:not(.app--analysis) .hud__right > .hud__stack > * {
     flex: none;
+  }
+  .app:not(.app--analysis) .hud__right > .hud__stack > .rank:not(.is-folded) {
+    flex: 0 1 auto;
+    min-height: 96px; /* header and about three rows */
+    display: flex;
+    flex-direction: column;
+  }
+  .app:not(.app--analysis) .hud__right > .hud__stack .rank__list {
+    min-height: 0;
+    overflow: hidden auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-inline-end: 2px;
+  }
+  .app:not(.app--analysis) .hud__right > .hud__stack .rank__list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .app:not(.app--analysis) .hud__right > .hud__stack .rank__list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .app:not(.app--analysis) .hud__right > .hud__stack .rank__list::-webkit-scrollbar-thumb {
+    border: 0;
+    border-radius: 3px;
+    min-height: 24px;
   }
 }
 

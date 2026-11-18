@@ -53,7 +53,15 @@ if (unknown.length) {
   process.exit(2);
 }
 
-const hashOf = (it) => createHash('sha256').update(JSON.stringify(lang === 'en' ? [VOICE_VERSION, VOICE, it.text] : [VOICE_VERSION, VOICE, it.say ?? it.text, lang])).digest('hex').slice(0, 16);
+// Pronunciation dictionary: how a term is spoken. Applied only to the text sent to the voice;
+// captions keep the written form. The voice reads Latin capitals letter by letter (L-O-L-A).
+const DICT = {
+  ar: [[/\bNASA\b/g, 'ناسا'], [/\bLOLA\b/g, 'لولا'], [/\bLROC\b/g, 'إل روك'], [/\bJPL\b/g, 'جيه بي إل'], [/\bHorizons\b/g, 'هورايزنز'], [/\bLunaNav\b/g, 'لونا ناف'], [/\bYale\b/g, 'ييل'], [/\bSpace Apps\b/g, 'سبيس آبس'], [/\bCSV\b/g, 'سي إس في'], [/\bArtemis\b/g, 'أرتميس']],
+  en: [[/\bNASA\b/g, 'Nasa'], [/\bLOLA\b/g, 'Lola'], [/\bLROC\b/g, 'L-Rock'], [/\bLunaNav\b/g, 'Luna Nav']],
+};
+const spoken = (it) => (DICT[lang] ?? []).reduce((t, [re, to]) => t.replace(re, to), it.say ?? it.text);
+// Unchanged by the dictionary, a clip keeps its old hash (and is not re-recorded).
+const hashOf = (it) => createHash('sha256').update(JSON.stringify(lang === 'en' ? [VOICE_VERSION, VOICE, spoken(it)] : [VOICE_VERSION, VOICE, spoken(it), lang])).digest('hex').slice(0, 16);
 
 mkdirSync(out, { recursive: true });
 const manPath = join(out, 'manifest.json');
@@ -74,11 +82,11 @@ const todo = recordable.filter((it) => {
   const file = join(out, `${it.id}.mp3`);
   return force || manifest.files[it.id]?.hash !== hashOf(it) || !existsSync(file);
 });
-const chars = todo.reduce((n, it) => n + (it.say ?? it.text).length, 0);
+const chars = todo.reduce((n, it) => n + spoken(it).length, 0);
 console.log(`Voice: ${VOICE.voiceName} (${VOICE.voiceId}), model ${VOICE.modelId}, ${VOICE.outputFormat}, config ${VOICE_VERSION}`);
 console.log(`${todo.length} clip(s) to record, ${chars} characters; ${recordable.length - todo.length} up to date or not selected.`);
 if (dry) {
-  for (const it of todo) console.log(`  would record ${it.id} (${it.text.length} chars)`);
+  for (const it of todo) console.log(`  would record ${it.id} (${spoken(it).length} chars)`);
   process.exit(0);
 }
 if (!todo.length) process.exit(0);
@@ -107,7 +115,7 @@ for (const it of todo) {
   const file = join(out, `${it.id}.mp3`);
   try {
     const stream = await client.textToSpeech.convert(VOICE.voiceId, {
-      text: it.say ?? it.text,
+      text: spoken(it),
       modelId: VOICE.modelId,
       languageCode: lang === 'en' ? VOICE.languageCode : lang,
       outputFormat: VOICE.outputFormat,

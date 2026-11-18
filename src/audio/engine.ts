@@ -133,17 +133,23 @@ if (typeof window !== 'undefined') void recordedIds();
  * are already in memory when Start Mission plays them (the large Moon imagery competes for the
  * network right after that tap). Others stream on demand.
  */
-const EARLY_CLIPS = ['welcome'];
 const early = new Map<string, Promise<string | null>>();
-if (typeof window !== 'undefined')
-  for (const id of EARLY_CLIPS)
-    early.set(
-      id,
-      fetch(assetUrl(`${clipDir()}/${id}.mp3`)) // the page's language (switching it reloads)
-        .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('audio') ? r.blob() : null))
-        .then((b) => (b ? URL.createObjectURL(b) : null))
-        .catch(() => null),
-    );
+/**
+ * Download a clip into memory now (once), so playing it later starts without the network.
+ * Played from a blob: URL, as the welcome always was (works on iPhone Safari). Not "warm the
+ * HTTP cache, then play the URL": that crashed the WebKit page in testing.
+ */
+export function preloadClip(id: string) {
+  if (early.has(id)) return;
+  early.set(
+    id,
+    fetch(assetUrl(`${clipDir()}/${id}.mp3`)) // the page's language (switching it reloads)
+      .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('audio') ? r.blob() : null))
+      .then((b) => (b ? URL.createObjectURL(b) : null))
+      .catch(() => null),
+  );
+}
+if (typeof window !== 'undefined') preloadClip('welcome');
 
 // ------------------------------------------------------------------ playback core
 let audio: HTMLAudioElement | null = null;

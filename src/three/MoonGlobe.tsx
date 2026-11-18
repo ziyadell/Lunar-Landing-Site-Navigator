@@ -8,6 +8,7 @@ import { useReadiness, reportFailure, clearFailure } from '../state/loading';
 import { useCameraInfo } from './GlobeCamera';
 import { markOnce, regionSwitchEnd } from '../utils/perf';
 import { track } from '../state/loading';
+import { preloadClip } from '../audio/engine';
 
 export type TextureTier = 'high' | 'standard';
 
@@ -235,6 +236,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
   const capHiState = useRef<'idle' | 'loading' | 'done'>('idle');
   const capHiImg = useRef<'idle' | 'loading' | 'done'>('idle');
   const wideState = useRef<'idle' | 'loading' | 'done'>('idle');
+  const wideHiState = useRef<'idle' | 'loading' | 'done'>('idle');
   useEffect(() => () => {
     if (uniforms.capImgOn.value) uniforms.capImg.value.dispose();
     if (uniforms.wideImgOn.value) uniforms.wideImg.value.dispose();
@@ -300,8 +302,10 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
         for (const f of [r.terrain.file, r.terrain.far?.file, r.terrain.regional?.file]) if (f) loadTerrain(f).catch(() => undefined);
         const all = sites.regions;
         const i = all.findIndex((x) => x.id === r.id);
+        preloadClip(`region-${r.id}`); // for "Explore the surface", which introduces this region
         for (const k of [1, -1]) {
           const nb = all[(i + k + all.length) % all.length];
+          preloadClip(`region-${nb.id}`); // its narration starts at once if "next" is pressed
           if (nb.detail && !cache.has(nb.id)) {
             prefetch(nb.detail.imagery);
             prefetch(nb.detail.normals);
@@ -348,9 +352,15 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
     const camPos = camera.position;
     const d = camPos.length();
     const camDir = camPos.clone().normalize();
+    // The high tier's large extras (about 27 MB) wait until what is on screen has loaded: started
+    // with it, they shared a slow line and held up the sharp globe, the pole and the region.
+    const rd = useReadiness.getState();
+    const extraBusy = capHiState.current === 'loading' || capHiImg.current === 'loading' || wideHiState.current === 'loading';
+    const settled = rd.globe !== 'pending' && rd.region !== 'pending' && !extraBusy; // and one extra at a time
 
     if (
       tier === 'high' &&
+      settled &&
       capHiState.current === 'idle' &&
       canTry('capRelief') &&
       sites.polarCap?.texture &&
@@ -385,20 +395,37 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
     };
     // Wide polar mosaic (about 60°S to the cap): the global map is washed out there, so this
     // loads as soon as any of the southern hemisphere faces the camera.
+    // The 2048 version first on every tier; the high tier upgrades to 4096 once settled.
+    const setWide = (t: THREE.Texture) => {
+      uniforms.wideImg.value.dispose();
+      uniforms.wideImg.value = t;
+      uniforms.wideImgOn.value = 1;
+      invalidate();
+    };
     if (wideState.current === 'idle' && camDir.y < 0.35 && canTry('wide')) {
       wideState.current = 'loading';
-      loadTex(tier === 'high' ? 'textures/polar/wac_wide_4096.jpg' : 'textures/polar/wac_wide_2048.jpg', true, aniso)
+      loadTex('textures/polar/wac_wide_2048.jpg', true, aniso)
         .then((t) => {
-          uniforms.wideImg.value.dispose();
-          uniforms.wideImg.value = t;
-          uniforms.wideImgOn.value = 1;
+          setWide(t);
           wideState.current = 'done';
           succeeded('wide');
-          invalidate();
         })
         .catch(() => {
           wideState.current = 'idle';
           failed('wide');
+        });
+    }
+    if (tier === 'high' && settled && wideState.current === 'done' && wideHiState.current === 'idle' && canTry('wideHi')) {
+      wideHiState.current = 'loading';
+      loadTex('textures/polar/wac_wide_4096.jpg', true, aniso)
+        .then((t) => {
+          setWide(t);
+          wideHiState.current = 'done';
+          succeeded('wideHi');
+        })
+        .catch(() => {
+          wideHiState.current = 'idle';
+          failed('wideHi');
         });
     }
     if (capState.current === 'idle' && camDir.y < -0.2 && canTry('cap')) {
@@ -418,7 +445,7 @@ export function MoonGlobe({ tier }: { tier: TextureTier }) {
             failed('cap');
           });
     }
-    if (tier === 'high' && capHiImg.current === 'idle' && d < 2.8 && camDir.y < -0.35 && sites.polarImagery?.cap.high && canTry('capHi')) {
+    if (tier === 'high' && settled && capHiImg.current === 'idle' && d < 2.8 && camDir.y < -0.35 && sites.polarImagery?.cap.high && canTry('capHi')) {
       capHiImg.current = 'loading';
       loadTex(sites.polarImagery.cap.high, true, aniso)
         .then((t) => {

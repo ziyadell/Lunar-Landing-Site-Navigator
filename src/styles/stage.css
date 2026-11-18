@@ -493,7 +493,9 @@
   border: 1px solid var(--glass-line);
 }
 .seg__btn {
-  height: 32px;
+  min-height: 32px; /* grows when a label wraps (Arabic "المنظر الطبيعي") instead of spilling out */
+  padding: 4px 6px;
+  line-height: 1.2;
   border: 0;
   border-radius: 7px;
   background: none;

@@ -217,5 +217,7 @@ export function switchLang() {
   const s = useSettings.getState();
   s.set({ lang: s.lang === 'ar' ? 'en' : 'ar' });
   // The welcome shows again in the new language: its tap is what lets the browser play sound.
+  // Cancel this page's downloads first: on a slow line they hold up the reloaded page.
+  window.stop();
   window.location.reload();
 }

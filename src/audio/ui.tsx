@@ -111,7 +111,9 @@ function useRegionAutoNarration() {
   useEffect(() => {
     let timer = 0;
     const unsub = useApp.subscribe((s, prev) => {
-      if (s.regionId === prev.regionId) return;
+      // A new region, or "Explore the surface" (same region, new view): both introduce the region.
+      const enteredSurface = s.mode === 'surface' && prev.mode !== 'surface';
+      if (s.regionId === prev.regionId && !enteredSurface) return;
       window.clearTimeout(timer);
       const id = `region-${s.regionId}`;
       timer = window.setTimeout(() => {
@@ -531,7 +533,14 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
           )}
           <button type="button" className="aplayer-mini__title" onClick={() => setMin(false)} aria-label={`Show player: ${title ?? 'narration'}`}>
             <span className="aplayer-mini__name">
-              {inTour && <span className="num">{tour.step + 1}/{tour.length} · </span>}
+              {inTour && (
+                <>
+                  <span className="num">
+                    {tour.step + 1}/{tour.length}
+                  </span>
+                  {' · '}
+                </>
+              )}
               {title}
             </span>
             {!written && (
@@ -557,7 +566,15 @@ export function MissionGuide({ placement = 'float' }: { placement?: 'float' | 'f
             </span>
             <div className="aplayer__titles">
               <span className="aplayer__title">
-                {inTour && <span className="aplayer__step num">{tour.step + 1}/{tour.length} · </span>}
+                {/* The separator stays outside the left-to-right number, so Arabic keeps the gap. */}
+                {inTour && (
+                  <>
+                    <span className="aplayer__step num">
+                      {tour.step + 1}/{tour.length}
+                    </span>
+                    <span className="aplayer__step"> · </span>
+                  </>
+                )}
                 {inTour ? narrationItem(tour.ids[tour.step])?.title : item?.title}
               </span>
               <span className="aplayer__src" aria-live="polite">
@@ -679,7 +696,13 @@ export function Welcome() {
       // Frame the whole Moon (the standard "Whole Moon" view); zooming in to a region is the
       // user's choice, never automatic. Issued once the layout has settled: on phones the
       // scene changes from full screen to its own box here, and the framing depends on its shape.
-      timers.current.push(window.setTimeout(() => useApp.getState().resetCamera(), 350));
+      // Not over the visitor's own move: a descent already started (Explore the surface) stays.
+      timers.current.push(
+        window.setTimeout(() => {
+          const a = useApp.getState();
+          if (a.mode === 'orbital' && !a.transitioning) a.resetCamera();
+        }, 350),
+      );
       timers.current.push(window.setTimeout(() => void play(narrationItem('welcome')!), 150));
     };
     const check = () => {
