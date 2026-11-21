@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { DataProvider } from './data/DataContext';
 import { useApp } from './state/store';
 import { Viewport } from './ui/Viewport';
@@ -165,6 +166,7 @@ export function App() {
     <DataProvider fallback={(s) => <Boot state={s as BootState} />}>
       <Workspace />
       <UpdateNotice />
+      <Analytics />
     </DataProvider>
   );
 }
