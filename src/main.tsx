@@ -1,6 +1,7 @@
 import './utils/perf';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
 import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-500.css';
 import '@fontsource/ibm-plex-sans/latin-600.css';
@@ -29,5 +30,7 @@ import './i18n-dom';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
+    {/* Vercel Web Analytics: visitor and page-view counts (no cookies). */}
+    <Analytics />
   </StrictMode>,
 );
